@@ -29,9 +29,16 @@
             android:layout_height="wrap_content"
             android:text="@string/decrypt_files" />
 
-        <ImageView
-            android:id="@+id/imgPreview2"
-            android:layout_width="100dp"
-            android:layout_height="100dp" />
+        <Button
+            android:id="@+id/btnLoadImages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/load_files" />
+
+        <LinearLayout
+            android:id="@+id/lLImages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
     </LinearLayout>
 </ScrollView>
