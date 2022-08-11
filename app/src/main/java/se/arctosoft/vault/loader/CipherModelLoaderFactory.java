@@ -9,9 +9,11 @@ import com.bumptech.glide.load.model.ModelLoader;
 import com.bumptech.glide.load.model.ModelLoaderFactory;
 import com.bumptech.glide.load.model.MultiModelLoaderFactory;
 
+import java.io.InputStream;
+
 import javax.crypto.CipherInputStream;
 
-public class CipherModelLoaderFactory implements ModelLoaderFactory<Uri, CipherInputStream> {
+public class CipherModelLoaderFactory implements ModelLoaderFactory<Uri, InputStream> {
     private final Context context;
 
     public CipherModelLoaderFactory(@NonNull Context context) {
@@ -20,7 +22,7 @@ public class CipherModelLoaderFactory implements ModelLoaderFactory<Uri, CipherI
 
     @NonNull
     @Override
-    public ModelLoader<Uri, CipherInputStream> build(@NonNull MultiModelLoaderFactory multiFactory) {
+    public ModelLoader<Uri, InputStream> build(@NonNull MultiModelLoaderFactory multiFactory) {
         return new CipherModelLoader(context);
     }
 

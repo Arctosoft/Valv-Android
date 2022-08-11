@@ -14,13 +14,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 
-import javax.crypto.CipherInputStream;
-
 import se.arctosoft.vault.util.Encryption;
 
-public class CipherDataFetcher implements DataFetcher<CipherInputStream> {
+public class CipherDataFetcher implements DataFetcher<InputStream> {
     private static final String TAG = "CipherDataFetcher";
-    private CipherInputStream cipherInputStream;
+    private InputStream cipherInputStream;
     private final Context context;
     private final Uri uri;
 
@@ -30,7 +28,7 @@ public class CipherDataFetcher implements DataFetcher<CipherInputStream> {
     }
 
     @Override
-    public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super CipherInputStream> callback) {
+    public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super InputStream> callback) {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
             this.cipherInputStream = Encryption.getCipherInputStream(inputStream);
@@ -61,8 +59,8 @@ public class CipherDataFetcher implements DataFetcher<CipherInputStream> {
 
     @NonNull
     @Override
-    public Class<CipherInputStream> getDataClass() {
-        return CipherInputStream.class;
+    public Class<InputStream> getDataClass() {
+        return InputStream.class;
     }
 
     @NonNull

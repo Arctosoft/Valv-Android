@@ -1,18 +1,26 @@
 package se.arctosoft.vault.util;
 
-import android.content.Context;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
 
+import com.bumptech.glide.Glide;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
+import java.util.concurrent.ExecutionException;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -32,51 +40,104 @@ public class Encryption {
     private static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
 
-    public static void writeFile(FragmentActivity context, Uri input, Uri output, char[] password, IOnUriResult onUriResult) {
+    public static void writeFile(FragmentActivity context, Uri input, DocumentFile file, DocumentFile thumb, char[] password, IOnUriResult onUriResult) {
         new Thread(() -> {
             try {
-                SecureRandom sr = SecureRandom.getInstanceStrong();
-                byte[] salt = new byte[SALT_LENGTH];
-                sr.nextBytes(salt);
-                byte[] ivBytes = new byte[IV_LENGTH];
-                sr.nextBytes(ivBytes);
+                createFile(context, input, file, password);
 
-                SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
-                KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
-                SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
-                Log.d(TAG, "decryptAndWriteFile: generated secret key for encryption: " + new String(secretKey.getEncoded()));
-                IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
+                createThumb(context, input, thumb, password);
 
-                Cipher cipher = Cipher.getInstance(CIPHER); // https://developer.android.com/reference/javax/crypto/Cipher
-                cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
-
-                InputStream inputStream = context.getContentResolver().openInputStream(input);
-                OutputStream fos = context.getContentResolver().openOutputStream(output);
-                fos.write(salt);
-                fos.write(ivBytes);
-                fos.flush();
-                CipherOutputStream cos = new CipherOutputStream(fos, cipher);
-
-                int read;
-                byte[] buffer = new byte[2048];
-                while ((read = inputStream.read(buffer)) != -1) {
-                    cos.write(buffer, 0, read);
-                }
-
-                cos.close();
-                fos.close();
-                inputStream.close();
-                try {
-                    secretKey.destroy();
-                } catch (DestroyFailedException e) {
-                    e.printStackTrace();
-                }
-                context.runOnUiThread(() -> onUriResult.onUriResult(output));
-            } catch (GeneralSecurityException | IOException e) {
+                context.runOnUiThread(() -> onUriResult.onUriResult(file.getUri()));
+            } catch (GeneralSecurityException | IOException | ExecutionException | InterruptedException e) {
                 e.printStackTrace();
                 context.runOnUiThread(() -> onUriResult.onError(e));
             }
         }).start();
+    }
+
+    private static class Streams {
+        private final InputStream inputStream;
+        private final CipherOutputStream outputStream;
+        private final SecretKey secretKey;
+
+        private Streams(InputStream inputStream, CipherOutputStream outputStream, SecretKey secretKey) {
+            this.inputStream = inputStream;
+            this.outputStream = outputStream;
+            this.secretKey = secretKey;
+        }
+
+        private void close() {
+            try {
+                outputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            try {
+                secretKey.destroy();
+            } catch (DestroyFailedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void createFile(FragmentActivity context, Uri input, DocumentFile file, char[] password) throws GeneralSecurityException, IOException {
+        Streams streams = getCipherOutputStream(context, input, file, password);
+
+        int read;
+        byte[] buffer = new byte[2048];
+        while ((read = streams.inputStream.read(buffer)) != -1) {
+            streams.outputStream.write(buffer, 0, read);
+        }
+
+        streams.close();
+    }
+
+    private static void createThumb(FragmentActivity context, Uri input, DocumentFile thumb, char[] password) throws GeneralSecurityException, IOException, ExecutionException, InterruptedException {
+        Streams streams = getCipherOutputStream(context, input, thumb, password);
+
+        Bitmap bitmap = Glide.with(context)
+                .asBitmap()
+                .load(input)
+                .centerCrop()
+                .submit(512, 512)
+                .get();
+
+        //bitmap.compress(Bitmap.CompressFormat.JPEG, 95, streams.outputStream);
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 92, stream);
+        byte[] byteArray = stream.toByteArray();
+        streams.outputStream.write(byteArray);
+        bitmap.recycle();
+
+        streams.close();
+    }
+
+    private static Streams getCipherOutputStream(FragmentActivity context, Uri input, DocumentFile file, char[] password) throws GeneralSecurityException, IOException {
+        SecureRandom sr = SecureRandom.getInstanceStrong();
+        byte[] salt = new byte[SALT_LENGTH];
+        sr.nextBytes(salt);
+        byte[] ivBytes = new byte[IV_LENGTH];
+        sr.nextBytes(ivBytes);
+
+        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
+        KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
+        SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
+
+        Cipher cipher = Cipher.getInstance(CIPHER);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
+
+        InputStream inputStream = context.getContentResolver().openInputStream(input);
+        OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(file.getUri()), 1024 * 32);
+        fos.write(salt);
+        fos.write(ivBytes);
+        fos.flush();
+        return new Streams(inputStream, new CipherOutputStream(fos, cipher), secretKey);
     }
 
     public static void decryptAndWriteFile(FragmentActivity context, Uri encryptedInput, Uri output, char[] password, IOnUriResult onUriResult) {
@@ -88,10 +149,11 @@ public class Encryption {
         Log.d(TAG, "decryptAndWriteFile: input: " + encryptedInput + ", output: " + output);
         new Thread(() -> {
             try {
+                long start = System.currentTimeMillis();
                 byte[] salt = new byte[SALT_LENGTH];
                 byte[] ivBytes = new byte[IV_LENGTH];
 
-                InputStream inputStream = context.getContentResolver().openInputStream(encryptedInput);
+                InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
                 inputStream.read(salt, 0, salt.length);
                 inputStream.read(ivBytes, 0, ivBytes.length);
                 Log.d(TAG, "decryptAndWriteFile: read salt + iv");
@@ -123,6 +185,8 @@ public class Encryption {
                 } catch (DestroyFailedException e) {
                     e.printStackTrace();
                 }
+                long end = System.currentTimeMillis();
+                context.runOnUiThread(() -> Toast.makeText(context, "decrypt took " + (end - start) + " ms", Toast.LENGTH_LONG).show());
                 Log.d(TAG, "decryptAndWriteFile: decrypted");
 
                 context.runOnUiThread(() -> onUriResult.onUriResult(output));
@@ -133,12 +197,13 @@ public class Encryption {
         }).start();
     }
 
-    public static CipherInputStream getCipherInputStream(@NonNull InputStream inputStream) throws IOException, GeneralSecurityException {
+    public static InputStream getCipherInputStream(@NonNull InputStream inputStream) throws IOException, GeneralSecurityException {
         byte[] salt = new byte[SALT_LENGTH];
         byte[] ivBytes = new byte[IV_LENGTH];
 
         inputStream.read(salt, 0, salt.length);
         inputStream.read(ivBytes, 0, ivBytes.length);
+        inputStream = new BufferedInputStream(inputStream, 1024 * 32);
 
         SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
         KeySpec keySpec = new PBEKeySpec("mypassword1".toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
