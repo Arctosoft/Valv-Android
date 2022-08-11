@@ -40,6 +40,11 @@ public class Encryption {
     private static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
 
+    public static final String PREFIX_IMAGE_FILE = ".arcv1.i-";
+    public static final String ENCRYPTED_PREFIX = ".arcv1.";
+    public static final String PREFIX_VIDEO_FILE = ".arcv1.v-";
+    public static final String PREFIX_THUMB = ".arcv1.t-";
+
     public static void writeFile(FragmentActivity context, Uri input, DocumentFile file, DocumentFile thumb, char[] password, IOnUriResult onUriResult) {
         new Thread(() -> {
             try {

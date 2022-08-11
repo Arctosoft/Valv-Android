@@ -89,8 +89,8 @@ public class MainActivity extends AppCompatActivity {
                 for (int i = 0; i < Math.min(10, files.size()); i++) {
                     Uri uri1 = files.get(i);
                     DocumentFile documentFile = DocumentFile.fromSingleUri(this, uri1);
-                    DocumentFile file = pickedDir.createFile("*/*", ".arcv1-" + documentFile.getName());
-                    DocumentFile thumb = pickedDir.createFile("*/*", ".arct1-" + documentFile.getName());
+                    DocumentFile file = pickedDir.createFile("*/*", Encryption.PREFIX_IMAGE_FILE + documentFile.getName());
+                    DocumentFile thumb = pickedDir.createFile("*/*", Encryption.PREFIX_THUMB + documentFile.getName());
                     Encryption.writeFile(this, uri1, file, thumb, "mypassword1".toCharArray(), new Encryption.IOnUriResult() {
                         @Override
                         public void onUriResult(Uri uri) {
@@ -113,17 +113,11 @@ public class MainActivity extends AppCompatActivity {
                 List<Uri> files = getFilesInFolder(getContentResolver(), pickedDir);
                 Log.e(TAG, "onActivityResult: found " + files.size());
                 Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
-                int count = 0;
                 for (int i = 0; i < files.size(); i++) {
-                    if (count >= 4) {
-                        break;
-                    }
                     Uri uri1 = files.get(i);
                     DocumentFile documentFile = DocumentFile.fromSingleUri(this, uri1);
                     String name = documentFile.getName();
-                    if (name.startsWith(".arcv1")) {
-                        count++;
-                    } else {
+                    if (name.startsWith(Encryption.PREFIX_THUMB)) {
                         continue;
                     }
                     DocumentFile file = pickedDir.createFile("*/*", System.currentTimeMillis() + "_" + name.substring(7));
@@ -154,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
                 for (int i = 0; i < files.size(); i++) {
                     Uri uri1 = files.get(i);
                     Log.e(TAG, "onActivityResult: last: " + uri1.getLastPathSegment());
-                    if (uri1.getLastPathSegment().contains("/.arct1-")) {
+                    if (uri1.getLastPathSegment().contains(Encryption.PREFIX_THUMB)) {
                         encryptedFiles.add(uri1);
                     }
                 }
