@@ -117,10 +117,10 @@ public class MainActivity extends AppCompatActivity {
                     Uri uri1 = files.get(i);
                     DocumentFile documentFile = DocumentFile.fromSingleUri(this, uri1);
                     String name = documentFile.getName();
-                    if (name.startsWith(Encryption.PREFIX_THUMB)) {
+                    if (name.startsWith(Encryption.PREFIX_THUMB) || !name.startsWith(Encryption.ENCRYPTED_PREFIX)) {
                         continue;
                     }
-                    DocumentFile file = pickedDir.createFile("*/*", System.currentTimeMillis() + "_" + name.substring(7));
+                    DocumentFile file = pickedDir.createFile("*/*", System.currentTimeMillis() + "_" + name.substring(9));
                     Encryption.decryptAndWriteFile(this, uri1, file.getUri(), "mypassword1".toCharArray(), new Encryption.IOnUriResult() {
                         @Override
                         public void onUriResult(Uri uri) {
