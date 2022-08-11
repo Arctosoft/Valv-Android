@@ -3,7 +3,6 @@ package se.arctosoft.vault.util;
 import android.net.Uri;
 import android.util.Log;
 
-import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
 
 import java.io.IOException;
@@ -53,9 +52,6 @@ public class Encryption {
                 int read;
                 byte[] buffer = new byte[2048];
                 while ((read = inputStream.read(buffer)) != -1) {
-                    if (read != 2048) {
-                        Log.e(TAG, "decryptAndWriteFile: read " + read);
-                    }
                     cos.write(buffer, 0, read);
                 }
 
@@ -104,20 +100,16 @@ public class Encryption {
                 cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
 
                 OutputStream fos = context.getContentResolver().openOutputStream(output);
-                CipherInputStream cos = new CipherInputStream(inputStream, cipher);
+                CipherInputStream cis = new CipherInputStream(inputStream, cipher);
 
                 int read;
                 byte[] buffer = new byte[2048];
-                while ((read = cos.read(buffer)) != -1) {
-                    if (read != 2048) {
-                        Log.e(TAG, "decryptAndWriteFile: read " + read);
-                    }
+                while ((read = cis.read(buffer)) != -1) {
                     fos.write(buffer, 0, read);
                 }
-
-                inputStream.close();
                 fos.close();
-                cos.close();
+                cis.close();
+                inputStream.close();
                 try {
                     secretKey.destroy();
                 } catch (DestroyFailedException e) {
