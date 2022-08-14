@@ -23,7 +23,7 @@ import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.arctosoft.vault.util.Encryption;
+import se.arctosoft.vault.encryption.Encryption;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int DECRYPT_FILES_IN_DIRECTORY = 2;
     private static final int LOAD_IMAGES = 3;
 
-    private Button btnEncryptFile, btnDecryptFile, btnLoadImages;
+    private Button btnEncryptFile, btnDecryptFile, btnLoadImages, btnOpenGallery;
     private LinearLayout lLImages;
 
     @Override
@@ -46,17 +46,13 @@ public class MainActivity extends AppCompatActivity {
         btnEncryptFile = findViewById(R.id.btnEncryptFile);
         btnDecryptFile = findViewById(R.id.btnDecryptFile);
         btnLoadImages = findViewById(R.id.btnLoadImages);
+        btnOpenGallery = findViewById(R.id.btnOpenGallery);
         lLImages = findViewById(R.id.lLImages);
 
-        btnEncryptFile.setOnClickListener(v -> {
-            startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), OPEN_DIRECTORY);
-        });
-        btnDecryptFile.setOnClickListener(v -> {
-            startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), DECRYPT_FILES_IN_DIRECTORY);
-        });
-        btnLoadImages.setOnClickListener(v -> {
-            startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), LOAD_IMAGES);
-        });
+        btnEncryptFile.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), OPEN_DIRECTORY));
+        btnDecryptFile.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), DECRYPT_FILES_IN_DIRECTORY));
+        btnLoadImages.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), LOAD_IMAGES));
+        btnOpenGallery.setOnClickListener(v -> startActivity(new Intent(this, GalleryActivity.class)));
     }
 
     private void loadImages(List<Uri> encryptedFiles) {

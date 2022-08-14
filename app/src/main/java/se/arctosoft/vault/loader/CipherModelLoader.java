@@ -13,7 +13,7 @@ import com.bumptech.glide.signature.ObjectKey;
 
 import java.io.InputStream;
 
-import se.arctosoft.vault.util.Encryption;
+import se.arctosoft.vault.encryption.Encryption;
 
 public class CipherModelLoader implements ModelLoader<Uri, InputStream> {
     private static final String TAG = "CipherModelLoader";

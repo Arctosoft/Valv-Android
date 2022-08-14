@@ -1,4 +1,4 @@
-package se.arctosoft.vault.util;
+package se.arctosoft.vault.utils;
 
 import androidx.annotation.NonNull;
 

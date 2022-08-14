@@ -1,4 +1,4 @@
-package se.arctosoft.vault.util;
+package se.arctosoft.vault.encryption;
 
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -31,19 +31,42 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.security.auth.DestroyFailedException;
 
+import se.arctosoft.vault.utils.Settings;
+
 public class Encryption {
     private static final String TAG = "Encryption";
     private static final String CIPHER = "ChaCha20/Poly1305/NoPadding";
-    private static final String KEY_ALGORITHM = "PBKDF2withHmacSHA512";
-    private static final int ITERATION_COUNT = 20000;
-    private static final int KEY_LENGTH = 256;
-    private static final int SALT_LENGTH = 16;
+    public static final String KEY_ALGORITHM = "PBKDF2withHmacSHA512";
+    public static final int ITERATION_COUNT = 20000;
+    public static final int KEY_LENGTH = 256;
+    public static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
 
     public static final String PREFIX_IMAGE_FILE = ".arcv1.i-";
     public static final String ENCRYPTED_PREFIX = ".arcv1.";
     public static final String PREFIX_VIDEO_FILE = ".arcv1.v-";
     public static final String PREFIX_THUMB = ".arcv1.t-";
+
+    public static boolean importImageFileToDirectory(FragmentActivity context, DocumentFile sourceFile, DocumentFile directory, Settings settings) {
+        char[] tempPassword = settings.getTempPassword();
+        if (tempPassword == null || tempPassword.length == 0) {
+            throw new RuntimeException("No password");
+        }
+
+        DocumentFile file = directory.createFile("*/*", Encryption.PREFIX_IMAGE_FILE + sourceFile.getName());
+        DocumentFile thumb = directory.createFile("*/*", Encryption.PREFIX_THUMB + sourceFile.getName());
+
+        try {
+            createFile(context, sourceFile.getUri(), file, tempPassword);
+            createThumb(context, sourceFile.getUri(), thumb, tempPassword);
+        } catch (GeneralSecurityException | IOException | ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            file.delete();
+            thumb.delete();
+            return false;
+        }
+        return true;
+    }
 
     public static void writeFile(FragmentActivity context, Uri input, DocumentFile file, DocumentFile thumb, char[] password, IOnUriResult onUriResult) {
         new Thread(() -> {
@@ -202,7 +225,7 @@ public class Encryption {
         }).start();
     }
 
-    public static InputStream getCipherInputStream(@NonNull InputStream inputStream) throws IOException, GeneralSecurityException {
+    public static InputStream getCipherInputStream(@NonNull InputStream inputStream, char[] password) throws IOException, GeneralSecurityException {
         byte[] salt = new byte[SALT_LENGTH];
         byte[] ivBytes = new byte[IV_LENGTH];
 
@@ -211,7 +234,7 @@ public class Encryption {
         inputStream = new BufferedInputStream(inputStream, 1024 * 32);
 
         SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
-        KeySpec keySpec = new PBEKeySpec("mypassword1".toCharArray(), salt, ITERATION_COUNT, KEY_LENGTH);
+        KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
         SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
         IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
 

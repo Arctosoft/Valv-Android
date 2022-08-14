@@ -8,4 +8,19 @@
     <string name="open_directory">Encrypt files in dir</string>
     <string name="decrypt_files">Decrypt files in dir</string>
     <string name="load_files">Load encrypted thumbnails</string>
+
+    <string name="menu_gallery_edit_included_folders">Edit included folders</string>
+    <string name="menu_gallery_import">Import files</string>
+    <string name="gallery_adapter_folder_name">%1$s (%2$d)</string>
+    <string name="gallery_add_folder">Add a folder</string>
+    <string name="gallery_title">Gallery</string>
+    <string name="menu_lock_vault">Lock vault</string>
+
+    <string name="launcher_title">Vault locked</string>
+    <string name="launcher_subtitle">Enter your password</string>
+    <string name="launcher_password_hint">Password</string>
+    <string name="launcher_button">Unlock vault</string>
+    <string name="dialog_import_to_title">Destination</string>
+    <string name="dialog_import_to_message_many">Choose a destination folder for these %1$d files</string>
+    <string name="dialog_import_to_message_one">Choose a destination folder for this file</string>
 </resources>

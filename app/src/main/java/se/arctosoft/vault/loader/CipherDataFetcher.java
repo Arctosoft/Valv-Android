@@ -14,25 +14,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 
-import se.arctosoft.vault.util.Encryption;
+import se.arctosoft.vault.encryption.Encryption;
+import se.arctosoft.vault.utils.Settings;
 
 public class CipherDataFetcher implements DataFetcher<InputStream> {
     private static final String TAG = "CipherDataFetcher";
     private InputStream cipherInputStream;
     private final Context context;
     private final Uri uri;
+    private final Settings settings;
 
     public CipherDataFetcher(@NonNull Context context, Uri uri) {
         this.context = context.getApplicationContext();
         this.uri = uri;
+        this.settings = Settings.getInstance(context);
     }
 
     @Override
     public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super InputStream> callback) {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            this.cipherInputStream = Encryption.getCipherInputStream(inputStream);
-            Log.e(TAG, "loadData: " + uri.getLastPathSegment());
+            this.cipherInputStream = Encryption.getCipherInputStream(inputStream, settings.getTempPassword());
+            Log.e(TAG, "loadData: " + uri.getLastPathSegment() + " " + new String(settings.getTempPassword()));
             callback.onDataReady(cipherInputStream);
         } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
@@ -42,12 +45,16 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
 
     @Override
     public void cleanup() {
+        Log.e(TAG, "cleanup: ");
         cancel();
     }
 
     @Override
     public void cancel() {
         Log.e(TAG, "cancel:");
+        if (settings != null) {
+            settings.clearTempPassword();
+        }
         if (cipherInputStream != null) {
             try {
                 cipherInputStream.close(); // interrupts decode if any
