@@ -17,7 +17,7 @@
     <string name="menu_lock_vault">Lock vault</string>
 
     <string name="launcher_title">Vault locked</string>
-    <string name="launcher_subtitle">Enter your password</string>
+    <string name="launcher_subtitle">Enter decryption password</string>
     <string name="launcher_password_hint">Password</string>
     <string name="launcher_button">Unlock vault</string>
     <string name="dialog_import_to_title">Destination</string>

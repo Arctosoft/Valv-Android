@@ -9,11 +9,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import se.arctosoft.vault.R;
 
-public class GalleryFolderViewHolder extends RecyclerView.ViewHolder {
+public class GalleryViewHolder extends RecyclerView.ViewHolder {
     public final ImageView imageView;
     public final TextView txtName;
 
-    public GalleryFolderViewHolder(@NonNull View itemView) {
+    public GalleryViewHolder(@NonNull View itemView) {
         super(itemView);
         imageView = itemView.findViewById(R.id.imageView);
         txtName = itemView.findViewById(R.id.txtName);

@@ -19,10 +19,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-import se.arctosoft.vault.adapters.GalleryFolderAdapter;
-import se.arctosoft.vault.data.GalleryDirectory;
+import se.arctosoft.vault.adapters.GalleryAdapter;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.databinding.ActivityGalleryBinding;
 import se.arctosoft.vault.encryption.Encryption;
@@ -35,12 +33,13 @@ import se.arctosoft.vault.utils.Toaster;
 public class GalleryActivity extends AppCompatActivity {
     private static final String TAG = "GalleryActivity";
     private static final int REQUEST_ADD_DIRECTORY = 1;
-    private static final int REQUEST_IMPORT_TO = 2;
     private static final int REQUEST_IMPORT_IMAGES = 3;
 
+    private static final Object lock = new Object();
+
     private ActivityGalleryBinding binding;
-    private GalleryFolderAdapter galleryFolderAdapter;
-    private List<GalleryDirectory> galleryDirectories;
+    private GalleryAdapter galleryAdapter;
+    private List<GalleryFile> galleryDirectories;
     private Settings settings;
 
     @Override
@@ -69,24 +68,33 @@ public class GalleryActivity extends AppCompatActivity {
         RecyclerView recyclerView = binding.recyclerView;
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, 3, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
-        galleryFolderAdapter = new GalleryFolderAdapter(this, galleryDirectories);
-        recyclerView.setAdapter(galleryFolderAdapter);
+        galleryAdapter = new GalleryAdapter(this, galleryDirectories);
+        recyclerView.setAdapter(galleryAdapter);
 
         findFolders();
     }
 
     private void findFolders() {
-        Set<Uri> directories = settings.getGalleryDirectoriesAsUri();
+        int size = galleryDirectories.size();
+        galleryDirectories.clear();
+        galleryAdapter.notifyItemRangeRemoved(0, size);
+        List<Uri> directories = settings.getGalleryDirectoriesAsUri();
+        Log.e(TAG, "findFolders: found " + directories.size() + " folders");
 
-        //if (directories.isEmpty()) {
-        //    binding.btnAddFolder.setVisibility(View.VISIBLE);
         binding.btnAddFolder.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), REQUEST_ADD_DIRECTORY));
-        //} else {
-        //    binding.btnAddFolder.setVisibility(View.GONE);
+
+        List<DocumentFile> documentFiles = new ArrayList<>(directories.size());
         for (Uri uri : directories) {
-            addDirectory(DocumentFile.fromTreeUri(this, uri));
+            Log.e(TAG, "findFolders: " + uri);
+            DocumentFile documentFile = DocumentFile.fromTreeUri(this, uri);
+            if (documentFile.canRead()) {
+                documentFiles.add(documentFile);
+            } else {
+                Toaster.getInstance(this).showLong("No permission to read " + uri.getLastPathSegment() + ", please add it again");
+                settings.removeGalleryDirectory(uri);
+            }
         }
-        //}
+        addDirectories(documentFiles);
     }
 
     @Override
@@ -97,16 +105,22 @@ public class GalleryActivity extends AppCompatActivity {
                 Uri uri = data.getData();
                 getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 DocumentFile pickedDir = DocumentFile.fromTreeUri(this, uri);
-                settings.addGalleryDirectory(uri);
-                addDirectory(pickedDir);
+                if (settings.addGalleryDirectory(uri)) {
+                    addDirectory(pickedDir);
+                }
             }
         } else if (requestCode == REQUEST_IMPORT_IMAGES && resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 ClipData clipData = data.getClipData();
                 List<Uri> uris = FileStuff.uriListFromClipData(clipData);
+                Log.e(TAG, "onActivityResult: got " + uris.size());
                 if (uris.isEmpty()) {
-                    return;
+                    Uri dataUri = data.getData();
+                    if (dataUri != null) {
+                        uris.add(dataUri);
+                    }
                 }
+                Log.e(TAG, "onActivityResult: got " + uris.size());
                 List<DocumentFile> documentFiles = new ArrayList<>();
                 for (Uri uri : uris) {
                     DocumentFile pickedFile = DocumentFile.fromSingleUri(this, uri);
@@ -127,6 +141,7 @@ public class GalleryActivity extends AppCompatActivity {
                         int finalFailed = failed;
                         runOnUiThread(() -> {
                             Toaster.getInstance(this).showLong("Encrypted and imported " + (documentFiles.size() - finalFailed) + " files");
+                            findFolders();
                         });
                     }).start();
                 });
@@ -141,8 +156,27 @@ public class GalleryActivity extends AppCompatActivity {
         Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
         List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(this, files);
 
-        galleryDirectories.add(new GalleryDirectory(galleryFiles, directory.getName()));
-        galleryFolderAdapter.notifyItemInserted(galleryDirectories.size() - 1);
+        synchronized (lock) {
+            galleryDirectories.add(0, GalleryFile.asDirectory(directory, galleryFiles));
+            galleryAdapter.notifyItemInserted(0);
+        }
+    }
+
+    private void addDirectories(@NonNull List<DocumentFile> directories) {
+        List<GalleryFile> galleryDirectories = new ArrayList<>(directories.size());
+        for (DocumentFile directory : directories) {
+            long start = System.currentTimeMillis();
+            List<Uri> files = FileStuff.getFilesInFolder(getContentResolver(), directory);
+            Log.e(TAG, "onActivityResult: found " + files.size() + " total files");
+            Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
+            List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(this, files);
+            Log.e(TAG, "addDirectories: found " + galleryFiles.size() + " encrypted files");
+            galleryDirectories.add(GalleryFile.asDirectory(directory, galleryFiles));
+        }
+        synchronized (lock) {
+            this.galleryDirectories.addAll(0, galleryDirectories);
+            galleryAdapter.notifyItemRangeInserted(0, galleryDirectories.size());
+        }
     }
 
     @Override
@@ -153,10 +187,12 @@ public class GalleryActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.import_files) {
             FileStuff.pickImageFiles(this, REQUEST_IMPORT_IMAGES);
+            return true;
         } else if (id == R.id.edit_included_folders) {
 
         } else if (id == R.id.lock) {
             lock();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -174,6 +210,7 @@ public class GalleryActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        Log.e(TAG, "onDestroy: ");
         lock();
         super.onDestroy();
     }

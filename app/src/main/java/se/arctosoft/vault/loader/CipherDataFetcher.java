@@ -35,7 +35,7 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
             this.cipherInputStream = Encryption.getCipherInputStream(inputStream, settings.getTempPassword());
-            Log.e(TAG, "loadData: " + uri.getLastPathSegment() + " " + new String(settings.getTempPassword()));
+            Log.e(TAG, "loadData: " + uri.getLastPathSegment());
             callback.onDataReady(cipherInputStream);
         } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
@@ -52,9 +52,6 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
     @Override
     public void cancel() {
         Log.e(TAG, "cancel:");
-        if (settings != null) {
-            settings.clearTempPassword();
-        }
         if (cipherInputStream != null) {
             try {
                 cipherInputStream.close(); // interrupts decode if any

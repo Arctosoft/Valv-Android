@@ -137,7 +137,7 @@ public class Encryption {
 
         //bitmap.compress(Bitmap.CompressFormat.JPEG, 95, streams.outputStream);
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 92, stream);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 75, stream);
         byte[] byteArray = stream.toByteArray();
         streams.outputStream.write(byteArray);
         bitmap.recycle();

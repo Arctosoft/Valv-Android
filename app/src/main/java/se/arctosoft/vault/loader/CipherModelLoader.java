@@ -2,7 +2,6 @@ package se.arctosoft.vault.loader;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -32,9 +31,8 @@ public class CipherModelLoader implements ModelLoader<Uri, InputStream> {
     @Override
     public boolean handles(@NonNull Uri uri) {
         String lastSegment = uri.getLastPathSegment().toLowerCase();
-        boolean handles = lastSegment.contains("/" + Encryption.ENCRYPTED_PREFIX) && (lastSegment.endsWith("jpg") || lastSegment.endsWith("png") || lastSegment.endsWith("gif"));
-        Log.e(TAG, "handles: " + lastSegment + " " + handles);
-        return handles;
+        //Log.e(TAG, "handles: " + lastSegment + " " + handles);
+        return lastSegment.contains("/" + Encryption.ENCRYPTED_PREFIX) /*&& (lastSegment.endsWith("jpg") || lastSegment.endsWith("png") || lastSegment.endsWith("gif"))*/;
     }
 
 }

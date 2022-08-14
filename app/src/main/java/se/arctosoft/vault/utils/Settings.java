@@ -3,6 +3,7 @@ package se.arctosoft.vault.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -10,13 +11,13 @@ import androidx.documentfile.provider.DocumentFile;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import se.arctosoft.vault.encryption.Password;
 
 public class Settings {
+    private static final String TAG = "Settings";
     private static final String SHARED_PREFERENCES_NAME = "prefs";
     private static final String PREF_DIRECTORIES = "p.gallery.dirs";
     private static final String PREF_PASSWORD_HASH = "p.p";
@@ -48,6 +49,7 @@ public class Settings {
 
     @Override
     protected void finalize() throws Throwable {
+        Log.e(TAG, "finalize: ");
         Password.lock(context, this);
         super.finalize();
     }
@@ -81,17 +83,46 @@ public class Settings {
         getSharedPrefsEditor().putString(PREF_PASSWORD_HASH, hash).apply();
     }
 
-    public void addGalleryDirectory(@NonNull Uri uri) {
-        Set<String> directories = getGalleryDirectories();
-        directories.add(uri.toString());
-        getSharedPrefsEditor().putStringSet(PREF_DIRECTORIES, directories).apply();
+    public boolean addGalleryDirectory(@NonNull Uri uri) {
+        List<String> directories = getGalleryDirectories();
+        String uriString = uri.toString();
+        if (directories.contains(uriString)) {
+            return false;
+        }
+        directories.add(0, uriString);
+        getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
+        return true;
+    }
+
+    public void removeGalleryDirectory(@NonNull Uri uri) {
+        List<String> directories = getGalleryDirectories();
+        directories.remove(uri.toString());
+        getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
     }
 
     @NonNull
-    public Set<Uri> getGalleryDirectoriesAsUri() {
-        Set<String> stringSet = getGalleryDirectories();
-        Set<Uri> uris = new HashSet<>();
-        for (String s : stringSet) {
+    private String stringListAsString(@NonNull List<String> list) {
+        if (list.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        Iterator<String> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            sb.append(iterator.next());
+            if (iterator.hasNext()) {
+                sb.append("\n");
+            }
+        }
+        Log.e(TAG, "stringListAsString: " + sb);
+        return sb.toString();
+    }
+
+    @NonNull
+    public List<Uri> getGalleryDirectoriesAsUri() {
+        List<String> directories = getGalleryDirectories();
+        Log.e(TAG, "getGalleryDirectoriesAsUri: " + directories.size());
+        List<Uri> uris = new ArrayList<>(directories.size());
+        for (String s : directories) {
             if (s != null) {
                 uris.add(Uri.parse(s));
             }
@@ -101,7 +132,7 @@ public class Settings {
 
     @NonNull
     public List<DocumentFile> getGalleryDirectoriesAsDocumentFile(Context context) {
-        Set<Uri> uris = getGalleryDirectoriesAsUri();
+        List<Uri> uris = getGalleryDirectoriesAsUri();
         List<DocumentFile> documentFiles = new ArrayList<>(uris.size());
         for (Uri uri : uris) {
             DocumentFile pickedDir = DocumentFile.fromTreeUri(context, uri);
@@ -113,7 +144,17 @@ public class Settings {
     }
 
     @NonNull
-    public Set<String> getGalleryDirectories() {
-        return getSharedPrefs().getStringSet(PREF_DIRECTORIES, new HashSet<>());
+    private List<String> getGalleryDirectories() {
+        String s = getSharedPrefs().getString(PREF_DIRECTORIES, null);
+        List<String> uris = new ArrayList<>();
+        if (s != null && !s.isEmpty()) {
+            String[] split = s.split("\n");
+            for (String value : split) {
+                if (value != null && !value.isEmpty()) {
+                    uris.add(value);
+                }
+            }
+        }
+        return uris;
     }
 }

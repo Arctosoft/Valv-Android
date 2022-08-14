@@ -7,20 +7,22 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.encryption.Encryption;
 
 public class FileStuff {
+    private static final String TAG = "FileStuff";
 
     @NonNull
     public static List<Uri> getFilesInFolder(@NonNull ContentResolver resolver, DocumentFile pickedDir) {
@@ -64,37 +66,75 @@ public class FileStuff {
 
     @NonNull
     public static List<GalleryFile> getEncryptedFilesInFolder(Context context, @NonNull List<Uri> files) {
-        List<DocumentFile> documentFiles = new ArrayList<>(files.size() / 2 + 1);
-        List<DocumentFile> documentThumbs = new ArrayList<>(files.size() / 2 + 1);
+        List<DocumentFile> documentFiles = new ArrayList<>();
+        List<DocumentFile> documentThumbs = new ArrayList<>();
+        List<GalleryFile> galleryFiles = new ArrayList<>();
         for (Uri fileUri : files) {
-            DocumentFile documentFile = DocumentFile.fromSingleUri(context, fileUri);
-            String fileName = documentFile.getName();
-            if (!fileName.startsWith(Encryption.ENCRYPTED_PREFIX)) {
+            Log.e(TAG, "getEncryptedFilesInFolder: check " + fileUri.getLastPathSegment());
+            String[] split = fileUri.getLastPathSegment().split("/");
+            String fileName = split[split.length - 1];
+            if (!fileName.startsWith(Encryption.ENCRYPTED_PREFIX)) { // && !documentFile.isDirectory()
                 continue;
             }
-            if (fileName.startsWith(Encryption.PREFIX_THUMB)) {
-                documentThumbs.add(documentFile);
+            DocumentFile documentFile = DocumentFile.fromSingleUri(context, fileUri);
+            //String fileName = documentFile.getName();
+
+            if (documentFile.isDirectory()) {
+                Log.e(TAG, "getEncryptedFilesInFolder: add dir " + fileUri);
+                galleryFiles.add(GalleryFile.asDirectory(documentFile,
+                        getEncryptedFilesInFolder(context,
+                                FileStuff.getFilesInFolder(context.getContentResolver(), documentFile))));
             } else {
-                documentFiles.add(documentFile);
+                if (fileName.startsWith(Encryption.PREFIX_THUMB)) {
+                    Log.e(TAG, "getEncryptedFilesInFolder: add thumb " + fileUri);
+                    documentThumbs.add(documentFile);
+                } else {
+                    Log.e(TAG, "getEncryptedFilesInFolder: add file " + fileUri);
+                    documentFiles.add(documentFile);
+                }
             }
         }
-        List<GalleryFile> galleryFiles = new ArrayList<>(documentFiles.size());
+
         for (DocumentFile d : documentFiles) {
+            Log.e(TAG, "getEncryptedFilesInFolder: " + d.getName());
             String unencryptedName = d.getName().split("-", 2)[1];
             boolean foundThumb = false;
             for (DocumentFile t : documentThumbs) {
                 String unencryptedThumbName = t.getName().split("-", 2)[1];
                 if (unencryptedName.equals(unencryptedThumbName)) {
-                    galleryFiles.add(new GalleryFile(d.getUri(), t.getUri(), FileType.fromFilename(d.getName()), d.lastModified()));
+                    galleryFiles.add(GalleryFile.asFile(d, t.getUri()));
                     foundThumb = true;
                     break;
                 }
             }
             if (!foundThumb) {
-                galleryFiles.add(new GalleryFile(d.getUri(), null, FileType.fromFilename(d.getName()), d.lastModified()));
+                galleryFiles.add(GalleryFile.asFile(d, null));
             }
         }
         return galleryFiles;
+    }
+
+    public static void deleteCache(Context context) {
+        deleteDir(context.getCacheDir());
+    }
+
+    private static boolean deleteDir(File dir) {
+        if (dir != null && dir.isDirectory()) {
+            String[] children = dir.list();
+            if (children != null) {
+                for (String child : children) {
+                    boolean success = deleteDir(new File(dir, child));
+                    if (!success) {
+                        return false;
+                    }
+                }
+            }
+            return dir.delete();
+        } else if (dir != null && dir.isFile()) {
+            return dir.delete();
+        } else {
+            return false;
+        }
     }
 
 }
