@@ -32,6 +32,6 @@ public class PressableGridImageView extends AppCompatImageView {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
         int width = getMeasuredWidth();
-        setMeasuredDimension(width, width);
+        setMeasuredDimension(width, (int) (width * 1.2));
     }
 }

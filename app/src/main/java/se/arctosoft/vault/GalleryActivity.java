@@ -3,6 +3,7 @@ package se.arctosoft.vault;
 import android.app.Activity;
 import android.content.ClipData;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -67,7 +68,8 @@ public class GalleryActivity extends AppCompatActivity {
         }
         galleryDirectories = new ArrayList<>();
         RecyclerView recyclerView = binding.recyclerView;
-        RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, 3, RecyclerView.VERTICAL, false);
+        int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
+        RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, spanCount, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
         galleryAdapter = new GalleryAdapter(this, galleryDirectories);
         recyclerView.setAdapter(galleryAdapter);
