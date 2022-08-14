@@ -87,6 +87,7 @@ public class LaunchActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        Log.e(TAG, "onBackPressed: ");
         finishAffinity();
         super.onBackPressed();
     }
@@ -94,7 +95,7 @@ public class LaunchActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         Log.e(TAG, "onDestroy: ");
-        Password.lock(this, settings);
+        //Password.lock(this, settings);
         super.onDestroy();
     }
 }

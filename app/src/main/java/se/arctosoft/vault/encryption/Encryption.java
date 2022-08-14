@@ -2,8 +2,6 @@ package se.arctosoft.vault.encryption;
 
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.util.Log;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.documentfile.provider.DocumentFile;
@@ -17,6 +15,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
@@ -168,7 +168,7 @@ public class Encryption {
         return new Streams(inputStream, new CipherOutputStream(fos, cipher), secretKey);
     }
 
-    public static void decryptAndWriteFile(FragmentActivity context, Uri encryptedInput, Uri output, char[] password, IOnUriResult onUriResult) {
+    /*public static void decryptAndWriteFile(FragmentActivity context, Uri encryptedInput, Uri output, char[] password, IOnUriResult onUriResult) {
         // Number of PBKDF2 hardening rounds to use. Larger values increase
         // computation time. You should select a value that causes computation
         // to take >100ms.
@@ -223,9 +223,72 @@ public class Encryption {
                 context.runOnUiThread(() -> onUriResult.onError(e));
             }
         }).start();
+    }*/
+
+    public static void decryptToCache(FragmentActivity context, Uri encryptedInput, char[] password, IOnUriResult onUriResult) {
+        new Thread(() -> {
+            try {
+                long start = System.currentTimeMillis();
+
+                InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
+
+                Path file = Files.createTempFile("temp_", ".dcrpt");
+                Uri fileUri = Uri.fromFile(file.toFile());
+                OutputStream fos = context.getContentResolver().openOutputStream(fileUri);
+                CipherInputStream cis = getCipherInputStream(inputStream, password);
+
+                int read;
+                byte[] buffer = new byte[2048];
+                while ((read = cis.read(buffer)) != -1) {
+                    fos.write(buffer, 0, read);
+                }
+                fos.close();
+                cis.close();
+                inputStream.close();
+                long end = System.currentTimeMillis();
+                //context.runOnUiThread(() -> Toast.makeText(context, "decrypt took " + (end - start) + " ms", Toast.LENGTH_LONG).show());
+                //Log.e(TAG, "decryptToCache: decrypted");
+
+                context.runOnUiThread(() -> onUriResult.onUriResult(fileUri));
+            } catch (GeneralSecurityException | IOException e) {
+                e.printStackTrace();
+                context.runOnUiThread(() -> onUriResult.onError(e));
+            }
+        }).start();
     }
 
-    public static InputStream getCipherInputStream(@NonNull InputStream inputStream, char[] password) throws IOException, GeneralSecurityException {
+    public static void decryptToByteArray(FragmentActivity context, Uri encryptedInput, char[] password, IOnByteArrayResult onByteArrayResult) {
+        try {
+            InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
+
+            //File file = Files.createTempFile("temp_", ".dcrpt").toFile();
+            CipherInputStream cis = getCipherInputStream(inputStream, password);
+
+            byte[] data = inputStreamToBytes(cis);
+            cis.close();
+            inputStream.close();
+
+            onByteArrayResult.onBytesResult(data);
+        } catch (GeneralSecurityException | IOException e) {
+            e.printStackTrace();
+            onByteArrayResult.onError(e);
+        }
+    }
+
+    public static byte[] inputStreamToBytes(InputStream is) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+        int nRead;
+        byte[] data = new byte[16384];
+
+        while ((nRead = is.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, nRead);
+        }
+
+        return buffer.toByteArray();
+    }
+
+    public static CipherInputStream getCipherInputStream(@NonNull InputStream inputStream, char[] password) throws IOException, GeneralSecurityException {
         byte[] salt = new byte[SALT_LENGTH];
         byte[] ivBytes = new byte[IV_LENGTH];
 
@@ -244,7 +307,13 @@ public class Encryption {
     }
 
     public interface IOnUriResult {
-        void onUriResult(Uri uri);
+        void onUriResult(Uri outputUri);
+
+        void onError(Exception e);
+    }
+
+    public interface IOnByteArrayResult {
+        void onBytesResult(byte[] bytes);
 
         void onError(Exception e);
     }

@@ -29,6 +29,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private static final String TAG = "GalleryDirectoryActivity";
     private static final Object lock = new Object();
     public static final String EXTRA_DIRECTORY = "d";
+    private static final String SAVED_KEY_POSITION = "p";
+    public static int LAST_POS = 0;
 
     private ActivityGalleryDirectoryBinding binding;
     private GalleryAdapter galleryAdapter;
@@ -59,14 +61,20 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             ab.setTitle(FileStuff.getFilenameFromUri(currentDirectory, false));
         }
 
-        init();
+        int pos = LAST_POS;
+        //if (savedInstanceState != null) {
+            //pos = savedInstanceState.getInt(SAVED_KEY_POSITION, 0);
+            //Log.e(TAG, "onRestoreInstanceState: scroll to " + pos);
+        //}
+
+        init(pos);
     }
 
     private void setLoading(boolean loading) {
         binding.cLLoading.cLLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
-    private void init() {
+    private void init(int pos) {
         settings = Settings.getInstance(this);
         if (!settings.isUnlocked()) {
             finish();
@@ -79,6 +87,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
         galleryAdapter = new GalleryAdapter(this, directoryFiles);
         recyclerView.setAdapter(galleryAdapter);
+        Log.e(TAG, "init: scroll to " + pos);
+        recyclerView.scrollToPosition(pos);
 
         findFilesIn(currentDirectory);
     }
@@ -126,4 +136,31 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_gallery_directory, menu);
         return super.onCreateOptionsMenu(menu);
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        savePosition();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        int pos = savePosition();
+        outState.putInt(SAVED_KEY_POSITION, pos);
+        Log.e(TAG, "onSaveInstanceState: " + pos);
+    }
+
+    private int savePosition() {
+        GridLayoutManager layoutManager = (GridLayoutManager) binding.recyclerView.getLayoutManager();
+        return layoutManager.findFirstVisibleItemPosition();
+    }
+
+    /*@Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        int pos = savedInstanceState.getInt(SAVED_KEY_POSITION, 0);
+        binding.recyclerView.postDelayed(() -> binding.recyclerView.scrollToPosition(pos), 100);
+        Log.e(TAG, "onRestoreInstanceState: scroll to " + pos);
+    }*/
 }

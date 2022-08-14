@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
                     DocumentFile thumb = pickedDir.createFile("*/*", Encryption.PREFIX_THUMB + documentFile.getName());
                     Encryption.writeFile(this, uri1, file, thumb, "mypassword1".toCharArray(), new Encryption.IOnUriResult() {
                         @Override
-                        public void onUriResult(Uri uri) {
+                        public void onUriResult(Uri outputUri) {
                             Log.e(TAG, "onUriResult: new name is " + documentFile.getName());
                         }
 
@@ -117,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
                         continue;
                     }
                     DocumentFile file = pickedDir.createFile("*/*", System.currentTimeMillis() + "_" + name.substring(9));
-                    Encryption.decryptAndWriteFile(this, uri1, file.getUri(), "mypassword1".toCharArray(), new Encryption.IOnUriResult() {
+                    /*Encryption.decryptAndWriteFile(this, uri1, file.getUri(), "mypassword1".toCharArray(), new Encryption.IOnUriResult() {
                         @Override
                         public void onUriResult(Uri uri) {
                             DocumentFile documentFile = DocumentFile.fromSingleUri(MainActivity.this, uri);
@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
                         public void onError(Exception e) {
 
                         }
-                    });
+                    });*/
                 }
             }
         } else if (requestCode == LOAD_IMAGES && resultCode == Activity.RESULT_OK) {

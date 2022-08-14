@@ -36,12 +36,14 @@ public class GalleryActivity extends AppCompatActivity {
     private static final String TAG = "GalleryActivity";
     private static final int REQUEST_ADD_DIRECTORY = 1;
     private static final int REQUEST_IMPORT_IMAGES = 3;
+    private static final String SAVED_KEY_POSITION = "p";
+    private static int lastPos = 0;
 
     private static final Object lock = new Object();
 
     private ActivityGalleryBinding binding;
     private GalleryAdapter galleryAdapter;
-    private List<GalleryFile> galleryDirectories;
+    private List<GalleryFile> galleryFiles;
     private Settings settings;
 
     @Override
@@ -56,23 +58,29 @@ public class GalleryActivity extends AppCompatActivity {
             ab.setDisplayHomeAsUpEnabled(true);
             ab.setTitle(R.string.gallery_title);
         }
+        int pos = lastPos;
+        if (savedInstanceState != null) {
+            pos = savedInstanceState.getInt(SAVED_KEY_POSITION, 0);
+            Log.e(TAG, "onRestoreInstanceState: scroll to " + pos);
+        }
 
-        init();
+        init(pos);
     }
 
-    private void init() {
+    private void init(int pos) {
         settings = Settings.getInstance(this);
         if (!settings.isUnlocked()) {
             finish();
             return;
         }
-        galleryDirectories = new ArrayList<>();
+        galleryFiles = new ArrayList<>();
         RecyclerView recyclerView = binding.recyclerView;
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, spanCount, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
-        galleryAdapter = new GalleryAdapter(this, galleryDirectories);
+        galleryAdapter = new GalleryAdapter(this, galleryFiles);
         recyclerView.setAdapter(galleryAdapter);
+        recyclerView.scrollToPosition(pos);
 
         setClickListeners();
 
@@ -93,8 +101,8 @@ public class GalleryActivity extends AppCompatActivity {
         new Thread(() -> {
             runOnUiThread(() -> {
                 synchronized (lock) {
-                    int size = galleryDirectories.size();
-                    galleryDirectories.clear();
+                    int size = galleryFiles.size();
+                    galleryFiles.clear();
                     galleryAdapter.notifyItemRangeRemoved(0, size);
                 }
             });
@@ -174,7 +182,7 @@ public class GalleryActivity extends AppCompatActivity {
         List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(files);
 
         synchronized (lock) {
-            galleryDirectories.add(0, GalleryFile.asDirectory(directoryUri, galleryFiles));
+            this.galleryFiles.add(0, GalleryFile.asDirectory(directoryUri, galleryFiles));
             galleryAdapter.notifyItemInserted(0);
         }
     }
@@ -193,7 +201,7 @@ public class GalleryActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             setLoading(false);
             synchronized (lock) {
-                this.galleryDirectories.addAll(0, galleryDirectories);
+                this.galleryFiles.addAll(0, galleryDirectories);
                 galleryAdapter.notifyItemRangeInserted(0, galleryDirectories.size());
             }
         });
@@ -223,6 +231,32 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        savePosition();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(SAVED_KEY_POSITION, savePosition());
+        Log.e(TAG, "onSaveInstanceState: ");
+    }
+
+    private int savePosition() {
+        GridLayoutManager layoutManager = (GridLayoutManager) binding.recyclerView.getLayoutManager();
+        return lastPos = layoutManager.findFirstVisibleItemPosition();
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        int pos = savedInstanceState.getInt(SAVED_KEY_POSITION, 0);
+        binding.recyclerView.scrollToPosition(pos);
+        Log.e(TAG, "onRestoreInstanceState: scroll to " + pos);
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_gallery, menu);
         return super.onCreateOptionsMenu(menu);
@@ -231,7 +265,7 @@ public class GalleryActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         Log.e(TAG, "onDestroy: ");
-        lock();
+        //lock();
         super.onDestroy();
     }
 }
