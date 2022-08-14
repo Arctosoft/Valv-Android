@@ -23,4 +23,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
+    <include
+        android:id="@+id/cLLoading"
+        layout="@layout/loading_item" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -52,7 +53,7 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryViewHolder> {
                         .apply(GlideStuff.getRequestOptions())
                         .into(holder.imageView);
             }
-            holder.txtName.setText(context.getString(R.string.gallery_adapter_folder_name, galleryFile.getName(), galleryFile.getFileCount()));
+            holder.txtName.setText(context.getString(R.string.gallery_adapter_folder_name, galleryFile.getNameWithPath(), galleryFile.getFileCount()));
         } else {
             Glide.with(context)
                     .load(galleryFile.getThumbUri())
@@ -67,6 +68,12 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryViewHolder> {
                         .putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString()));
             } else {
                 // TODO open image in fullscreen
+            }
+        });
+        holder.imageView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                return true;
             }
         });
     }

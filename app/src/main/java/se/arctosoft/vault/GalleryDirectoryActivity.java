@@ -6,11 +6,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -33,7 +33,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private GalleryAdapter galleryAdapter;
     private List<GalleryFile> directoryFiles;
     private Settings settings;
-    private DocumentFile currentDirectory;
+    private Uri currentDirectory;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,25 +42,27 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
 
         Bundle extras = getIntent().getExtras();
-        Uri uri = null;
+        currentDirectory = null;
         if (extras != null) {
-            uri = Uri.parse(extras.getString(EXTRA_DIRECTORY));
+            currentDirectory = Uri.parse(extras.getString(EXTRA_DIRECTORY));
         }
-        if (uri == null) {
+        if (currentDirectory == null) {
             finish();
             return;
         }
-
-        currentDirectory = DocumentFile.fromSingleUri(this, uri);
 
         setSupportActionBar(binding.toolbar);
         ActionBar ab = getSupportActionBar();
         if (ab != null) {
             ab.setDisplayHomeAsUpEnabled(true);
-            ab.setTitle(currentDirectory.getName());
+            ab.setTitle(FileStuff.getFilenameFromUri(currentDirectory, false));
         }
 
         init();
+    }
+
+    private void setLoading(boolean loading) {
+        binding.cLLoading.cLLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
     private void init() {
@@ -79,17 +81,23 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         findFilesIn(currentDirectory);
     }
 
-    private void findFilesIn(DocumentFile directory) {
-        long start = System.currentTimeMillis();
-        List<Uri> files = FileStuff.getFilesInFolder(getContentResolver(), directory);
-        Log.e(TAG, "onActivityResult: found " + files.size());
-        Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
-        List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(this, files);
+    private void findFilesIn(Uri directoryUri) {
+        setLoading(true);
+        new Thread(() -> {
+            long start = System.currentTimeMillis();
+            List<Uri> files = FileStuff.getFilesInFolder(getContentResolver(), directoryUri);
+            Log.e(TAG, "onActivityResult: found " + files.size());
+            Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
+            List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(files);
 
-        synchronized (lock) {
-            directoryFiles.addAll(0, galleryFiles);
-            galleryAdapter.notifyItemRangeInserted(0, galleryFiles.size());
-        }
+            runOnUiThread(() -> {
+                setLoading(false);
+                synchronized (lock) {
+                    directoryFiles.addAll(0, galleryFiles);
+                    galleryAdapter.notifyItemRangeInserted(0, galleryFiles.size());
+                }
+            });
+        }).start();
     }
 
     @Override

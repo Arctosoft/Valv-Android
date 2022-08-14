@@ -16,15 +16,11 @@ public enum FileType {
         this.i = i;
     }
 
-    public static FileType fromDocument(@NonNull DocumentFile doc) {
-        if (doc.isDirectory()) {
-            return FOLDER;
+    public static FileType fromFilename(@NonNull String name) {
+        if (name.contains(Encryption.PREFIX_IMAGE_FILE)) {
+            return IMAGE;
         } else {
-            if (doc.getName().contains(Encryption.PREFIX_IMAGE_FILE)) {
-                return IMAGE;
-            } else {
-                return VIDEO;
-            }
+            return VIDEO;
         }
     }
 }

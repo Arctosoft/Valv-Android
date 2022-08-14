@@ -1,6 +1,7 @@
 package se.arctosoft.vault.utils;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -16,17 +17,16 @@ import se.arctosoft.vault.R;
 public class Dialogs {
     private static final String TAG = "Dialogs";
 
-    public static void showImportGalleryChooseDestinationDialog(Context context, Settings settings, int filesToImport, IOnDirectorySelected onDirectorySelected) {
-        List<DocumentFile> directories = settings.getGalleryDirectoriesAsDocumentFile(context);
+    public static void showImportGalleryChooseDestinationDialog(Context context, Settings settings, IOnDirectorySelected onDirectorySelected) {
+        List<Uri> directories = settings.getGalleryDirectoriesAsUri();
         String[] names = new String[directories.size()];
         for (int i = 0; i < names.length; i++) {
-            names[i] = directories.get(i).getName();
+            names[i] = FileStuff.getFilenameWithPathFromUri(directories.get(i));
         }
         Log.e(TAG, "showImportGalleryChooseDestinationDialog: " + Arrays.toString(names));
         new MaterialAlertDialogBuilder(context)
                 .setTitle(context.getString(R.string.dialog_import_to_title))
-                //.setMessage(filesToImport == 1 ? context.getString(R.string.dialog_import_to_message_one) : context.getString(R.string.dialog_import_to_message_many, filesToImport))
-                .setItems(names, (dialog, which) -> onDirectorySelected.onDirectorySelected(directories.get(which)))
+                .setItems(names, (dialog, which) -> onDirectorySelected.onDirectorySelected(DocumentFile.fromTreeUri(context, directories.get(which))))
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }

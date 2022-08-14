@@ -1,59 +1,68 @@
 package se.arctosoft.vault.data;
 
 import android.net.Uri;
-import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.documentfile.provider.DocumentFile;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import se.arctosoft.vault.utils.FileStuff;
+
 public class GalleryFile {
     private static final String TAG = "GalleryFile";
-    private final DocumentFile documentFile;
     private final FileType fileType;
+    private final String encryptedName, name;
     private final boolean isDirectory;
-    private Uri thumbUri;
+    private Uri fileUri, thumbUri;
     private List<GalleryFile> filesInDirectory;
 
-    private GalleryFile(DocumentFile documentFile, @Nullable Uri thumbUri) {
-        this.documentFile = documentFile;
+    private GalleryFile(@NonNull Uri fileUri, @Nullable Uri thumbUri) {
+        this.fileUri = fileUri;
+        this.encryptedName = FileStuff.getFilenameFromUri(fileUri, false);
+        this.name = encryptedName.split("-", 2)[1];
         this.thumbUri = thumbUri;
         this.isDirectory = false;
-        this.fileType = FileType.fromDocument(documentFile);
+        this.fileType = FileType.fromFilename(encryptedName);
     }
 
-    private GalleryFile(DocumentFile documentFile, List<GalleryFile> filesInDirectory) {
-        this.documentFile = documentFile;
+    private GalleryFile(@NonNull Uri fileUri, List<GalleryFile> filesInDirectory) {
+        this.fileUri = fileUri;
+        this.encryptedName = FileStuff.getFilenameFromUri(fileUri, false);
+        this.name = encryptedName;
         this.thumbUri = null;
         this.isDirectory = true;
-        this.fileType = FileType.fromDocument(documentFile);
+        this.fileType = FileType.fromFilename(encryptedName);
         this.filesInDirectory = filesInDirectory;
     }
 
-    public static GalleryFile asDirectory(DocumentFile documentFile, List<GalleryFile> filesInDirectory) {
-        return new GalleryFile(documentFile, filesInDirectory);
+    public static GalleryFile asDirectory(Uri fileUri, List<GalleryFile> filesInDirectory) {
+        return new GalleryFile(fileUri, filesInDirectory);
     }
 
-    public static GalleryFile asFile(DocumentFile documentFile, @Nullable Uri thumbUri) {
-        return new GalleryFile(documentFile, thumbUri);
+    public static GalleryFile asFile(Uri fileUri, @Nullable Uri thumbUri) {
+        return new GalleryFile(fileUri, thumbUri);
     }
 
     public void setThumbUri(Uri thumbUri) {
         this.thumbUri = thumbUri;
     }
 
-    public String getName() {
-        return documentFile.isDirectory() ? documentFile.getName() : documentFile.getName().split("-")[1];
+    public String getNameWithPath() {
+        return FileStuff.getFilenameWithPathFromUri(fileUri);
     }
 
-    public String getOriginalName() {
-        return documentFile.getName();
+    public String getName() {
+        return name;
+    }
+
+    public String getEncryptedName() {
+        return encryptedName;
     }
 
     public Uri getUri() {
-        return documentFile.getUri();
+        return fileUri;
     }
 
     @Nullable
@@ -63,10 +72,6 @@ public class GalleryFile {
 
     public boolean hasThumb() {
         return thumbUri != null;
-    }
-
-    public DocumentFile getDocumentFile() {
-        return documentFile;
     }
 
     public FileType getFileType() {
