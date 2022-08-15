@@ -82,6 +82,7 @@ public class GalleryFullscreenAdapter extends RecyclerView.Adapter<GalleryFullsc
                 }
             })).start();
             holder.txtName.setText(galleryFile.getName());
+            holder.imageView.setOnClickListener(v -> context.onBackPressed());
         }
     }
 

@@ -8,12 +8,16 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -96,11 +100,20 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
         galleryAdapter = new GalleryAdapter(this, galleryFiles);
         recyclerView.setAdapter(galleryAdapter);
-        galleryAdapter.setOnFileCLicked(pos -> {
-            showViewpager(true, pos);
+        galleryAdapter.setOnFileCLicked(pos -> showViewpager(true, pos));
+    }
+
+    private void setupViewpager() {
+        showViewpager(false, -1);
+        galleryFullscreenAdapter = new GalleryFullscreenAdapter(this, galleryFiles);
+        binding.viewPager.setAdapter(galleryFullscreenAdapter);
+        binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                binding.recyclerView.scrollToPosition(position);
+            }
         });
-        //Log.e(TAG, "init: scroll to " + pos);
-        //recyclerView.scrollToPosition(pos);
     }
 
     private void showViewpager(boolean show, int pos) {
@@ -109,13 +122,17 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             binding.viewPager.setCurrentItem(pos, false);
         } else {
             binding.viewPager.setVisibility(View.GONE);
+            if (pos >= 0) {
+                RecyclerView.ViewHolder viewHolder = binding.recyclerView.findViewHolderForAdapterPosition(pos);
+                if (viewHolder != null) {
+                    Animation animation = new AlphaAnimation(0, 1);
+                    animation.setDuration(500);
+                    animation.setInterpolator(new LinearInterpolator());
+                    viewHolder.itemView.startAnimation(animation);
+                }
+                binding.recyclerView.scrollToPosition(pos);
+            }
         }
-    }
-
-    private void setupViewpager() {
-        showViewpager(false, 0);
-        galleryFullscreenAdapter = new GalleryFullscreenAdapter(this, galleryFiles);
-        binding.viewPager.setAdapter(galleryFullscreenAdapter);
     }
 
     private void findFilesIn(Uri directoryUri) {
@@ -165,7 +182,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         if (binding.viewPager.getVisibility() == View.VISIBLE) {
-            showViewpager(false, 0);
+            showViewpager(false, binding.viewPager.getCurrentItem());
         } else {
             super.onBackPressed();
         }
