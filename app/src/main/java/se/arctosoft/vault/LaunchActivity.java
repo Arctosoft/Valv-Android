@@ -68,9 +68,6 @@ public class LaunchActivity extends AppCompatActivity {
             return false;
         });
         binding.btnUnlock.setOnClickListener(v -> {
-            if (binding.btnUnlock.getVisibility() != View.VISIBLE) {
-                return;
-            }
             if (isStarting.compareAndSet(false, true)) {
                 binding.btnUnlock.setEnabled(false);
                 settings.setTempPassword(binding.eTPassword.getText().toString().toCharArray());
@@ -80,11 +77,17 @@ public class LaunchActivity extends AppCompatActivity {
                     binding.eTPassword.clearFocus();
                     binding.getRoot().requestFocus();
                     isStarting.set(false);
-                    binding.btnUnlock.setEnabled(true);
+                    //binding.btnUnlock.setEnabled(true);
                 }, 400);
             }
         });
         binding.btnHelp.setOnClickListener(v -> Dialogs.showTextDialog(this, null, getString(R.string.launcher_help_message)));
+    }
+
+    @Override
+    protected void onResume() {
+        GLIDE_KEY = System.currentTimeMillis();
+        super.onResume();
     }
 
     @Override

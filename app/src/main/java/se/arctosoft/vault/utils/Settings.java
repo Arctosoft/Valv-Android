@@ -114,14 +114,14 @@ public class Settings {
                 sb.append("\n");
             }
         }
-        Log.e(TAG, "stringListAsString: " + sb);
+        //Log.e(TAG, "stringListAsString: " + sb);
         return sb.toString();
     }
 
     @NonNull
     public List<Uri> getGalleryDirectoriesAsUri() {
         List<String> directories = getGalleryDirectories();
-        Log.e(TAG, "getGalleryDirectoriesAsUri: " + directories.size());
+        //Log.e(TAG, "getGalleryDirectoriesAsUri: " + directories.size());
         List<Uri> uris = new ArrayList<>(directories.size());
         for (String s : directories) {
             if (s != null) {

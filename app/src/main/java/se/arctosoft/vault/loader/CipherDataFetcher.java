@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 
 import se.arctosoft.vault.encryption.Encryption;
+import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.utils.Settings;
 
 public class CipherDataFetcher implements DataFetcher<InputStream> {
@@ -35,23 +36,23 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
             streams = Encryption.getCipherInputStream(inputStream, settings.getTempPassword());
-            Log.e(TAG, "loadData: " + uri.getLastPathSegment());
+            //Log.e(TAG, "loadData: " + uri.getLastPathSegment());
             callback.onDataReady(streams.getInputStream());
-        } catch (GeneralSecurityException | IOException e) {
-            e.printStackTrace();
+        } catch (GeneralSecurityException | IOException | InvalidPasswordException e) {
+            //e.printStackTrace();
             callback.onLoadFailed(e);
         }
     }
 
     @Override
     public void cleanup() {
-        Log.e(TAG, "cleanup: ");
+        Log.i(TAG, "cleanup: ");
         cancel();
     }
 
     @Override
     public void cancel() {
-        Log.e(TAG, "cancel:");
+        Log.i(TAG, "cancel:");
         if (streams != null) {
             streams.close(); // interrupts decode if any
         }

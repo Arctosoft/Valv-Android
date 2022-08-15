@@ -23,8 +23,8 @@ import androidx.viewpager2.widget.ViewPager2;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.arctosoft.vault.adapters.GalleryAdapter;
-import se.arctosoft.vault.adapters.GalleryFullscreenAdapter;
+import se.arctosoft.vault.adapters.GalleryGridAdapter;
+import se.arctosoft.vault.adapters.GalleryPagerAdapter;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.databinding.ActivityGalleryDirectoryBinding;
 import se.arctosoft.vault.encryption.Password;
@@ -38,12 +38,12 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     public static final String EXTRA_DIRECTORY = "d";
 
     private ActivityGalleryDirectoryBinding binding;
-    private GalleryAdapter galleryAdapter;
-    private GalleryFullscreenAdapter galleryFullscreenAdapter;
+    private GalleryDirectoryViewModel viewModel;
+    private GalleryGridAdapter galleryGridAdapter;
+    private GalleryPagerAdapter galleryPagerAdapter;
     private List<GalleryFile> galleryFiles;
     private Settings settings;
     private Uri currentDirectory;
-    private GalleryDirectoryViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,8 +84,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             return;
         }
         galleryFiles = new ArrayList<>();
-        setupRecycler();
         setupViewpager();
+        setupRecycler();
 
         findFilesIn(currentDirectory);
     }
@@ -95,15 +95,15 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, spanCount, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
-        galleryAdapter = new GalleryAdapter(this, galleryFiles);
-        recyclerView.setAdapter(galleryAdapter);
-        galleryAdapter.setOnFileCLicked(pos -> showViewpager(true, pos, true));
+        galleryGridAdapter = new GalleryGridAdapter(this, galleryFiles, pos -> galleryPagerAdapter.notifyItemRemoved(pos));
+        recyclerView.setAdapter(galleryGridAdapter);
+        galleryGridAdapter.setOnFileCLicked(pos -> showViewpager(true, pos, true));
     }
 
     private void setupViewpager() {
-        galleryFullscreenAdapter = new GalleryFullscreenAdapter(this, galleryFiles, pos -> galleryAdapter.notifyItemRemoved(pos), currentDirectory);
-        binding.viewPager.setAdapter(galleryFullscreenAdapter);
-        Log.e(TAG, "setupViewpager: " + viewModel.getCurrentPosition() + " " + viewModel.isFullscreen());
+        galleryPagerAdapter = new GalleryPagerAdapter(this, galleryFiles, pos -> galleryGridAdapter.notifyItemRemoved(pos), currentDirectory);
+        binding.viewPager.setAdapter(galleryPagerAdapter);
+        //Log.e(TAG, "setupViewpager: " + viewModel.getCurrentPosition() + " " + viewModel.isFullscreen());
         binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
             public void onPageSelected(int position) {
@@ -119,7 +119,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     }
 
     private void showViewpager(boolean show, int pos, boolean animate) {
-        Log.e(TAG, "showViewpager: " + show + " " + pos);
+        //Log.e(TAG, "showViewpager: " + show + " " + pos);
         viewModel.setFullscreen(show);
         if (show) {
             binding.viewPager.setVisibility(View.VISIBLE);
@@ -152,7 +152,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 setLoading(false);
                 synchronized (lock) {
                     this.galleryFiles.addAll(0, galleryFiles);
-                    galleryAdapter.notifyItemRangeInserted(0, galleryFiles.size());
+                    galleryGridAdapter.notifyItemRangeInserted(0, galleryFiles.size());
                 }
             });
         }).start();

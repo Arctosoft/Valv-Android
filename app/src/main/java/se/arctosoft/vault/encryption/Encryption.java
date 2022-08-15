@@ -2,6 +2,7 @@ package se.arctosoft.vault.encryption;
 
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,6 +22,7 @@ import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 import javax.crypto.Cipher;
@@ -32,19 +34,23 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.security.auth.DestroyFailedException;
 
+import se.arctosoft.vault.data.FileType;
+import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 
 public class Encryption {
     private static final String TAG = "Encryption";
-    private static final String CIPHER = "ChaCha20/Poly1305/NoPadding";
+    private static final String CIPHER = "ChaCha20/NONE/NoPadding";
     public static final String KEY_ALGORITHM = "PBKDF2withHmacSHA512";
     public static final int ITERATION_COUNT = 20000;
     public static final int KEY_LENGTH = 256;
-    public static final int SALT_LENGTH = 16;
+    private static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
+    private static final int CHECK_LENGTH = 12;
 
     public static final String PREFIX_IMAGE_FILE = ".arcv1.i-";
+    public static final String PREFIX_GIF_FILE = ".arcv1.g-";
     public static final String ENCRYPTED_PREFIX = ".arcv1.";
     public static final String PREFIX_VIDEO_FILE = ".arcv1.v-";
     public static final String PREFIX_THUMB = ".arcv1.t-";
@@ -55,8 +61,10 @@ public class Encryption {
             throw new RuntimeException("No password");
         }
 
-        DocumentFile file = directory.createFile("*/*", Encryption.PREFIX_IMAGE_FILE + sourceFile.getName());
-        DocumentFile thumb = directory.createFile("*/*", Encryption.PREFIX_THUMB + sourceFile.getName());
+        String name = sourceFile.getName();
+        Log.e(TAG, "importImageFileToDirectory: mimetype is " + sourceFile.getType() + " for " + name);
+        DocumentFile file = directory.createFile("*/*", FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + name);
+        DocumentFile thumb = directory.createFile("*/*", Encryption.PREFIX_THUMB + name);
 
         try {
             createFile(context, sourceFile.getUri(), file, tempPassword);
@@ -175,6 +183,8 @@ public class Encryption {
         sr.nextBytes(salt);
         byte[] ivBytes = new byte[IV_LENGTH];
         sr.nextBytes(ivBytes);
+        byte[] checkBytes = new byte[CHECK_LENGTH];
+        sr.nextBytes(checkBytes);
 
         SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
         KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
@@ -188,8 +198,11 @@ public class Encryption {
         OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(outputFile.getUri()), 1024 * 32);
         fos.write(salt);
         fos.write(ivBytes);
+        fos.write(checkBytes);
         fos.flush();
-        return new Streams(inputStream, new CipherOutputStream(fos, cipher), secretKey);
+        CipherOutputStream cipherOutputStream = new CipherOutputStream(fos, cipher);
+        cipherOutputStream.write(checkBytes);
+        return new Streams(inputStream, cipherOutputStream, secretKey);
     }
 
     public static void decryptToCache(FragmentActivity context, Uri encryptedInput, char[] password, IOnUriResult onUriResult) {
@@ -215,6 +228,10 @@ public class Encryption {
             } catch (GeneralSecurityException | IOException e) {
                 e.printStackTrace();
                 context.runOnUiThread(() -> onUriResult.onError(e));
+            } catch (InvalidPasswordException e) {
+                Log.e(TAG, "decryptToCache: catch invalid password");
+                e.printStackTrace();
+                context.runOnUiThread(() -> onUriResult.onInvalidPassword(e));
             }
         }).start();
     }
@@ -242,6 +259,9 @@ public class Encryption {
             } catch (GeneralSecurityException | IOException e) {
                 e.printStackTrace();
                 context.runOnUiThread(() -> onUriResult.onError(e));
+            } catch (InvalidPasswordException e) {
+                e.printStackTrace();
+                context.runOnUiThread(() -> onUriResult.onInvalidPassword(e));
             }
         }).start();
     }
@@ -259,6 +279,9 @@ public class Encryption {
         } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
             onByteArrayResult.onError(e);
+        } catch (InvalidPasswordException e) {
+            e.printStackTrace();
+            onByteArrayResult.onInvalidPassword(e);
         }
     }
 
@@ -274,13 +297,17 @@ public class Encryption {
         return buffer.toByteArray();
     }
 
-    public static Streams getCipherInputStream(@NonNull InputStream inputStream, char[] password) throws IOException, GeneralSecurityException {
+    public static Streams getCipherInputStream(@NonNull InputStream inputStream, char[] password) throws IOException, GeneralSecurityException, InvalidPasswordException {
         byte[] salt = new byte[SALT_LENGTH];
         byte[] ivBytes = new byte[IV_LENGTH];
+        byte[] checkBytes1 = new byte[CHECK_LENGTH];
+        byte[] checkBytes2 = new byte[CHECK_LENGTH];
 
+        inputStream = new BufferedInputStream(inputStream, 1024 * 32);
         inputStream.read(salt, 0, salt.length);
         inputStream.read(ivBytes, 0, ivBytes.length);
-        inputStream = new BufferedInputStream(inputStream, 1024 * 32);
+        inputStream.read(checkBytes1, 0, checkBytes1.length);
+        //Log.e(TAG, "getCipherInputStream: read " + new String(checkBytes1));
 
         SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
         KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
@@ -289,19 +316,30 @@ public class Encryption {
 
         Cipher cipher = Cipher.getInstance(CIPHER);
         cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-        return new Streams(new CipherInputStream(inputStream, cipher), secretKey);
+        CipherInputStream cipherInputStream = new CipherInputStream(inputStream, cipher);
+        cipherInputStream.read(checkBytes2, 0, checkBytes2.length);
+        //Log.e(TAG, "getCipherInputStream: " + new String(checkBytes1) + new String(checkBytes2));
+        if (!Arrays.equals(checkBytes1, checkBytes2)) {
+            //Log.e(TAG, "getCipherInputStream: do not match");
+            throw new InvalidPasswordException("Invalid password");
+        }
+        return new Streams(cipherInputStream, secretKey);
     }
 
     public interface IOnUriResult {
         void onUriResult(Uri outputUri);
 
         void onError(Exception e);
+
+        void onInvalidPassword(InvalidPasswordException e);
     }
 
     public interface IOnByteArrayResult {
         void onBytesResult(byte[] bytes);
 
         void onError(Exception e);
+
+        void onInvalidPassword(InvalidPasswordException e);
     }
 
 }

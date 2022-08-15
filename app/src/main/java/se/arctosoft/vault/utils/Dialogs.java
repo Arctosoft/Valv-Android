@@ -24,7 +24,7 @@ public class Dialogs {
         for (int i = 0; i < names.length; i++) {
             names[i] = FileStuff.getFilenameWithPathFromUri(directories.get(i));
         }
-        Log.e(TAG, "showImportGalleryChooseDestinationDialog: " + Arrays.toString(names));
+        //Log.e(TAG, "showImportGalleryChooseDestinationDialog: " + Arrays.toString(names));
         new MaterialAlertDialogBuilder(context)
                 .setTitle(context.getString(R.string.dialog_import_to_title))
                 .setItems(names, (dialog, which) -> onDirectorySelected.onDirectorySelected(DocumentFile.fromTreeUri(context, directories.get(which))))

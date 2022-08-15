@@ -16,7 +16,7 @@ public class GalleryFile {
     private final String encryptedName, name;
     private final boolean isDirectory;
     private final Uri fileUri;
-    private Uri thumbUri;
+    private Uri thumbUri, decryptedCacheUri;
     private List<GalleryFile> filesInDirectory;
 
     private GalleryFile(@NonNull Uri fileUri, @Nullable Uri thumbUri) {
@@ -24,6 +24,7 @@ public class GalleryFile {
         this.encryptedName = FileStuff.getFilenameFromUri(fileUri, false);
         this.name = encryptedName.split("-", 2)[1];
         this.thumbUri = thumbUri;
+        this.decryptedCacheUri = null;
         this.isDirectory = false;
         this.fileType = FileType.fromFilename(encryptedName);
     }
@@ -33,6 +34,7 @@ public class GalleryFile {
         this.encryptedName = FileStuff.getFilenameFromUri(fileUri, false);
         this.name = encryptedName;
         this.thumbUri = null;
+        this.decryptedCacheUri = null;
         this.isDirectory = true;
         this.fileType = FileType.fromFilename(encryptedName);
         this.filesInDirectory = filesInDirectory;
@@ -44,6 +46,15 @@ public class GalleryFile {
 
     public static GalleryFile asFile(Uri fileUri, @Nullable Uri thumbUri) {
         return new GalleryFile(fileUri, thumbUri);
+    }
+
+    public void setDecryptedCacheUri(Uri decryptedCacheUri) {
+        this.decryptedCacheUri = decryptedCacheUri;
+    }
+
+    @Nullable
+    public Uri getDecryptedCacheUri() {
+        return decryptedCacheUri;
     }
 
     public void setThumbUri(Uri thumbUri) {

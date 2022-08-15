@@ -21,7 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
-import se.arctosoft.vault.adapters.GalleryAdapter;
+import se.arctosoft.vault.adapters.GalleryGridAdapter;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.databinding.ActivityGalleryBinding;
 import se.arctosoft.vault.encryption.Encryption;
@@ -35,13 +35,11 @@ public class GalleryActivity extends AppCompatActivity {
     private static final String TAG = "GalleryActivity";
     private static final int REQUEST_ADD_DIRECTORY = 1;
     private static final int REQUEST_IMPORT_IMAGES = 3;
-    private static final String SAVED_KEY_POSITION = "p";
-    private static int lastPos = 0;
 
     private static final Object lock = new Object();
 
     private ActivityGalleryBinding binding;
-    private GalleryAdapter galleryAdapter;
+    private GalleryGridAdapter galleryGridAdapter;
     private List<GalleryFile> galleryFiles;
     private Settings settings;
 
@@ -57,16 +55,11 @@ public class GalleryActivity extends AppCompatActivity {
             ab.setDisplayHomeAsUpEnabled(true);
             ab.setTitle(R.string.gallery_title);
         }
-        int pos = lastPos;
-        if (savedInstanceState != null) {
-            pos = savedInstanceState.getInt(SAVED_KEY_POSITION, 0);
-            Log.e(TAG, "onRestoreInstanceState: scroll to " + pos);
-        }
 
-        init(pos);
+        init();
     }
 
-    private void init(int pos) {
+    private void init() {
         settings = Settings.getInstance(this);
         if (!settings.isUnlocked()) {
             finish();
@@ -77,9 +70,8 @@ public class GalleryActivity extends AppCompatActivity {
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, spanCount, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
-        galleryAdapter = new GalleryAdapter(this, galleryFiles);
-        recyclerView.setAdapter(galleryAdapter);
-        recyclerView.scrollToPosition(pos);
+        galleryGridAdapter = new GalleryGridAdapter(this, galleryFiles, null);
+        recyclerView.setAdapter(galleryGridAdapter);
 
         setClickListeners();
 
@@ -102,15 +94,15 @@ public class GalleryActivity extends AppCompatActivity {
                 synchronized (lock) {
                     int size = galleryFiles.size();
                     galleryFiles.clear();
-                    galleryAdapter.notifyItemRangeRemoved(0, size);
+                    galleryGridAdapter.notifyItemRangeRemoved(0, size);
                 }
             });
             List<Uri> directories = settings.getGalleryDirectoriesAsUri();
-            Log.e(TAG, "findFolders: found " + directories.size() + " folders");
+            //Log.e(TAG, "findFolders: found " + directories.size() + " folders");
 
             List<Uri> uriFiles = new ArrayList<>(directories.size());
             for (Uri uri : directories) {
-                Log.e(TAG, "findFolders: " + uri);
+                //Log.e(TAG, "findFolders: " + uri);
                 DocumentFile documentFile = DocumentFile.fromTreeUri(this, uri);
                 if (documentFile.canRead()) {
                     uriFiles.add(documentFile.getUri());
@@ -163,13 +155,13 @@ public class GalleryActivity extends AppCompatActivity {
     private void addDirectory(Uri directoryUri) {
         long start = System.currentTimeMillis();
         List<Uri> files = FileStuff.getFilesInFolder(getContentResolver(), directoryUri);
-        Log.e(TAG, "onActivityResult: found " + files.size());
-        Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
+        //Log.e(TAG, "onActivityResult: found " + files.size());
+        //Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
         List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(files);
 
         synchronized (lock) {
             this.galleryFiles.add(0, GalleryFile.asDirectory(directoryUri, galleryFiles));
-            galleryAdapter.notifyItemInserted(0);
+            galleryGridAdapter.notifyItemInserted(0);
         }
     }
 
@@ -178,17 +170,17 @@ public class GalleryActivity extends AppCompatActivity {
         for (Uri directory : directories) {
             long start = System.currentTimeMillis();
             List<Uri> files = FileStuff.getFilesInFolder(getContentResolver(), directory);
-            Log.e(TAG, "onActivityResult: found " + files.size() + " total files");
-            Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
+            //Log.e(TAG, "onActivityResult: found " + files.size() + " total files");
+            //Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
             List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(files);
-            Log.e(TAG, "addDirectories: found " + galleryFiles.size() + " encrypted files");
+            //Log.e(TAG, "addDirectories: found " + galleryFiles.size() + " encrypted files");
             galleryDirectories.add(GalleryFile.asDirectory(directory, galleryFiles));
         }
         runOnUiThread(() -> {
             setLoading(false);
             synchronized (lock) {
                 this.galleryFiles.addAll(0, galleryDirectories);
-                galleryAdapter.notifyItemRangeInserted(0, galleryDirectories.size());
+                galleryGridAdapter.notifyItemRangeInserted(0, galleryDirectories.size());
             }
         });
     }
@@ -216,32 +208,6 @@ public class GalleryActivity extends AppCompatActivity {
     private void lock() {
         Password.lock(this, settings);
         finish();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        savePosition();
-    }
-
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt(SAVED_KEY_POSITION, savePosition());
-        Log.e(TAG, "onSaveInstanceState: ");
-    }
-
-    private int savePosition() {
-        GridLayoutManager layoutManager = (GridLayoutManager) binding.recyclerView.getLayoutManager();
-        return lastPos = layoutManager.findFirstVisibleItemPosition();
-    }
-
-    @Override
-    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        int pos = savedInstanceState.getInt(SAVED_KEY_POSITION, 0);
-        binding.recyclerView.scrollToPosition(pos);
-        Log.e(TAG, "onRestoreInstanceState: scroll to " + pos);
     }
 
     @Override

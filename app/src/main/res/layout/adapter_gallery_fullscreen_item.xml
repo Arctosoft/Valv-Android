@@ -5,11 +5,10 @@
     android:layout_height="match_parent"
     android:animateLayoutChanges="true">
 
-    <com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
-        android:id="@+id/imageView"
+    <FrameLayout
+        android:id="@+id/fLContent"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:adjustViewBounds="true" />
+        android:layout_height="match_parent" />
 
     <TextView
         android:id="@+id/txtName"
