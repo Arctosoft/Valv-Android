@@ -62,13 +62,25 @@
                 android:layout_gravity="end"
                 android:layout_marginTop="12dp"
                 android:text="@string/launcher_button"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:icon="@drawable/ic_round_lock_open_24" />
-
-
 
         </LinearLayout>
 
     </ScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnHelp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginBottom="20dp"
+        android:background="@color/colorInvisible"
+        android:text="@string/help"
+        android:textColor="@color/colorTextYellow"
+        app:icon="@drawable/ic_outline_tips_and_updates_24"
+        app:iconTint="@color/colorTextYellow"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

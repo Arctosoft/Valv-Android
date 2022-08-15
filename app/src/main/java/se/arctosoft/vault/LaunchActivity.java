@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import se.arctosoft.vault.databinding.ActivityLaunchBinding;
 import se.arctosoft.vault.encryption.Password;
+import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.Settings;
 
 public class LaunchActivity extends AppCompatActivity {
@@ -38,6 +39,10 @@ public class LaunchActivity extends AppCompatActivity {
         isStarting = new AtomicBoolean(false);
         Password.lock(this, settings);
 
+        setListeners();
+    }
+
+    private void setListeners() {
         binding.eTPassword.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -83,6 +88,7 @@ public class LaunchActivity extends AppCompatActivity {
                 }, 400);
             }
         });
+        binding.btnHelp.setOnClickListener(v -> Dialogs.showTextDialog(this, null, getString(R.string.launcher_help_message)));
     }
 
     @Override

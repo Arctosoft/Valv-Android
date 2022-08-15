@@ -9,4 +9,6 @@
     <color name="white">#FFFFFFFF</color>
 
     <color name="lightColorToolbar">#FBFBFB</color>
+    <color name="colorInvisible">#00FFFFFF</color>
+    <color name="colorTextYellow">#F6DB41</color>
 </resources>

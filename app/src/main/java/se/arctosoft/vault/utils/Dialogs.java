@@ -35,4 +35,12 @@ public class Dialogs {
         void onDirectorySelected(@NonNull DocumentFile directory);
     }
 
+    public static void showTextDialog(Context context, String title, String message) {
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
 }

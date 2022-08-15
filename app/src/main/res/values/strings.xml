@@ -3,12 +3,18 @@
     <string name="gallery_encrypt_file">Encrypt file</string>
     <string name="gallery_decrypt_file">Decrypt file</string>
     <string name="title_activity_main">MainActivity</string>
-    <string name="tab_text_1">Tab 1</string>
-    <string name="tab_text_2">Tab 2</string>
     <string name="open_directory">Encrypt files in dir</string>
     <string name="decrypt_files">Decrypt files in dir</string>
     <string name="load_files">Load encrypted thumbnails</string>
     <string name="loading">loading</string>
+    <string name="help">Help</string>
+
+    <string name="launcher_title">Vault locked</string>
+    <string name="launcher_subtitle">Enter decryption password</string>
+    <string name="launcher_password_hint">Password</string>
+    <string name="launcher_button">Unlock vault</string>
+    <string name="launcher_help_title">Help</string>
+    <string name="launcher_help_message">Enter a password of at least eight characters to use as the decryption and encryption key.\n\nTip: use different passwords to manage different vaults</string>
 
     <string name="menu_gallery_edit_included_folders">Edit included folders</string>
     <string name="menu_gallery_import">Import files</string>
@@ -17,10 +23,6 @@
     <string name="gallery_import_files">Import files</string>
     <string name="gallery_title">Gallery</string>
     <string name="menu_lock_vault">Lock vault</string>
-
-    <string name="launcher_title">Vault locked</string>
-    <string name="launcher_subtitle">Enter decryption password</string>
-    <string name="launcher_password_hint">Password</string>
-    <string name="launcher_button">Unlock vault</string>
     <string name="dialog_import_to_title">Destination</string>
+
 </resources>
