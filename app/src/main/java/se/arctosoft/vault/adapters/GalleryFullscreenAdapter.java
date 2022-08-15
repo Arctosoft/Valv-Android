@@ -1,5 +1,6 @@
 package se.arctosoft.vault.adapters;
 
+import android.graphics.PointF;
 import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.davemorrissey.labs.subscaleview.ImageSource;
+import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -49,6 +51,26 @@ public class GalleryFullscreenAdapter extends RecyclerView.Adapter<GalleryFullsc
     public void onBindViewHolder(@NonNull GalleryFullscreenViewHolder holder, int position) {
         FragmentActivity context = weakReference.get();
         GalleryFile galleryFile = galleryFiles.get(position);
+
+        holder.txtName.setText(galleryFile.getName());
+        setupImageView(holder, context, galleryFile);
+        setupButtons(holder, context, galleryFile);
+    }
+
+    private void setupImageView(GalleryFullscreenViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
+        holder.imageView.setOnClickListener(v -> context.onBackPressed());
+        holder.imageView.setMinimumDpi(40);
+        holder.imageView.setOnStateChangedListener(new SubsamplingScaleImageView.OnStateChangedListener() {
+            @Override
+            public void onScaleChanged(float newScale, int origin) {
+                showButtons(holder, newScale <= holder.imageView.getMinScale());
+            }
+
+            @Override
+            public void onCenterChanged(PointF newCenter, int origin) {
+
+            }
+        });
         new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
             @Override
             public void onUriResult(Uri outputUri) {
@@ -61,9 +83,20 @@ public class GalleryFullscreenAdapter extends RecyclerView.Adapter<GalleryFullsc
                 Toaster.getInstance(context).showLong("Failed to decrypt " + galleryFile.getName() + ": " + e.getMessage());
             }
         })).start();
-        holder.txtName.setText(galleryFile.getName());
-        holder.imageView.setOnClickListener(v -> context.onBackPressed());
-        holder.imageView.setMinimumDpi(40);
+    }
+
+    private void showButtons(GalleryFullscreenViewHolder holder, boolean show) {
+        if (show) {
+            holder.lLButtons.setVisibility(View.VISIBLE);
+            holder.txtName.setVisibility(View.VISIBLE);
+        } else {
+            holder.lLButtons.setVisibility(View.GONE);
+            holder.txtName.setVisibility(View.GONE);
+        }
+    }
+
+    private void setupButtons(GalleryFullscreenViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
+        showButtons(holder, true);
         holder.btnDelete.setOnClickListener(v -> Dialogs.showConfirmationDialog(context, context.getString(R.string.dialog_delete_file_title), context.getString(R.string.dialog_delete_file_message), (dialog, which) -> {
             boolean deletedFile = FileStuff.deleteFile(context, galleryFile.getUri());
             boolean deletedThumb = FileStuff.deleteFile(context, galleryFile.getThumbUri());
