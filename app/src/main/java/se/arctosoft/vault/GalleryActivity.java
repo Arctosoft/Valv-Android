@@ -151,26 +151,28 @@ public class GalleryActivity extends AppCompatActivity {
                 List<DocumentFile> documentFiles = new ArrayList<>();
                 for (Uri uri : uris) {
                     DocumentFile pickedFile = DocumentFile.fromSingleUri(this, uri);
-                    if (pickedFile != null && pickedFile.getType() != null && pickedFile.getType().startsWith("image/")) {
+                    if (pickedFile != null && pickedFile.getType() != null && pickedFile.getType().startsWith("image/") && !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX)) {
                         documentFiles.add(pickedFile);
                     }
                 }
-                Dialogs.showImportGalleryChooseDestinationDialog(this, settings, directory -> {
-                    setLoading(true);
-                    new Thread(() -> {
-                        int failed = 0;
-                        for (DocumentFile file : documentFiles) {
-                            boolean imported = Encryption.importImageFileToDirectory(this, file, directory, settings);
-                            if (!imported) {
-                                failed++;
-                                Toaster.getInstance(this).showLong("Failed to import " + file.getName());
+                if (!documentFiles.isEmpty()) {
+                    Dialogs.showImportGalleryChooseDestinationDialog(this, settings, directory -> {
+                        setLoading(true);
+                        new Thread(() -> {
+                            int failed = 0;
+                            for (DocumentFile file : documentFiles) {
+                                boolean imported = Encryption.importImageFileToDirectory(this, file, directory, settings);
+                                if (!imported) {
+                                    failed++;
+                                    Toaster.getInstance(this).showLong("Failed to import " + file.getName());
+                                }
                             }
-                        }
-                        int finalFailed = failed;
-                        runOnUiThread(() -> Toaster.getInstance(this).showLong("Encrypted and imported " + (documentFiles.size() - finalFailed) + " files"));
-                        findFolders();
-                    }).start();
-                });
+                            int finalFailed = failed;
+                            runOnUiThread(() -> Toaster.getInstance(this).showLong("Encrypted and imported " + (documentFiles.size() - finalFailed) + " files"));
+                            findFolders();
+                        }).start();
+                    });
+                }
             }
         }
     }

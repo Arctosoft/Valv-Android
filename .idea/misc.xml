@@ -3,6 +3,10 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/AndroidStudio/Vault/app/src/main/res/drawable/ic_outline_create_new_folder_24.xml" value="0.2765" />
+        <entry key="..\:/AndroidStudio/Vault/app/src/main/res/drawable/ic_outline_library_add_24.xml" value="0.2765" />
+        <entry key="..\:/AndroidStudio/Vault/app/src/main/res/drawable/ic_outline_lock_24.xml" value="0.2765" />
+        <entry key="..\:/AndroidStudio/Vault/app/src/main/res/drawable/ic_round_lock_open_24.xml" value="0.2765" />
         <entry key="..\:/AndroidStudio/Vault/app/src/main/res/layout/activity_gallery.xml" value="0.5536458333333333" />
         <entry key="..\:/AndroidStudio/Vault/app/src/main/res/layout/activity_gallery_directory.xml" value="0.38229166666666664" />
         <entry key="..\:/AndroidStudio/Vault/app/src/main/res/layout/activity_gallery_fullscreen.xml" value="0.5536458333333333" />
