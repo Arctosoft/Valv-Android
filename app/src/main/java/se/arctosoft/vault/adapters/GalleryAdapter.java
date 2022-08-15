@@ -18,7 +18,6 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 
 import se.arctosoft.vault.GalleryDirectoryActivity;
-import se.arctosoft.vault.GalleryFullscreenActivity;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryViewHolder;
 import se.arctosoft.vault.data.GalleryFile;
@@ -28,10 +27,19 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryViewHolder> {
     private static final String TAG = "GalleryFolderAdapter";
     private final WeakReference<FragmentActivity> weakReference;
     private final List<GalleryFile> galleryFiles;
+    private IOnFileCLicked onFileCLicked;
+
+    public interface IOnFileCLicked {
+        void onClick(int pos);
+    }
 
     public GalleryAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles) {
         this.weakReference = new WeakReference<>(context);
         this.galleryFiles = galleryFiles;
+    }
+
+    public void setOnFileCLicked(IOnFileCLicked onFileCLicked) {
+        this.onFileCLicked = onFileCLicked;
     }
 
     @NonNull
@@ -65,13 +73,16 @@ public class GalleryAdapter extends RecyclerView.Adapter<GalleryViewHolder> {
 
         holder.imageView.setOnClickListener(v -> {
             if (galleryFile.isDirectory()) {
-                GalleryDirectoryActivity.LAST_POS = position;
+                //GalleryDirectoryActivity.LAST_POS = position;
                 context.startActivity(new Intent(context, GalleryDirectoryActivity.class)
                         .putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString()));
             } else {
-                GalleryFullscreenActivity.FILES = galleryFiles;
-                context.startActivity(new Intent(context, GalleryFullscreenActivity.class)
-                        .putExtra(GalleryFullscreenActivity.EXTRA_POSITION, position));
+                //GalleryFullscreenActivity.FILES = galleryFiles;
+                //context.startActivity(new Intent(context, GalleryFullscreenActivity.class)
+                //        .putExtra(GalleryFullscreenActivity.EXTRA_POSITION, position));
+                if (onFileCLicked != null) {
+                    onFileCLicked.onClick(position);
+                }
             }
         });
         holder.imageView.setOnLongClickListener(new View.OnLongClickListener() {

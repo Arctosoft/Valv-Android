@@ -15,9 +15,6 @@
         android:theme="@style/Theme.Vault"
         tools:targetApi="31">
         <activity
-            android:name=".GalleryFullscreenActivity"
-            android:exported="false" />
-        <activity
             android:name=".GalleryDirectoryActivity"
             android:exported="false" />
         <activity
