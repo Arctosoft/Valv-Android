@@ -15,6 +15,7 @@ import android.view.animation.LinearInterpolator;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
@@ -29,13 +30,12 @@ import se.arctosoft.vault.databinding.ActivityGalleryDirectoryBinding;
 import se.arctosoft.vault.encryption.Password;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
+import se.arctosoft.vault.viewmodel.GalleryDirectoryViewModel;
 
 public class GalleryDirectoryActivity extends AppCompatActivity {
     private static final String TAG = "GalleryDirectoryActivity";
     private static final Object lock = new Object();
     public static final String EXTRA_DIRECTORY = "d";
-    //private static final String SAVED_KEY_POSITION = "p";
-    //public static int LAST_POS = 0;
 
     private ActivityGalleryDirectoryBinding binding;
     private GalleryAdapter galleryAdapter;
@@ -43,6 +43,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private List<GalleryFile> galleryFiles;
     private Settings settings;
     private Uri currentDirectory;
+    private GalleryDirectoryViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,11 +68,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             ab.setTitle(FileStuff.getFilenameFromUri(currentDirectory, false));
         }
 
-        //int pos = LAST_POS;
-        //if (savedInstanceState != null) {
-        //pos = savedInstanceState.getInt(SAVED_KEY_POSITION, 0);
-        //Log.e(TAG, "onRestoreInstanceState: scroll to " + pos);
-        //}
+        viewModel = new ViewModelProvider(this).get(GalleryDirectoryViewModel.class);
 
         init();
     }
@@ -104,7 +101,6 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     }
 
     private void setupViewpager() {
-        showViewpager(false, -1);
         galleryFullscreenAdapter = new GalleryFullscreenAdapter(this, galleryFiles, pos -> galleryAdapter.notifyItemRemoved(pos), currentDirectory);
         binding.viewPager.setAdapter(galleryFullscreenAdapter);
         binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -112,11 +108,19 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             public void onPageSelected(int position) {
                 super.onPageSelected(position);
                 binding.recyclerView.scrollToPosition(position);
+                viewModel.setCurrentPosition(position);
             }
         });
+        Log.e(TAG, "setupViewpager: " + viewModel.getCurrentPosition() + " " + viewModel.isFullscreen());
+        binding.viewPager.postDelayed(() -> {
+            binding.viewPager.setCurrentItem(viewModel.getCurrentPosition(), false);
+            showViewpager(viewModel.isFullscreen(), viewModel.getCurrentPosition());
+        }, 200);
     }
 
     private void showViewpager(boolean show, int pos) {
+        Log.e(TAG, "showViewpager: " + show + " " + pos);
+        viewModel.setFullscreen(show);
         if (show) {
             binding.viewPager.setVisibility(View.VISIBLE);
             binding.viewPager.setCurrentItem(pos, false);
@@ -138,10 +142,10 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private void findFilesIn(Uri directoryUri) {
         setLoading(true);
         new Thread(() -> {
-            long start = System.currentTimeMillis();
+            //long start = System.currentTimeMillis();
             List<Uri> files = FileStuff.getFilesInFolder(getContentResolver(), directoryUri);
-            Log.e(TAG, "onActivityResult: found " + files.size());
-            Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
+            //Log.e(TAG, "onActivityResult: found " + files.size());
+            //Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
             List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(files);
 
             runOnUiThread(() -> {
@@ -187,31 +191,4 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             super.onBackPressed();
         }
     }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        //savePosition();
-    }
-
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        //int pos = savePosition();
-        //outState.putInt(SAVED_KEY_POSITION, pos);
-        //Log.e(TAG, "onSaveInstanceState: " + pos);
-    }
-
-    /*private int savePosition() {
-        GridLayoutManager layoutManager = (GridLayoutManager) binding.recyclerView.getLayoutManager();
-        return layoutManager.findFirstVisibleItemPosition();
-    }*/
-
-    /*@Override
-    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        int pos = savedInstanceState.getInt(SAVED_KEY_POSITION, 0);
-        binding.recyclerView.postDelayed(() -> binding.recyclerView.scrollToPosition(pos), 100);
-        Log.e(TAG, "onRestoreInstanceState: scroll to " + pos);
-    }*/
 }
