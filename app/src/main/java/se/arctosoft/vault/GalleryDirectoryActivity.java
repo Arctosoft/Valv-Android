@@ -105,7 +105,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
 
     private void setupViewpager() {
         showViewpager(false, -1);
-        galleryFullscreenAdapter = new GalleryFullscreenAdapter(this, galleryFiles, pos -> galleryAdapter.notifyItemRemoved(pos));
+        galleryFullscreenAdapter = new GalleryFullscreenAdapter(this, galleryFiles, pos -> galleryAdapter.notifyItemRemoved(pos), currentDirectory);
         binding.viewPager.setAdapter(galleryFullscreenAdapter);
         binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override

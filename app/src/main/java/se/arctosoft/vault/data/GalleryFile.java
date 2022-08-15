@@ -15,7 +15,8 @@ public class GalleryFile {
     private final FileType fileType;
     private final String encryptedName, name;
     private final boolean isDirectory;
-    private Uri fileUri, thumbUri;
+    private final Uri fileUri;
+    private Uri thumbUri;
     private List<GalleryFile> filesInDirectory;
 
     private GalleryFile(@NonNull Uri fileUri, @Nullable Uri thumbUri) {

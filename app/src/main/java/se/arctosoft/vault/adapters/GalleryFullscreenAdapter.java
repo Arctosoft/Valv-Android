@@ -29,11 +29,13 @@ public class GalleryFullscreenAdapter extends RecyclerView.Adapter<GalleryFullsc
     private final WeakReference<FragmentActivity> weakReference;
     private final List<GalleryFile> galleryFiles;
     private final IOnFileDeleted onFileDeleted;
+    private final Uri currentDirectory;
 
-    public GalleryFullscreenAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted) {
+    public GalleryFullscreenAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted, Uri currentDirectory) {
         this.weakReference = new WeakReference<>(context);
         this.galleryFiles = galleryFiles;
         this.onFileDeleted = onFileDeleted;
+        this.currentDirectory = currentDirectory;
     }
 
     @NonNull
@@ -78,9 +80,18 @@ public class GalleryFullscreenAdapter extends RecyclerView.Adapter<GalleryFullsc
                 Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_not_deleted));
             }
         }));
-        holder.btnExport.setOnClickListener(v -> Dialogs.showConfirmationDialog(context, context.getString(R.string.dialog_export_title), context.getString(R.string.dialog_export_message), (dialog, which) -> {
+        holder.btnExport.setOnClickListener(v -> Dialogs.showConfirmationDialog(context, context.getString(R.string.dialog_export_title), context.getString(R.string.dialog_export_message),
+                (dialog, which) -> Encryption.decryptAndExport(context, galleryFile.getUri(), currentDirectory, Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
+                    @Override
+                    public void onUriResult(Uri outputUri) {
+                        Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_exported, FileStuff.getFilenameWithPathFromUri(outputUri)));
+                    }
 
-        }));
+                    @Override
+                    public void onError(Exception e) {
+                        Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_not_exported, e.getMessage()));
+                    }
+                })));
     }
 
     @Override

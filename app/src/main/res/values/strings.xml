@@ -28,10 +28,12 @@
     <string name="gallery_title">Gallery</string>
     <string name="gallery_file_deleted">File deleted</string>
     <string name="gallery_file_not_deleted">Error, file could not be deleted</string>
+    <string name="gallery_file_exported">Exported to %1$s</string>
+    <string name="gallery_file_not_exported">Export error: %1$s</string>
 
     <string name="dialog_import_to_title">Destination</string>
     <string name="dialog_export_title">Export?</string>
-    <string name="dialog_export_message">Decrypt and export this?</string>
+    <string name="dialog_export_message">Decrypt and export this file?</string>
     <string name="dialog_delete_file_title">Delete?</string>
     <string name="dialog_delete_file_message">Delete this file permanently?</string>
 
