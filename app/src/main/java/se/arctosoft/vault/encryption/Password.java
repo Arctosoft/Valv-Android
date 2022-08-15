@@ -43,7 +43,7 @@ public class Password {
         settings.clearTempPassword();
         FileStuff.deleteCache(context);
         Glide.get(context).clearMemory();
-        new Thread(() -> Glide.get(context).clearDiskCache()).start();
+        //new Thread(() -> Glide.get(context).clearDiskCache()).start();
         LaunchActivity.GLIDE_KEY = System.currentTimeMillis();
     }
 }

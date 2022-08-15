@@ -26,6 +26,7 @@ public class FileStuff {
 
     @NonNull
     public static List<Uri> getFilesInFolder(@NonNull ContentResolver resolver, Uri pickedDir) {
+        Log.e(TAG, "getFilesInFolder: path " + pickedDir.getPathSegments() );
         Uri realUri = DocumentsContract.buildChildDocumentsUriUsingTree(pickedDir, DocumentsContract.getDocumentId(pickedDir));
         List<Uri> files = new ArrayList<>();
         Cursor c = resolver.query(

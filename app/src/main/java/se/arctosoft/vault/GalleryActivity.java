@@ -131,8 +131,9 @@ public class GalleryActivity extends AppCompatActivity {
             if (data != null) {
                 Uri uri = data.getData();
                 getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                if (settings.addGalleryDirectory(uri)) {
-                    addDirectory(uri);
+                DocumentFile documentFile = DocumentFile.fromTreeUri(this, uri);
+                if (settings.addGalleryDirectory(documentFile.getUri())) {
+                    addDirectory(documentFile.getUri());
                 }
             }
         } else if (requestCode == REQUEST_IMPORT_IMAGES && resultCode == Activity.RESULT_OK) {
