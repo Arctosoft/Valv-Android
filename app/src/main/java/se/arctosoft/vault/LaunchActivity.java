@@ -57,11 +57,7 @@ public class LaunchActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {
                 int length = s.length();
-                if (length >= 8) {
-                    binding.btnUnlock.setVisibility(View.VISIBLE);
-                } else {
-                    binding.btnUnlock.setVisibility(View.GONE);
-                }
+                binding.btnUnlock.setEnabled(length >= 8);
             }
         });
         binding.eTPassword.setOnEditorActionListener((v, actionId, event) -> {

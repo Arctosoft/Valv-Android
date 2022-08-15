@@ -1,7 +1,6 @@
 package se.arctosoft.vault;
 
 import android.app.Activity;
-import android.content.ClipData;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -138,23 +137,7 @@ public class GalleryActivity extends AppCompatActivity {
             }
         } else if (requestCode == REQUEST_IMPORT_IMAGES && resultCode == Activity.RESULT_OK) {
             if (data != null) {
-                ClipData clipData = data.getClipData();
-                List<Uri> uris = FileStuff.uriListFromClipData(clipData);
-                Log.e(TAG, "onActivityResult: got " + uris.size());
-                if (uris.isEmpty()) {
-                    Uri dataUri = data.getData();
-                    if (dataUri != null) {
-                        uris.add(dataUri);
-                    }
-                }
-                Log.e(TAG, "onActivityResult: got " + uris.size());
-                List<DocumentFile> documentFiles = new ArrayList<>();
-                for (Uri uri : uris) {
-                    DocumentFile pickedFile = DocumentFile.fromSingleUri(this, uri);
-                    if (pickedFile != null && pickedFile.getType() != null && pickedFile.getType().startsWith("image/") && !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX)) {
-                        documentFiles.add(pickedFile);
-                    }
-                }
+                List<DocumentFile> documentFiles = FileStuff.getDocumentsFromDirectoryResult(this, data);
                 if (!documentFiles.isEmpty()) {
                     Dialogs.showImportGalleryChooseDestinationDialog(this, settings, directory -> {
                         setLoading(true);

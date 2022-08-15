@@ -18,7 +18,6 @@
             android:layout_width="300dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:animateLayoutChanges="true"
             android:orientation="vertical">
 
             <TextView
@@ -44,6 +43,7 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="12dp"
                 android:hint="@string/launcher_password_hint"
+                app:counterEnabled="true"
                 app:endIconMode="password_toggle">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -61,6 +61,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_marginTop="12dp"
+                android:enabled="false"
                 android:text="@string/launcher_button"
                 android:visibility="visible"
                 app:icon="@drawable/ic_round_lock_open_24" />

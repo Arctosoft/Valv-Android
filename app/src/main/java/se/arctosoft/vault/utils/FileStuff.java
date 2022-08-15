@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
-import android.provider.MediaStore;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -27,7 +26,7 @@ public class FileStuff {
 
     @NonNull
     public static List<Uri> getFilesInFolder(@NonNull ContentResolver resolver, Uri pickedDir) {
-        Log.e(TAG, "getFilesInFolder: path " + pickedDir.getPathSegments() );
+        Log.e(TAG, "getFilesInFolder: path " + pickedDir.getPathSegments());
         Uri realUri = DocumentsContract.buildChildDocumentsUriUsingTree(pickedDir, DocumentsContract.getDocumentId(pickedDir));
         List<Uri> files = new ArrayList<>();
         Cursor c = resolver.query(
@@ -129,6 +128,28 @@ public class FileStuff {
         }
         Log.e(TAG, "getEncryptedFilesInFolder: took " + (System.currentTimeMillis() - start) + " ms to find encrypted files");
         return galleryFiles;
+    }
+
+    @NonNull
+    public static List<DocumentFile> getDocumentsFromDirectoryResult(Context context, @NonNull Intent data) {
+        ClipData clipData = data.getClipData();
+        List<Uri> uris = FileStuff.uriListFromClipData(clipData);
+        Log.e(TAG, "getDocumentsFromDirectoryResult: got " + uris.size());
+        if (uris.isEmpty()) {
+            Uri dataUri = data.getData();
+            if (dataUri != null) {
+                uris.add(dataUri);
+            }
+        }
+        Log.e(TAG, "getDocumentsFromDirectoryResult: got " + uris.size());
+        List<DocumentFile> documentFiles = new ArrayList<>();
+        for (Uri uri : uris) {
+            DocumentFile pickedFile = DocumentFile.fromSingleUri(context, uri);
+            if (pickedFile != null && pickedFile.getType() != null && pickedFile.getType().startsWith("image/") && !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX)) {
+                documentFiles.add(pickedFile);
+            }
+        }
+        return documentFiles;
     }
 
     public static boolean deleteFile(Context context, @Nullable Uri uri) {
