@@ -12,6 +12,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
 
 import java.io.File;
@@ -128,6 +129,18 @@ public class FileStuff {
         }
         Log.e(TAG, "getEncryptedFilesInFolder: took " + (System.currentTimeMillis() - start) + " ms to find encrypted files");
         return galleryFiles;
+    }
+
+    public static boolean deleteFile(Context context, @Nullable Uri uri) {
+        if (uri == null) {
+            return true;
+        }
+        DocumentFile documentFile = DocumentFile.fromSingleUri(context, uri);
+        assert documentFile != null;
+        if (!documentFile.exists()) {
+            return true;
+        }
+        return documentFile.delete();
     }
 
     public static void deleteCache(Context context) {

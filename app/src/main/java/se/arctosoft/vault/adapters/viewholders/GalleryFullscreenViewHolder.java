@@ -1,6 +1,7 @@
 package se.arctosoft.vault.adapters.viewholders;
 
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -13,10 +14,13 @@ import se.arctosoft.vault.R;
 public class GalleryFullscreenViewHolder extends RecyclerView.ViewHolder {
     public final SubsamplingScaleImageView imageView;
     public final TextView txtName;
+    public final Button btnDelete, btnExport;
 
     public GalleryFullscreenViewHolder(@NonNull View itemView) {
         super(itemView);
         imageView = itemView.findViewById(R.id.imageView);
         txtName = itemView.findViewById(R.id.txtName);
+        btnDelete = itemView.findViewById(R.id.btnDelete);
+        btnExport = itemView.findViewById(R.id.btnExport);
     }
 }

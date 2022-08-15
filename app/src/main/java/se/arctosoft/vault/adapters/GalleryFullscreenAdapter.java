@@ -18,6 +18,9 @@ import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryFullscreenViewHolder;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.encryption.Encryption;
+import se.arctosoft.vault.interfaces.IOnFileDeleted;
+import se.arctosoft.vault.utils.Dialogs;
+import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.Toaster;
 
@@ -25,10 +28,12 @@ public class GalleryFullscreenAdapter extends RecyclerView.Adapter<GalleryFullsc
     private static final String TAG = "GalleryFullscreenAdapter";
     private final WeakReference<FragmentActivity> weakReference;
     private final List<GalleryFile> galleryFiles;
+    private final IOnFileDeleted onFileDeleted;
 
-    public GalleryFullscreenAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles) {
+    public GalleryFullscreenAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted) {
         this.weakReference = new WeakReference<>(context);
         this.galleryFiles = galleryFiles;
+        this.onFileDeleted = onFileDeleted;
     }
 
     @NonNull
@@ -57,6 +62,25 @@ public class GalleryFullscreenAdapter extends RecyclerView.Adapter<GalleryFullsc
         holder.txtName.setText(galleryFile.getName());
         holder.imageView.setOnClickListener(v -> context.onBackPressed());
         holder.imageView.setMinimumDpi(40);
+        holder.btnDelete.setOnClickListener(v -> Dialogs.showConfirmationDialog(context, context.getString(R.string.dialog_delete_file_title), context.getString(R.string.dialog_delete_file_message), (dialog, which) -> {
+            boolean deletedFile = FileStuff.deleteFile(context, galleryFile.getUri());
+            boolean deletedThumb = FileStuff.deleteFile(context, galleryFile.getThumbUri());
+            if (deletedFile) {
+                int pos = holder.getAdapterPosition();
+                galleryFiles.remove(pos);
+                notifyItemRemoved(pos);
+                onFileDeleted.onFileDeleted(pos);
+                Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_deleted));
+                if (galleryFiles.size() == 0) {
+                    context.onBackPressed();
+                }
+            } else {
+                Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_not_deleted));
+            }
+        }));
+        holder.btnExport.setOnClickListener(v -> Dialogs.showConfirmationDialog(context, context.getString(R.string.dialog_export_title), context.getString(R.string.dialog_export_message), (dialog, which) -> {
+
+        }));
     }
 
     @Override

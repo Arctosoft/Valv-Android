@@ -1,6 +1,7 @@
 package se.arctosoft.vault.utils;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.net.Uri;
 import android.util.Log;
 
@@ -40,6 +41,15 @@ public class Dialogs {
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
+    public static void showConfirmationDialog(Context context, String title, String message, DialogInterface.OnClickListener onConfirm) {
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, onConfirm)
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 
