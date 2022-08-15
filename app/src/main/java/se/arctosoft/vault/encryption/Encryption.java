@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
 
@@ -83,22 +84,45 @@ public class Encryption {
         }).start();
     }
 
-    private static class Streams {
+    public static class Streams {
         private final InputStream inputStream;
         private final CipherOutputStream outputStream;
         private final SecretKey secretKey;
 
-        private Streams(InputStream inputStream, CipherOutputStream outputStream, SecretKey secretKey) {
+        private Streams(@NonNull InputStream inputStream, @NonNull CipherOutputStream outputStream, @NonNull SecretKey secretKey) {
             this.inputStream = inputStream;
             this.outputStream = outputStream;
             this.secretKey = secretKey;
         }
 
-        private void close() {
-            try {
-                outputStream.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+        @NonNull
+        public InputStream getInputStream() {
+            return inputStream;
+        }
+
+        @Nullable
+        public CipherOutputStream getOutputStream() {
+            return outputStream;
+        }
+
+        @NonNull
+        public SecretKey getSecretKey() {
+            return secretKey;
+        }
+
+        private Streams(@NonNull InputStream inputStream, @NonNull SecretKey secretKey) {
+            this.inputStream = inputStream;
+            this.outputStream = null;
+            this.secretKey = secretKey;
+        }
+
+        public void close() {
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
             try {
                 inputStream.close();
@@ -135,7 +159,6 @@ public class Encryption {
                 .submit(512, 512)
                 .get();
 
-        //bitmap.compress(Bitmap.CompressFormat.JPEG, 95, streams.outputStream);
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 75, stream);
         byte[] byteArray = stream.toByteArray();
@@ -168,86 +191,24 @@ public class Encryption {
         return new Streams(inputStream, new CipherOutputStream(fos, cipher), secretKey);
     }
 
-    /*public static void decryptAndWriteFile(FragmentActivity context, Uri encryptedInput, Uri output, char[] password, IOnUriResult onUriResult) {
-        // Number of PBKDF2 hardening rounds to use. Larger values increase
-        // computation time. You should select a value that causes computation
-        // to take >100ms.
-        //final int iterations = 20000;
-
-        Log.d(TAG, "decryptAndWriteFile: input: " + encryptedInput + ", output: " + output);
-        new Thread(() -> {
-            try {
-                long start = System.currentTimeMillis();
-                byte[] salt = new byte[SALT_LENGTH];
-                byte[] ivBytes = new byte[IV_LENGTH];
-
-                InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
-                inputStream.read(salt, 0, salt.length);
-                inputStream.read(ivBytes, 0, ivBytes.length);
-                Log.d(TAG, "decryptAndWriteFile: read salt + iv");
-
-                Log.d(TAG, "decryptAndWriteFile: " + new String(salt) + " " + new String(ivBytes));
-
-                SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
-                KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
-                SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
-                Log.d(TAG, "decryptAndWriteFile: generated secret key for decryption: " + new String(secretKey.getEncoded()));
-                IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
-
-                Cipher cipher = Cipher.getInstance(CIPHER); // https://developer.android.com/reference/javax/crypto/Cipher
-                cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-
-                OutputStream fos = context.getContentResolver().openOutputStream(output);
-                CipherInputStream cis = new CipherInputStream(inputStream, cipher);
-
-                int read;
-                byte[] buffer = new byte[2048];
-                while ((read = cis.read(buffer)) != -1) {
-                    fos.write(buffer, 0, read);
-                }
-                fos.close();
-                cis.close();
-                inputStream.close();
-                try {
-                    secretKey.destroy();
-                } catch (DestroyFailedException e) {
-                    e.printStackTrace();
-                }
-                long end = System.currentTimeMillis();
-                context.runOnUiThread(() -> Toast.makeText(context, "decrypt took " + (end - start) + " ms", Toast.LENGTH_LONG).show());
-                Log.d(TAG, "decryptAndWriteFile: decrypted");
-
-                context.runOnUiThread(() -> onUriResult.onUriResult(output));
-            } catch (GeneralSecurityException | IOException e) {
-                e.printStackTrace();
-                context.runOnUiThread(() -> onUriResult.onError(e));
-            }
-        }).start();
-    }*/
-
     public static void decryptToCache(FragmentActivity context, Uri encryptedInput, char[] password, IOnUriResult onUriResult) {
         new Thread(() -> {
             try {
-                long start = System.currentTimeMillis();
-
                 InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
 
                 Path file = Files.createTempFile("temp_", ".dcrpt");
                 Uri fileUri = Uri.fromFile(file.toFile());
                 OutputStream fos = context.getContentResolver().openOutputStream(fileUri);
-                CipherInputStream cis = getCipherInputStream(inputStream, password);
+                Streams cis = getCipherInputStream(inputStream, password);
 
                 int read;
                 byte[] buffer = new byte[2048];
-                while ((read = cis.read(buffer)) != -1) {
+                while ((read = cis.inputStream.read(buffer)) != -1) {
                     fos.write(buffer, 0, read);
                 }
                 fos.close();
                 cis.close();
                 inputStream.close();
-                long end = System.currentTimeMillis();
-                //context.runOnUiThread(() -> Toast.makeText(context, "decrypt took " + (end - start) + " ms", Toast.LENGTH_LONG).show());
-                //Log.e(TAG, "decryptToCache: decrypted");
 
                 context.runOnUiThread(() -> onUriResult.onUriResult(fileUri));
             } catch (GeneralSecurityException | IOException e) {
@@ -262,9 +223,9 @@ public class Encryption {
             InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
 
             //File file = Files.createTempFile("temp_", ".dcrpt").toFile();
-            CipherInputStream cis = getCipherInputStream(inputStream, password);
+            Streams cis = getCipherInputStream(inputStream, password);
 
-            byte[] data = inputStreamToBytes(cis);
+            byte[] data = inputStreamToBytes(cis.inputStream);
             cis.close();
             inputStream.close();
 
@@ -288,7 +249,7 @@ public class Encryption {
         return buffer.toByteArray();
     }
 
-    public static CipherInputStream getCipherInputStream(@NonNull InputStream inputStream, char[] password) throws IOException, GeneralSecurityException {
+    public static Streams getCipherInputStream(@NonNull InputStream inputStream, char[] password) throws IOException, GeneralSecurityException {
         byte[] salt = new byte[SALT_LENGTH];
         byte[] ivBytes = new byte[IV_LENGTH];
 
@@ -303,7 +264,7 @@ public class Encryption {
 
         Cipher cipher = Cipher.getInstance(CIPHER);
         cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-        return new CipherInputStream(inputStream, cipher);
+        return new Streams(new CipherInputStream(inputStream, cipher), secretKey);
     }
 
     public interface IOnUriResult {

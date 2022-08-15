@@ -19,7 +19,7 @@ import se.arctosoft.vault.utils.Settings;
 
 public class CipherDataFetcher implements DataFetcher<InputStream> {
     private static final String TAG = "CipherDataFetcher";
-    private InputStream cipherInputStream;
+    private Encryption.Streams streams;
     private final Context context;
     private final Uri uri;
     private final Settings settings;
@@ -34,9 +34,9 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
     public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super InputStream> callback) {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            this.cipherInputStream = Encryption.getCipherInputStream(inputStream, settings.getTempPassword());
+            streams = Encryption.getCipherInputStream(inputStream, settings.getTempPassword());
             Log.e(TAG, "loadData: " + uri.getLastPathSegment());
-            callback.onDataReady(cipherInputStream);
+            callback.onDataReady(streams.getInputStream());
         } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
             callback.onLoadFailed(e);
@@ -52,12 +52,8 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
     @Override
     public void cancel() {
         Log.e(TAG, "cancel:");
-        if (cipherInputStream != null) {
-            try {
-                cipherInputStream.close(); // interrupts decode if any
-                cipherInputStream = null;
-            } catch (IOException ignore) {
-            }
+        if (streams != null) {
+            streams.close(); // interrupts decode if any
         }
     }
 
