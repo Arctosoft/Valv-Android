@@ -185,8 +185,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (binding.viewPager.getVisibility() == View.VISIBLE) {
-            showViewpager(false, binding.viewPager.getCurrentItem());
+        if (viewModel.isFullscreen()) {
+            showViewpager(false, viewModel.getCurrentPosition());
         } else {
             super.onBackPressed();
         }

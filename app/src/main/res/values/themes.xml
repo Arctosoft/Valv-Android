@@ -18,12 +18,12 @@
         <item name="toolbar_icon_tint">@color/black</item>
     </style>
 
-    <style name="Theme.Vault.NoActionBar">
+    <!--<style name="Theme.Vault.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
     </style>
 
     <style name="Theme.Vault.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-    <style name="Theme.Vault.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+    <style name="Theme.Vault.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />-->
 </resources>
