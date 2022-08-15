@@ -21,6 +21,7 @@
     <string name="menu_gallery_edit_included_folders">Edit included folders</string>
     <string name="menu_gallery_import">Import files</string>
     <string name="menu_lock_vault">Lock vault</string>
+    <string name="menu_about">About</string>
 
     <string name="gallery_adapter_folder_name">%1$s (%2$d)</string>
     <string name="gallery_add_folder">Add a folder</string>
@@ -36,5 +37,7 @@
     <string name="dialog_export_message">Decrypt and export this file?</string>
     <string name="dialog_delete_file_title">Delete?</string>
     <string name="dialog_delete_file_message">Delete this file permanently?</string>
+    <string name="dialog_about_title">About</string>
+    <string name="dialog_about_message">Gallery vault version %1$s-%2$s (%3$d).\n\nFiles are encrypted using ChaCha20-Poly1305 and keys are derived using PBKDF2 with HMACSHA512.\n\n\u00A9 2022 Arctosoft AB</string>
 
 </resources>

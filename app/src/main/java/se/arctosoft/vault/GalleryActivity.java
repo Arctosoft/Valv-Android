@@ -204,6 +204,8 @@ public class GalleryActivity extends AppCompatActivity {
             return true;
         } else if (id == R.id.edit_included_folders) {
 
+        } else if (id == R.id.about) {
+            Dialogs.showTextDialog(this, getString(R.string.dialog_about_title), getString(R.string.dialog_about_message, BuildConfig.BUILD_TYPE, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE));
         } else if (id == R.id.lock) {
             lock();
             return true;

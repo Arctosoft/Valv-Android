@@ -14,4 +14,8 @@
         android:id="@+id/import_files"
         android:title="@string/menu_gallery_import"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/about"
+        android:title="@string/menu_about"
+        app:showAsAction="never" />
 </menu>
