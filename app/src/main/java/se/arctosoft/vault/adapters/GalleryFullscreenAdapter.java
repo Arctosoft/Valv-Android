@@ -1,7 +1,6 @@
 package se.arctosoft.vault.adapters;
 
 import android.net.Uri;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +19,7 @@ import se.arctosoft.vault.adapters.viewholders.GalleryFullscreenViewHolder;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.utils.Settings;
+import se.arctosoft.vault.utils.Toaster;
 
 public class GalleryFullscreenAdapter extends RecyclerView.Adapter<GalleryFullscreenViewHolder> {
     private static final String TAG = "GalleryFullscreenAdapter";
@@ -42,48 +42,21 @@ public class GalleryFullscreenAdapter extends RecyclerView.Adapter<GalleryFullsc
     public void onBindViewHolder(@NonNull GalleryFullscreenViewHolder holder, int position) {
         FragmentActivity context = weakReference.get();
         GalleryFile galleryFile = galleryFiles.get(position);
-        if (galleryFile.isDirectory()) {
-            GalleryFile firstFile = galleryFile.getFirstFile();
-            Log.e(TAG, "onBindViewHolder: " + position + " " + firstFile);
-            if (firstFile != null) {
-                /*Glide.with(context)
-                        .load(firstFile.getUri())
-                        .apply(GlideStuff.getRequestOptions())
-                        .into(holder.imageView);*/
+        new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
+            @Override
+            public void onUriResult(Uri outputUri) {
+                context.runOnUiThread(() -> holder.imageView.setImage(ImageSource.uri(outputUri)));
             }
-            holder.txtName.setText(context.getString(R.string.gallery_adapter_folder_name, galleryFile.getNameWithPath(), galleryFile.getFileCount()));
-        } else {
-            /*Glide.with(context)
-                    .load(galleryFile.getUri())
-                    .apply(GlideStuff.getRequestOptions())
-                    .into(holder.imageView);*/
 
-            new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
-                /*@Override
-                public void onBytesResult(byte[] bytes) {
-                    try {
-                        Bitmap bitmap = Glide.with(context).asBitmap().load(bytes).submit().get();
-                        context.runOnUiThread(() -> holder.imageView.setImage(ImageSource.bitmap(bitmap)));
-                    } catch (ExecutionException | InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }*/ // TODO make fragment instead of activity
-
-                @Override
-                public void onUriResult(Uri outputUri) {
-                    context.runOnUiThread(() -> {
-                        holder.imageView.setImage(ImageSource.uri(outputUri));
-                    });
-                }
-
-                @Override
-                public void onError(Exception e) {
-
-                }
-            })).start();
-            holder.txtName.setText(galleryFile.getName());
-            holder.imageView.setOnClickListener(v -> context.onBackPressed());
-        }
+            @Override
+            public void onError(Exception e) {
+                e.printStackTrace();
+                Toaster.getInstance(context).showLong("Failed to decrypt " + galleryFile.getName() + ": " + e.getMessage());
+            }
+        })).start();
+        holder.txtName.setText(galleryFile.getName());
+        holder.imageView.setOnClickListener(v -> context.onBackPressed());
+        holder.imageView.setMinimumDpi(40);
     }
 
     @Override
