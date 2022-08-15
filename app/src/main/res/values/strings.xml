@@ -8,6 +8,8 @@
     <string name="load_files">Load encrypted thumbnails</string>
     <string name="loading">loading</string>
     <string name="help">Help</string>
+    <string name="delete">Delete</string>
+    <string name="export">Export</string>
 
     <string name="launcher_title">Vault locked</string>
     <string name="launcher_subtitle">Enter decryption password</string>

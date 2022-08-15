@@ -7,7 +7,7 @@ import androidx.appcompat.widget.AppCompatImageView;
 
 import se.arctosoft.vault.utils.Constants;
 
-public class PressableGridImageView extends AppCompatImageView {
+public class PressableGridImageView extends PressableImageView {
 
     public PressableGridImageView(Context context) {
         super(context);
@@ -19,12 +19,6 @@ public class PressableGridImageView extends AppCompatImageView {
 
     public PressableGridImageView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-    }
-
-    @Override
-    public void setPressed(boolean pressed) {
-        super.setPressed(pressed);
-        setAlpha(pressed ? Constants.HALF : Constants.FULL);
     }
 
     @Override

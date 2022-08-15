@@ -2,16 +2,13 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:layout_margin="@dimen/grid_item_margin">
+    android:layout_height="match_parent">
 
     <com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:adjustViewBounds="true"
-        app:layout_constraintBottom_toTopOf="@id/txtName"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="match_parent"
+        android:adjustViewBounds="true" />
 
     <TextView
         android:id="@+id/txtName"
@@ -20,6 +17,65 @@
         android:layout_marginStart="4dp"
         android:layout_marginEnd="4dp"
         android:textSize="12sp"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:backgroundTint="?gallery_viewpager_buttons_background"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:weightSum="2"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDelete"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackground"
+                android:backgroundTint="@color/colorInvisible"
+                android:padding="@dimen/fullscreen_buttons_padding"
+                android:src="@drawable/ic_outline_delete_forever_24"
+                android:text="@string/delete"
+                android:textColor="?gallery_viewpager_buttons"
+                app:icon="@drawable/ic_outline_delete_forever_24"
+                app:iconGravity="top"
+                app:iconPadding="0dp"
+                app:iconSize="@dimen/fullscreen_icon_size"
+                app:iconTint="?gallery_viewpager_buttons" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnExport"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackground"
+                android:backgroundTint="@color/colorInvisible"
+                android:padding="@dimen/fullscreen_buttons_padding"
+                android:src="@drawable/ic_outline_delete_forever_24"
+                android:text="@string/export"
+                android:textColor="?gallery_viewpager_buttons"
+                app:icon="@drawable/ic_outline_file_download_24"
+                app:iconGravity="top"
+                app:iconPadding="0dp"
+                app:iconSize="@dimen/fullscreen_icon_size"
+                app:iconTint="?gallery_viewpager_buttons" />
+
+        </LinearLayout>
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

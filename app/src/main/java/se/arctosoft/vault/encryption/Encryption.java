@@ -137,8 +137,8 @@ public class Encryption {
         }
     }
 
-    private static void createFile(FragmentActivity context, Uri input, DocumentFile file, char[] password) throws GeneralSecurityException, IOException {
-        Streams streams = getCipherOutputStream(context, input, file, password);
+    private static void createFile(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password) throws GeneralSecurityException, IOException {
+        Streams streams = getCipherOutputStream(context, input, outputFile, password);
 
         int read;
         byte[] buffer = new byte[2048];
@@ -149,8 +149,8 @@ public class Encryption {
         streams.close();
     }
 
-    private static void createThumb(FragmentActivity context, Uri input, DocumentFile thumb, char[] password) throws GeneralSecurityException, IOException, ExecutionException, InterruptedException {
-        Streams streams = getCipherOutputStream(context, input, thumb, password);
+    private static void createThumb(FragmentActivity context, Uri input, DocumentFile outputThumbFile, char[] password) throws GeneralSecurityException, IOException, ExecutionException, InterruptedException {
+        Streams streams = getCipherOutputStream(context, input, outputThumbFile, password);
 
         Bitmap bitmap = Glide.with(context)
                 .asBitmap()
@@ -168,7 +168,7 @@ public class Encryption {
         streams.close();
     }
 
-    private static Streams getCipherOutputStream(FragmentActivity context, Uri input, DocumentFile file, char[] password) throws GeneralSecurityException, IOException {
+    private static Streams getCipherOutputStream(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password) throws GeneralSecurityException, IOException {
         SecureRandom sr = SecureRandom.getInstanceStrong();
         byte[] salt = new byte[SALT_LENGTH];
         sr.nextBytes(salt);
@@ -184,7 +184,7 @@ public class Encryption {
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
 
         InputStream inputStream = context.getContentResolver().openInputStream(input);
-        OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(file.getUri()), 1024 * 32);
+        OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(outputFile.getUri()), 1024 * 32);
         fos.write(salt);
         fos.write(ivBytes);
         fos.flush();
@@ -221,8 +221,6 @@ public class Encryption {
     public static void decryptToByteArray(FragmentActivity context, Uri encryptedInput, char[] password, IOnByteArrayResult onByteArrayResult) {
         try {
             InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
-
-            //File file = Files.createTempFile("temp_", ".dcrpt").toFile();
             Streams cis = getCipherInputStream(inputStream, password);
 
             byte[] data = inputStreamToBytes(cis.inputStream);
@@ -241,7 +239,6 @@ public class Encryption {
 
         int nRead;
         byte[] data = new byte[16384];
-
         while ((nRead = is.read(data, 0, data.length)) != -1) {
             buffer.write(data, 0, nRead);
         }
