@@ -15,7 +15,7 @@ public class GalleryDirectoryViewModel extends ViewModel {
 
     private final List<GalleryFile> galleryFiles = new LinkedList<>();
     private int currentPosition = 0;
-    private boolean isFullscreen = false;
+    private boolean viewPagerVisible = false;
     private boolean initialised = false;
 
     public boolean isInitialised() {
@@ -44,11 +44,11 @@ public class GalleryDirectoryViewModel extends ViewModel {
         this.currentPosition = currentPosition;
     }
 
-    public boolean isFullscreen() {
-        return isFullscreen;
+    public boolean isViewpagerVisible() {
+        return viewPagerVisible;
     }
 
-    public void setFullscreen(boolean fullscreen) {
-        isFullscreen = fullscreen;
+    public void setViewpagerVisible(boolean fullscreen) {
+        viewPagerVisible = fullscreen;
     }
 }

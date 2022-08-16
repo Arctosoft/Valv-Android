@@ -55,7 +55,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     @NonNull
     @Override
     public GalleryGridViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        CardView v = (CardView) LayoutInflater.from(parent.getContext()).inflate(R.layout.adapter_gallery_folder_item, parent, false);
+        CardView v = (CardView) LayoutInflater.from(parent.getContext()).inflate(R.layout.adapter_gallery_grid_item, parent, false);
         return new GalleryGridViewHolder(v);
     }
 

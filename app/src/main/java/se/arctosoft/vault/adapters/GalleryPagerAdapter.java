@@ -1,11 +1,13 @@
 package se.arctosoft.vault.adapters;
 
+import android.graphics.Color;
 import android.graphics.PointF;
 import android.net.Uri;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
@@ -16,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
+import com.google.android.material.color.MaterialColors;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -38,25 +41,27 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private final List<GalleryFile> galleryFiles;
     private final IOnFileDeleted onFileDeleted;
     private final Uri currentDirectory;
+    private boolean isFullscreen;
 
     public GalleryPagerAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted, Uri currentDirectory) {
         this.weakReference = new WeakReference<>(context);
         this.galleryFiles = galleryFiles;
         this.onFileDeleted = onFileDeleted;
         this.currentDirectory = currentDirectory;
+        this.isFullscreen = false;
     }
 
     @NonNull
     @Override
     public GalleryPagerViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
-        ConstraintLayout v = (ConstraintLayout) layoutInflater.inflate(R.layout.adapter_gallery_fullscreen_item, parent, false);
+        ConstraintLayout v = (ConstraintLayout) layoutInflater.inflate(R.layout.adapter_gallery_viewpager_item, parent, false);
         FrameLayout fLContent = v.findViewById(R.id.fLContent);
         if (viewType == FileType.IMAGE.i) {
-            fLContent.addView(layoutInflater.inflate(R.layout.adapter_gallery_fullscreen_item_image, fLContent, false));
+            fLContent.addView(layoutInflater.inflate(R.layout.adapter_gallery_viewpager_item_image, fLContent, false));
             return new GalleryPagerViewHolder.GalleryPagerImageViewHolder(v);
         } else {
-            fLContent.addView(layoutInflater.inflate(R.layout.adapter_gallery_fullscreen_item_gif, fLContent, false));
+            fLContent.addView(layoutInflater.inflate(R.layout.adapter_gallery_viewpager_item_gif, fLContent, false));
             return new GalleryPagerViewHolder.GalleryPagerGifViewHolder(v);
         } // TODO video
     }
@@ -72,9 +77,26 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         setupButtons(holder, context, galleryFile);
     }
 
+    @Override
+    public void onBindViewHolder(@NonNull GalleryPagerViewHolder holder, int position, @NonNull List<Object> payloads) {
+        boolean found = false;
+        if (!payloads.isEmpty()) {
+            for (Object o : payloads) {
+                if (o instanceof Boolean) {
+                    showButtons(holder, !((Boolean) o));
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            super.onBindViewHolder(holder, position, payloads);
+        }
+    }
+
     private void setupImageView(GalleryPagerViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder) {
-            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setOnClickListener(v -> context.onBackPressed());
+            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setOnClickListener(v -> onItemPressed(context, holder));
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setMinimumDpi(40);
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setOnStateChangedListener(new SubsamplingScaleImageView.OnStateChangedListener() {
                 @Override
@@ -88,7 +110,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 }
             });
         } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
-            ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).gifImageView.setOnClickListener(v -> context.onBackPressed());
+            ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).gifImageView.setOnClickListener(v -> onItemPressed(context, holder));
         }
         if (galleryFile.getDecryptedCacheUri() == null) {
             new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
@@ -116,6 +138,21 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         }
     }
 
+    private void onItemPressed(FragmentActivity context, GalleryPagerViewHolder holder) {
+        //context.onBackPressed();
+        toggleFullscreen(context);
+        //showButtons(holder, !this.isFullscreen);
+    }
+
+    private void toggleFullscreen(@NonNull FragmentActivity context) {
+        this.isFullscreen = !isFullscreen;
+        WindowManager.LayoutParams attrs = context.getWindow().getAttributes();
+        attrs.flags ^= WindowManager.LayoutParams.FLAG_FULLSCREEN;
+        context.getWindow().setAttributes(attrs);
+        context.getWindow().getDecorView().setSystemUiVisibility(this.isFullscreen ? View.SYSTEM_UI_FLAG_HIDE_NAVIGATION : View.SYSTEM_UI_FLAG_VISIBLE);
+        notifyItemRangeChanged(0, galleryFiles.size(), isFullscreen);
+    }
+
     private void loadImage(Uri outputUri, GalleryPagerViewHolder holder, FragmentActivity context) {
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder) {
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setImage(ImageSource.uri(outputUri));
@@ -128,6 +165,12 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     }
 
     private void showButtons(GalleryPagerViewHolder holder, boolean show) {
+        if (isFullscreen) {
+            show = false;
+            holder.root.setBackgroundColor(weakReference.get().getResources().getColor(R.color.black));
+        } else {
+            holder.root.setBackgroundColor(MaterialColors.getColor(weakReference.get(), R.attr.gallery_viewpager_background, Color.WHITE));
+        }
         if (show) {
             holder.lLButtons.setVisibility(View.VISIBLE);
             holder.txtName.setVisibility(View.VISIBLE);

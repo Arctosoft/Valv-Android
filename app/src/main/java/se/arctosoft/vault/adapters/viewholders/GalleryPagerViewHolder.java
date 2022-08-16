@@ -17,9 +17,11 @@ public class GalleryPagerViewHolder extends RecyclerView.ViewHolder {
     public final TextView txtName;
     public final Button btnDelete, btnExport;
     public final LinearLayout lLButtons;
+    public final View root;
 
     private GalleryPagerViewHolder(@NonNull View itemView) {
         super(itemView);
+        root = itemView;
         txtName = itemView.findViewById(R.id.txtName);
         btnDelete = itemView.findViewById(R.id.btnDelete);
         btnExport = itemView.findViewById(R.id.btnExport);

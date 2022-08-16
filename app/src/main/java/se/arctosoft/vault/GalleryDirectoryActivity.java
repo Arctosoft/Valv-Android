@@ -115,13 +115,13 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         });
         binding.viewPager.postDelayed(() -> {
             binding.viewPager.setCurrentItem(viewModel.getCurrentPosition(), false);
-            showViewpager(viewModel.isFullscreen(), viewModel.getCurrentPosition(), false);
+            showViewpager(viewModel.isViewpagerVisible(), viewModel.getCurrentPosition(), false);
         }, 200);
     }
 
     private void showViewpager(boolean show, int pos, boolean animate) {
         //Log.e(TAG, "showViewpager: " + show + " " + pos);
-        viewModel.setFullscreen(show);
+        viewModel.setViewpagerVisible(show);
         if (show) {
             binding.viewPager.setVisibility(View.VISIBLE);
             binding.viewPager.setCurrentItem(pos, false);
@@ -186,7 +186,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        if (viewModel.isFullscreen()) {
+        if (viewModel.isViewpagerVisible()) {
             showViewpager(false, viewModel.getCurrentPosition(), true);
         } else {
             super.onBackPressed();
