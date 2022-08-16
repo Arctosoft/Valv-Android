@@ -20,7 +20,6 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import se.arctosoft.vault.adapters.GalleryGridAdapter;
@@ -39,9 +38,9 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
 
     private ActivityGalleryDirectoryBinding binding;
     private GalleryDirectoryViewModel viewModel;
+
     private GalleryGridAdapter galleryGridAdapter;
     private GalleryPagerAdapter galleryPagerAdapter;
-    private List<GalleryFile> galleryFiles;
     private Settings settings;
     private Uri currentDirectory;
 
@@ -83,11 +82,13 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             finish();
             return;
         }
-        galleryFiles = new ArrayList<>();
         setupViewpager();
         setupRecycler();
 
-        findFilesIn(currentDirectory);
+        if (!viewModel.isInitialised()) {
+            Log.e(TAG, "init: not initialised, find files");
+            findFilesIn(currentDirectory);
+        }
     }
 
     private void setupRecycler() {
@@ -95,13 +96,13 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, spanCount, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
-        galleryGridAdapter = new GalleryGridAdapter(this, galleryFiles, pos -> galleryPagerAdapter.notifyItemRemoved(pos));
+        galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), pos -> galleryPagerAdapter.notifyItemRemoved(pos));
         recyclerView.setAdapter(galleryGridAdapter);
         galleryGridAdapter.setOnFileCLicked(pos -> showViewpager(true, pos, true));
     }
 
     private void setupViewpager() {
-        galleryPagerAdapter = new GalleryPagerAdapter(this, galleryFiles, pos -> galleryGridAdapter.notifyItemRemoved(pos), currentDirectory);
+        galleryPagerAdapter = new GalleryPagerAdapter(this, viewModel.getGalleryFiles(), pos -> galleryGridAdapter.notifyItemRemoved(pos), currentDirectory);
         binding.viewPager.setAdapter(galleryPagerAdapter);
         //Log.e(TAG, "setupViewpager: " + viewModel.getCurrentPosition() + " " + viewModel.isFullscreen());
         binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -142,16 +143,16 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private void findFilesIn(Uri directoryUri) {
         setLoading(true);
         new Thread(() -> {
-            //long start = System.currentTimeMillis();
             List<Uri> files = FileStuff.getFilesInFolder(getContentResolver(), directoryUri);
-            //Log.e(TAG, "onActivityResult: found " + files.size());
-            //Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
             List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(files);
 
             runOnUiThread(() -> {
                 setLoading(false);
                 synchronized (lock) {
-                    this.galleryFiles.addAll(0, galleryFiles);
+                    if (viewModel.isInitialised()) {
+                        return;
+                    }
+                    viewModel.setInitialised(galleryFiles);
                     galleryGridAdapter.notifyItemRangeInserted(0, galleryFiles.size());
                 }
             });
