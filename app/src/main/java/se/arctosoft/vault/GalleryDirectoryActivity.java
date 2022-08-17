@@ -153,6 +153,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                     }
                     viewModel.setInitialised(galleryFiles);
                     galleryGridAdapter.notifyItemRangeInserted(0, galleryFiles.size());
+                    galleryPagerAdapter.notifyItemRangeInserted(0, galleryFiles.size());
                 }
             });
         }).start();
