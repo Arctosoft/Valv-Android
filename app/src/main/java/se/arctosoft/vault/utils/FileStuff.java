@@ -73,7 +73,7 @@ public class FileStuff {
 
         for (CursorFile file : documentFiles) {
             if (file.isDirectory()) {
-                galleryFiles.add(GalleryFile.asDirectory(file, null));
+                //galleryFiles.add(GalleryFile.asDirectory(file, null)); // TODO fix later
                 continue;
             }
             file.setUnencryptedName(FileStuff.getUnencryptedFileName(file.getName()));

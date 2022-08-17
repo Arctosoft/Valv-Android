@@ -31,6 +31,7 @@
     <string name="gallery_file_not_deleted">Error, file could not be deleted</string>
     <string name="gallery_file_exported">Exported to %1$s</string>
     <string name="gallery_file_not_exported">Export error: %1$s</string>
+    <string name="gallery_importing_progress">Importing %1$d out of %2$d\n%3$s/%4$s MB</string>
 
     <string name="dialog_import_to_title">Destination</string>
     <string name="dialog_export_title">Export?</string>
@@ -38,6 +39,6 @@
     <string name="dialog_delete_file_title">Delete?</string>
     <string name="dialog_delete_file_message">Delete this file permanently?</string>
     <string name="dialog_about_title">About</string>
-    <string name="dialog_about_message">Gallery vault version %1$s-%2$s (%3$d).\n\nFiles are encrypted using ChaCha20-Poly1305 and keys are derived using PBKDF2 with HMACSHA512.\n\n\u00A9 2022 Arctosoft AB</string>
+    <string name="dialog_about_message">Gallery vault version %1$s-%2$s (%3$d).\n\nFiles are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.\n\n\u00A9 2022 Arctosoft AB</string>
 
 </resources>

@@ -3,6 +3,7 @@ package se.arctosoft.vault;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.icu.text.DecimalFormat;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -42,6 +43,7 @@ public class GalleryActivity extends AppCompatActivity {
     private GalleryGridAdapter galleryGridAdapter;
     private List<GalleryFile> galleryFiles;
     private Settings settings;
+    private boolean cancelTask = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +87,18 @@ public class GalleryActivity extends AppCompatActivity {
 
     private void setLoading(boolean loading) {
         binding.cLLoading.cLLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
+        binding.cLLoading.txtImporting.setVisibility(View.GONE);
+    }
+
+    private void setLoadingProgress(int progress, int total, String doneMB, String totalMB) {
+        binding.cLLoading.cLLoading.setVisibility(View.VISIBLE);
+        if (total > 0) {
+            Log.e(TAG, "setLoading: " + progress + " " + total + " " + doneMB + " " + totalMB);
+            binding.cLLoading.txtImporting.setText(getString(R.string.gallery_importing_progress, progress, total, doneMB, totalMB));
+            binding.cLLoading.txtImporting.setVisibility(View.VISIBLE);
+        } else {
+            binding.cLLoading.txtImporting.setVisibility(View.GONE);
+        }
     }
 
     private void findFolders() {
@@ -132,19 +146,38 @@ public class GalleryActivity extends AppCompatActivity {
                 List<DocumentFile> documentFiles = FileStuff.getDocumentsFromDirectoryResult(this, data);
                 if (!documentFiles.isEmpty()) {
                     Dialogs.showImportGalleryChooseDestinationDialog(this, settings, directory -> {
-                        setLoading(true);
+                        double totalSize = 0;
+                        for (DocumentFile file : documentFiles) {
+                            totalSize += (file.length() / 1000000.0);
+                        }
+                        final DecimalFormat decimalFormat = new DecimalFormat("0.00");
+                        final String totalMB = decimalFormat.format(totalSize);
                         new Thread(() -> {
-                            int failed = 0;
+                            final int[] progress = new int[]{1};
+                            final double[] bytesDone = new double[]{0};
+                            runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), "0", totalMB));
                             for (DocumentFile file : documentFiles) {
-                                boolean imported = Encryption.importImageFileToDirectory(this, file, directory, settings);
+                                if (cancelTask) {
+                                    break;
+                                }
+                                boolean imported = false;
+                                try {
+                                    imported = Encryption.importImageFileToDirectory(this, file, directory, settings);
+                                } catch (SecurityException e) {
+                                    e.printStackTrace();
+                                }
+                                progress[0]++;
+                                bytesDone[0] += file.length();
+                                runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format(bytesDone[0] / 1000000.0), totalMB));
                                 if (!imported) {
-                                    failed++;
-                                    Toaster.getInstance(this).showLong("Failed to import " + file.getName());
+                                    runOnUiThread(() -> Toaster.getInstance(this).showLong("Failed to import " + file.getName()));
                                 }
                             }
-                            int finalFailed = failed;
-                            runOnUiThread(() -> Toaster.getInstance(this).showLong("Encrypted and imported " + (documentFiles.size() - finalFailed) + " files"));
-                            findFolders();
+                            runOnUiThread(() -> {
+                                Toaster.getInstance(this).showLong("Encrypted and imported " + (progress[0] - 1) + " files");
+                                findFolders();
+                            });
+
                         }).start();
                     });
                 }
@@ -199,6 +232,15 @@ public class GalleryActivity extends AppCompatActivity {
     private void lock() {
         Password.lock(this, settings);
         finish();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (binding.cLLoading.cLLoading.getVisibility() == View.VISIBLE) {
+            cancelTask = true;
+        } else {
+            super.onBackPressed();
+        }
     }
 
     @Override

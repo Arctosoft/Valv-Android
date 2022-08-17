@@ -49,6 +49,9 @@ public class CursorFile implements Comparable<CursorFile> {
 
     @Override
     public int compareTo(CursorFile o) {
+        if (o.isDirectory) {
+            return 1;
+        }
         return Long.compare(o.lastModified, this.lastModified);
     }
 }

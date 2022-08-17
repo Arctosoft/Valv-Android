@@ -22,24 +22,33 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnImportFiles"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:backgroundTint="@color/teal_200"
-        android:text="@string/gallery_import_files"
-        app:icon="@drawable/ic_outline_library_add_24"
-        app:layout_constraintBottom_toTopOf="@id/btnAddFolder" />
+        android:orientation="horizontal"
+        android:weightSum="2"
+        app:layout_constraintBottom_toBottomOf="parent">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnAddFolder"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        android:text="@string/gallery_add_folder"
-        app:icon="@drawable/ic_outline_create_new_folder_24"
-        app:layout_constraintBottom_toBottomOf="parent" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnImportFiles"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:layout_weight="1"
+            android:backgroundTint="@color/teal_200"
+            android:text="@string/gallery_import_files"
+            app:icon="@drawable/ic_outline_library_add_24" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAddFolder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:layout_weight="1"
+            android:text="@string/gallery_add_folder"
+            app:icon="@drawable/ic_outline_create_new_folder_24" />
+
+    </LinearLayout>
 
     <include
         android:id="@+id/cLLoading"

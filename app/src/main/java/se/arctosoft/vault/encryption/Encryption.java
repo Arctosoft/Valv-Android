@@ -62,7 +62,6 @@ public class Encryption {
         }
 
         String name = sourceFile.getName();
-        Log.e(TAG, "importImageFileToDirectory: mimetype is " + sourceFile.getType() + " for " + name);
         DocumentFile file = directory.createFile("*/*", FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + name);
         DocumentFile thumb = directory.createFile("*/*", Encryption.PREFIX_THUMB + name);
 

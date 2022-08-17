@@ -22,10 +22,10 @@
 
             <ImageView
                 android:layout_width="match_parent"
-                android:layout_height="92dp"
+                android:layout_height="54dp"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
-                android:src="@mipmap/ic_launcher_v_foreground" />
+                android:layout_marginTop="18dp"
+                android:src="@drawable/logo" />
 
             <TextView
                 android:layout_width="match_parent"
