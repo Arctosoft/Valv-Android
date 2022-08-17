@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
     tools:context=".GalleryDirectoryActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -25,9 +26,31 @@
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
-        android:background="?gallery_viewpager_background"
         android:layout_height="match_parent"
-        android:orientation="horizontal" />
+        android:background="?gallery_viewpager_background"
+        android:orientation="horizontal"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/lLSelectionButtons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDeleteFiles"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:backgroundTint="?attr/button_warning"
+            android:elevation="3dp"
+            android:stateListAnimator="@null"
+            android:text="@string/gallery_delete_selected_files"
+            app:icon="@drawable/ic_outline_delete_forever_24" />
+
+    </LinearLayout>
 
     <include
         android:id="@+id/cLLoading"

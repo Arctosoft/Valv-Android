@@ -27,6 +27,7 @@ import se.arctosoft.vault.adapters.GalleryPagerAdapter;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.databinding.ActivityGalleryDirectoryBinding;
 import se.arctosoft.vault.encryption.Password;
+import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.viewmodel.GalleryDirectoryViewModel;
@@ -43,6 +44,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private GalleryPagerAdapter galleryPagerAdapter;
     private Settings settings;
     private Uri currentDirectory;
+    private boolean inSelectionMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +86,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         }
         setupViewpager();
         setupRecycler();
+        setClickListeners();
 
         if (!viewModel.isInitialised()) {
             Log.e(TAG, "init: not initialised, find files");
@@ -91,14 +94,55 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         }
     }
 
+    private void setClickListeners() {
+        binding.btnDeleteFiles.setOnClickListener(v -> Dialogs.showConfirmationDialog(this, getString(R.string.dialog_delete_files_title), getString(R.string.dialog_delete_files_message),
+                (dialog, which) -> {
+                    setLoading(true);
+                    new Thread(() -> {
+                        synchronized (lock) {
+                            for (GalleryFile f : galleryGridAdapter.getSelectedFiles()) {
+                                boolean deleted = FileStuff.deleteFile(this, f.getUri());
+                                FileStuff.deleteFile(this, f.getThumbUri());
+                                if (deleted) {
+                                    int i = viewModel.getGalleryFiles().indexOf(f);
+                                    Log.e(TAG, "setClickListeners: deleted " + i);
+                                    if (i >= 0) {
+                                        viewModel.getGalleryFiles().remove(i);
+                                        runOnUiThread(() -> {
+                                            galleryGridAdapter.notifyItemRemoved(i);
+                                            galleryPagerAdapter.notifyItemRemoved(i);
+                                        });
+                                    }
+                                }
+                            }
+                            runOnUiThread(() -> {
+                                galleryGridAdapter.onSelectionModeChanged(false);
+                                setLoading(false);
+                            });
+                        }
+                    }).start();
+                }));
+    }
+
     private void setupRecycler() {
         RecyclerView recyclerView = binding.recyclerView;
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, spanCount, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
-        galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), pos -> galleryPagerAdapter.notifyItemRemoved(pos));
+        galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), true); // TODO setting to show/hide names
+        galleryGridAdapter.setOnFileDeleted(pos -> galleryPagerAdapter.notifyItemRemoved(pos));
         recyclerView.setAdapter(galleryGridAdapter);
         galleryGridAdapter.setOnFileCLicked(pos -> showViewpager(true, pos, true));
+        galleryGridAdapter.setOnSelectionModeChanged(this::onSelectionModeChanged);
+    }
+
+    private void onSelectionModeChanged(boolean inSelectionMode) {
+        this.inSelectionMode = inSelectionMode;
+        if (inSelectionMode) {
+            binding.lLSelectionButtons.setVisibility(View.VISIBLE);
+        } else {
+            binding.lLSelectionButtons.setVisibility(View.GONE);
+        }
     }
 
     private void setupViewpager() {
@@ -188,6 +232,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     public void onBackPressed() {
         if (viewModel.isViewpagerVisible()) {
             showViewpager(false, viewModel.getCurrentPosition(), true);
+        } else if (inSelectionMode && galleryGridAdapter != null) {
+            galleryGridAdapter.onSelectionModeChanged(false);
         } else {
             super.onBackPressed();
         }

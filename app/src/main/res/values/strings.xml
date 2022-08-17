@@ -26,6 +26,8 @@
     <string name="gallery_adapter_folder_name">%1$s (%2$d)</string>
     <string name="gallery_add_folder">Add a folder</string>
     <string name="gallery_import_files">Import files</string>
+    <string name="gallery_remove_selected_folders">Remove selected folders</string>
+    <string name="gallery_delete_selected_files">Delete selected files</string>
     <string name="gallery_title">Gallery</string>
     <string name="gallery_file_deleted">File deleted</string>
     <string name="gallery_file_not_deleted">Error, file could not be deleted</string>
@@ -33,6 +35,10 @@
     <string name="gallery_file_not_exported">Export error: %1$s</string>
     <string name="gallery_importing_progress">Importing %1$d out of %2$d\n%3$s/%4$s MB</string>
 
+    <string name="dialog_remove_folder_title">Remove folders?</string>
+    <string name="dialog_remove_folder_message">Remove the selected folder(s)? The contained files will not be deleted</string>
+    <string name="dialog_delete_files_title">Delete files?</string>
+    <string name="dialog_delete_files_message">Delete the selected file(s) permanently? This action is irreversible</string>
     <string name="dialog_import_to_title">Destination</string>
     <string name="dialog_export_title">Export?</string>
     <string name="dialog_export_message">Decrypt and export this file?</string>

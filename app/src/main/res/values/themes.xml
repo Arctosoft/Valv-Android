@@ -17,6 +17,7 @@
         <item name="gallery_viewpager_buttons">@color/textColorDark</item>
         <item name="toolbar_icon_tint">@color/black</item>
         <item name="button_secondary">@color/secondary_color</item>
+        <item name="button_warning">@color/button_warning_color</item>
     </style>
 
     <!--<style name="Theme.Vault.NoActionBar">

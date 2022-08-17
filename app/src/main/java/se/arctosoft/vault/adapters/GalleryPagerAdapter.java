@@ -123,7 +123,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 @Override
                 public void onError(Exception e) {
                     e.printStackTrace();
-                    Toaster.getInstance(context).showLong("Failed to decrypt " + galleryFile.getName() + ": " + e.getMessage());
+                    //Toaster.getInstance(context).showLong("Failed to decrypt " + galleryFile.getName() + ": " + e.getMessage());
                 }
 
                 @Override

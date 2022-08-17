@@ -44,6 +44,7 @@ public class GalleryActivity extends AppCompatActivity {
     private List<GalleryFile> galleryFiles;
     private Settings settings;
     private boolean cancelTask = false;
+    private boolean inSelectionMode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,17 +73,46 @@ public class GalleryActivity extends AppCompatActivity {
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, spanCount, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
-        galleryGridAdapter = new GalleryGridAdapter(this, galleryFiles, null);
+        galleryGridAdapter = new GalleryGridAdapter(this, galleryFiles, true);
         recyclerView.setAdapter(galleryGridAdapter);
+        galleryGridAdapter.setOnSelectionModeChanged(this::onSelectionModeChanged);
 
         setClickListeners();
 
         findFolders();
     }
 
+    private void onSelectionModeChanged(boolean inSelectionMode) {
+        this.inSelectionMode = inSelectionMode;
+        if (inSelectionMode) {
+            binding.lLButtons.setVisibility(View.GONE);
+            binding.lLSelectionButtons.setVisibility(View.VISIBLE);
+        } else {
+            binding.lLSelectionButtons.setVisibility(View.GONE);
+            binding.lLButtons.setVisibility(View.VISIBLE);
+        }
+    }
+
     private void setClickListeners() {
         binding.btnAddFolder.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), REQUEST_ADD_DIRECTORY));
         binding.btnImportFiles.setOnClickListener(v -> FileStuff.pickImageFiles(this, REQUEST_IMPORT_IMAGES));
+        binding.btnRemoveFolder.setOnClickListener(v -> Dialogs.showConfirmationDialog(this, getString(R.string.dialog_remove_folder_title), getString(R.string.dialog_remove_folder_message),
+                (dialog, which) -> {
+                    for (GalleryFile f : galleryGridAdapter.getSelectedFiles()) {
+                        settings.removeGalleryDirectory(f.getUri());
+                        try {
+                            getContentResolver().releasePersistableUriPermission(f.getUri(), Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                        } catch (SecurityException e) {
+                            e.printStackTrace();
+                        }
+                        int i = galleryFiles.indexOf(f);
+                        if (i >= 0) {
+                            galleryFiles.remove(i);
+                            galleryGridAdapter.notifyItemRemoved(i);
+                        }
+                    }
+                    galleryGridAdapter.onSelectionModeChanged(false);
+                }));
     }
 
     private void setLoading(boolean loading) {
@@ -112,11 +142,9 @@ public class GalleryActivity extends AppCompatActivity {
                 }
             });
             List<Uri> directories = settings.getGalleryDirectoriesAsUri();
-            //Log.e(TAG, "findFolders: found " + directories.size() + " folders");
 
             List<Uri> uriFiles = new ArrayList<>(directories.size());
             for (Uri uri : directories) {
-                //Log.e(TAG, "findFolders: " + uri);
                 DocumentFile documentFile = DocumentFile.fromTreeUri(this, uri);
                 if (documentFile.canRead()) {
                     uriFiles.add(documentFile.getUri());
@@ -218,8 +246,6 @@ public class GalleryActivity extends AppCompatActivity {
         } else if (id == R.id.import_files) {
             FileStuff.pickImageFiles(this, REQUEST_IMPORT_IMAGES);
             return true;
-        } else if (id == R.id.edit_included_folders) {
-
         } else if (id == R.id.about) {
             Dialogs.showTextDialog(this, getString(R.string.dialog_about_title), getString(R.string.dialog_about_message, BuildConfig.BUILD_TYPE, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE));
         } else if (id == R.id.lock) {
@@ -238,6 +264,8 @@ public class GalleryActivity extends AppCompatActivity {
     public void onBackPressed() {
         if (binding.cLLoading.cLLoading.getVisibility() == View.VISIBLE) {
             cancelTask = true;
+        } else if (inSelectionMode && galleryGridAdapter != null) {
+            galleryGridAdapter.onSelectionModeChanged(false);
         } else {
             super.onBackPressed();
         }

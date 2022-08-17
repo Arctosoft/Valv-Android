@@ -17,5 +17,6 @@
         <item name="gallery_viewpager_buttons">@color/textColorLight</item>
         <item name="toolbar_icon_tint">@color/white</item>
         <item name="button_secondary">@color/secondary_night_color</item>
+        <item name="button_warning">@color/button_warning_color</item>
     </style>
 </resources>

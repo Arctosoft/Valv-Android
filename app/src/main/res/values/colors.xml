@@ -19,6 +19,7 @@
     <color name="secondary_dark_color">#209AAA</color>
     <color name="secondary_night_color">#13A2B5</color>
     <color name="secondary_night_dark_color">#178493</color>
+    <color name="button_warning_color">#CA1818</color>
 
     <color name="lightColorToolbar">#FBFBFB</color>
     <color name="colorInvisible">#00FFFFFF</color>

@@ -7,6 +7,7 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import se.arctosoft.vault.utils.FileStuff;
 
@@ -151,5 +152,18 @@ public class GalleryFile implements Comparable<GalleryFile> {
     @Override
     public int compareTo(GalleryFile o) {
         return Long.compare(o.lastModified, this.lastModified);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GalleryFile that = (GalleryFile) o;
+        return fileUri.equals(that.fileUri);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fileUri);
     }
 }

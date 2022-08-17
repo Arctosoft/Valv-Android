@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
     tools:context=".GalleryActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -23,6 +24,7 @@
         app:layout_constraintTop_toBottomOf="@id/toolbar" />
 
     <LinearLayout
+        android:id="@+id/lLButtons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -51,6 +53,27 @@
             android:stateListAnimator="@null"
             android:text="@string/gallery_add_folder"
             app:icon="@drawable/ic_outline_create_new_folder_24" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/lLSelectionButtons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRemoveFolder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:backgroundTint="?attr/button_warning"
+            android:elevation="3dp"
+            android:stateListAnimator="@null"
+            android:text="@string/gallery_remove_selected_folders"
+            app:icon="@drawable/ic_round_remove_circle_outline_24" />
 
     </LinearLayout>
 

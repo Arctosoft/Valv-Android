@@ -5,4 +5,5 @@
     <attr name="gallery_viewpager_buttons" format="color" />
     <attr name="toolbar_icon_tint" format="color" />
     <attr name="button_secondary" format="color" />
+    <attr name="button_warning" format="color" />
 </resources>
