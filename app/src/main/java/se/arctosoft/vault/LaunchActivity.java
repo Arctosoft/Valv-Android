@@ -57,7 +57,7 @@ public class LaunchActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {
                 int length = s.length();
-                binding.btnUnlock.setEnabled(length >= 8);
+                binding.btnUnlock.setEnabled(length > 0);
             }
         });
         binding.eTPassword.setOnEditorActionListener((v, actionId, event) -> {
@@ -77,7 +77,6 @@ public class LaunchActivity extends AppCompatActivity {
                     binding.eTPassword.clearFocus();
                     binding.getRoot().requestFocus();
                     isStarting.set(false);
-                    //binding.btnUnlock.setEnabled(true);
                 }, 400);
             }
         });
@@ -93,14 +92,8 @@ public class LaunchActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         Log.e(TAG, "onBackPressed: ");
+        Password.lock(this, settings);
         finishAffinity();
         super.onBackPressed();
-    }
-
-    @Override
-    protected void onDestroy() {
-        Log.e(TAG, "onDestroy: ");
-        //Password.lock(this, settings);
-        super.onDestroy();
     }
 }

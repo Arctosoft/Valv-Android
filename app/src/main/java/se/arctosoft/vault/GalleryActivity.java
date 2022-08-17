@@ -63,7 +63,7 @@ public class GalleryActivity extends AppCompatActivity {
 
     private void init() {
         settings = Settings.getInstance(this);
-        if (!settings.isUnlocked()) {
+        if (settings.isLocked()) {
             finish();
             return;
         }

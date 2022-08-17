@@ -59,8 +59,8 @@ public class Settings {
         return password;
     }
 
-    public boolean isUnlocked() {
-        return password != null && password.length >= 8;
+    public boolean isLocked() {
+        return password == null || password.length <= 0;
     }
 
     public void setTempPassword(@NonNull char[] password) {
