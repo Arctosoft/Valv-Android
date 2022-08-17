@@ -7,10 +7,10 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_launcher_v"
         android:label="@string/app_name"
         android:largeHeap="true"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/ic_launcher_v_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Vault"
         tools:targetApi="31">

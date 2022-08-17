@@ -153,11 +153,7 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     private void addDirectory(Uri directoryUri) {
-        long start = System.currentTimeMillis();
-        List<Uri> files = FileStuff.getFilesInFolder(getContentResolver(), directoryUri);
-        //Log.e(TAG, "onActivityResult: found " + files.size());
-        //Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
-        List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(files);
+        List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directoryUri);
 
         synchronized (lock) {
             this.galleryFiles.add(0, GalleryFile.asDirectory(directoryUri, galleryFiles));
@@ -168,12 +164,7 @@ public class GalleryActivity extends AppCompatActivity {
     private void addDirectories(@NonNull List<Uri> directories) {
         List<GalleryFile> galleryDirectories = new ArrayList<>(directories.size());
         for (Uri directory : directories) {
-            long start = System.currentTimeMillis();
-            List<Uri> files = FileStuff.getFilesInFolder(getContentResolver(), directory);
-            //Log.e(TAG, "onActivityResult: found " + files.size() + " total files");
-            //Log.e(TAG, "onActivityResult: took " + (System.currentTimeMillis() - start) + " ms");
-            List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(files);
-            //Log.e(TAG, "addDirectories: found " + galleryFiles.size() + " encrypted files");
+            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directory);
             galleryDirectories.add(GalleryFile.asDirectory(directory, galleryFiles));
         }
         runOnUiThread(() -> {

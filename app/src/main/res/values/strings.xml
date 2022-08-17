@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Vault</string>
+    <string name="app_name">Valv</string>
     <string name="gallery_encrypt_file">Encrypt file</string>
     <string name="gallery_decrypt_file">Decrypt file</string>
     <string name="title_activity_main">MainActivity</string>

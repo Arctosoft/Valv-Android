@@ -20,10 +20,17 @@
             android:layout_gravity="center_horizontal"
             android:orientation="vertical">
 
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="92dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:src="@mipmap/ic_launcher_v_foreground" />
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="10dp"
                 android:text="@string/launcher_title"
                 android:textAlignment="center"
                 android:textSize="22sp"

@@ -1,12 +1,12 @@
 package se.arctosoft.vault.utils;
 
 import android.content.ClipData;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,8 +15,10 @@ import androidx.fragment.app.FragmentActivity;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import se.arctosoft.vault.data.CursorFile;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.encryption.Encryption;
 
@@ -24,24 +26,71 @@ public class FileStuff {
     private static final String TAG = "FileStuff";
 
     @NonNull
-    public static List<Uri> getFilesInFolder(@NonNull ContentResolver resolver, Uri pickedDir) {
-        //Log.e(TAG, "getFilesInFolder: path " + pickedDir.getPathSegments());
+    public static List<GalleryFile> getFilesInFolder(Context context, Uri pickedDir) {
         Uri realUri = DocumentsContract.buildChildDocumentsUriUsingTree(pickedDir, DocumentsContract.getDocumentId(pickedDir));
-        List<Uri> files = new ArrayList<>();
-        Cursor c = resolver.query(
+        List<CursorFile> files = new ArrayList<>();
+        Cursor c = context.getContentResolver().query(
                 realUri,
-                new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME},
+                new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_LAST_MODIFIED, DocumentsContract.Document.COLUMN_MIME_TYPE},
                 null,
                 null,
                 null);
         if (c == null || !c.moveToFirst()) {
-            return files;
+            if (c != null) {
+                c.close();
+            }
+            return new ArrayList<>();
         }
         do {
-            files.add(0, DocumentsContract.buildDocumentUriUsingTree(realUri, c.getString(0)));
+            Uri uri = DocumentsContract.buildDocumentUriUsingTree(realUri, c.getString(0));
+            String name = c.getString(1);
+            long lastModified = c.getLong(2);
+            String mimeType = c.getString(3);
+            files.add(new CursorFile(name, uri, lastModified, mimeType));
         } while (c.moveToNext());
+        Log.e(TAG, "getFilesInFolder: found " + files.size() + " in " + pickedDir.getLastPathSegment());
         c.close();
-        return files;
+        Collections.sort(files);
+        return getEncryptedFilesInFolder(files);
+    }
+
+    @NonNull
+    private static List<GalleryFile> getEncryptedFilesInFolder(@NonNull List<CursorFile> files) {
+        List<CursorFile> documentFiles = new ArrayList<>();
+        List<CursorFile> documentThumbs = new ArrayList<>();
+        List<GalleryFile> galleryFiles = new ArrayList<>();
+        for (CursorFile file : files) {
+            if (!file.getName().startsWith(Encryption.ENCRYPTED_PREFIX) && !file.isDirectory()) {
+                continue;
+            }
+
+            if (file.getName().startsWith(Encryption.PREFIX_THUMB)) {
+                documentThumbs.add(file);
+            } else {
+                documentFiles.add(file);
+            }
+        }
+
+        for (CursorFile file : documentFiles) {
+            if (file.isDirectory()) {
+                galleryFiles.add(GalleryFile.asDirectory(file, null));
+                continue;
+            }
+            file.setUnencryptedName(FileStuff.getUnencryptedFileName(file.getName()));
+            boolean foundThumb = false;
+            for (CursorFile thumb : documentThumbs) {
+                thumb.setUnencryptedName(FileStuff.getUnencryptedFileName(thumb.getName()));
+                if (file.getUnencryptedName().equals(thumb.getUnencryptedName())) {
+                    galleryFiles.add(GalleryFile.asFile(file, thumb));
+                    foundThumb = true;
+                    break;
+                }
+            }
+            if (!foundThumb) {
+                galleryFiles.add(GalleryFile.asFile(file, null));
+            }
+        }
+        return galleryFiles;
     }
 
     public static void pickImageFiles(@NonNull FragmentActivity context, int requestCode) {
@@ -78,55 +127,8 @@ public class FileStuff {
         return s;
     }
 
-    @NonNull
-    public static List<GalleryFile> getEncryptedFilesInFolder(@NonNull List<Uri> files) {
-        List<Uri> documentFiles = new ArrayList<>();
-        List<Uri> documentThumbs = new ArrayList<>();
-        List<GalleryFile> galleryFiles = new ArrayList<>();
-        //long start = System.currentTimeMillis();
-        for (Uri fileUri : files) {
-            //Log.e(TAG, "getEncryptedFilesInFolder: check " + fileUri.getLastPathSegment());
-
-            String fileName = FileStuff.getFilenameFromUri(fileUri, false);
-            if (!fileName.startsWith(Encryption.ENCRYPTED_PREFIX)) { // && !documentFile.isDirectory()
-                continue;
-            }
-            //DocumentFile documentFile = DocumentFile.fromSingleUri(context, fileUri);
-            //String fileName = documentFile.getName();
-
-            /*if (documentFile.isDirectory()) {
-                //Log.e(TAG, "getEncryptedFilesInFolder: add dir " + fileUri);
-                galleryFiles.add(GalleryFile.asDirectory(documentFile,
-                        getEncryptedFilesInFolder(context,
-                                FileStuff.getFilesInFolder(context.getContentResolver(), documentFile))));
-            } else {*/
-            if (fileName.startsWith(Encryption.PREFIX_THUMB)) {
-                //Log.e(TAG, "getEncryptedFilesInFolder: add thumb " + fileUri);
-                documentThumbs.add(fileUri);
-            } else {
-                //Log.e(TAG, "getEncryptedFilesInFolder: add file " + fileUri);
-                documentFiles.add(fileUri);
-            }
-            //}
-        }
-
-        for (Uri fileUri : documentFiles) {
-            String unencryptedName = FileStuff.getFilenameFromUri(fileUri, true);
-            boolean foundThumb = false;
-            for (Uri thumbUri : documentThumbs) {
-                String unencryptedThumbName = FileStuff.getFilenameFromUri(thumbUri, true);
-                if (unencryptedName.equals(unencryptedThumbName)) {
-                    galleryFiles.add(GalleryFile.asFile(fileUri, thumbUri));
-                    foundThumb = true;
-                    break;
-                }
-            }
-            if (!foundThumb) {
-                galleryFiles.add(GalleryFile.asFile(fileUri, null));
-            }
-        }
-        //Log.e(TAG, "getEncryptedFilesInFolder: took " + (System.currentTimeMillis() - start) + " ms to find encrypted files");
-        return galleryFiles;
+    public static String getUnencryptedFileName(@NonNull String s) {
+        return s.split("-", 2)[1];
     }
 
     @NonNull

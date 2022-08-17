@@ -72,7 +72,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         GalleryFile galleryFile = galleryFiles.get(position);
 
         holder.txtName.setText(galleryFile.getName());
-        Log.e(TAG, "onBindViewHolder: " + galleryFile.getUri() + " " + position + " " + galleryFile.getFileType());
+        //Log.e(TAG, "onBindViewHolder: " + galleryFile.getUri() + " " + position + " " + galleryFile.getFileType());
         setupImageView(holder, context, galleryFile);
         setupButtons(holder, context, galleryFile);
     }

@@ -10,23 +10,25 @@ import java.util.List;
 
 import se.arctosoft.vault.utils.FileStuff;
 
-public class GalleryFile {
+public class GalleryFile implements Comparable<GalleryFile> {
     private static final String TAG = "GalleryFile";
     private final FileType fileType;
     private final String encryptedName, name;
     private final boolean isDirectory;
     private final Uri fileUri;
+    private final long lastModified;
     private Uri thumbUri, decryptedCacheUri;
     private List<GalleryFile> filesInDirectory;
 
-    private GalleryFile(@NonNull Uri fileUri, @Nullable Uri thumbUri) {
-        this.fileUri = fileUri;
-        this.encryptedName = FileStuff.getFilenameFromUri(fileUri, false);
+    private GalleryFile(@NonNull CursorFile file, @Nullable CursorFile thumb) {
+        this.fileUri = file.getUri();
+        this.encryptedName = file.getName();
         this.name = encryptedName.split("-", 2)[1];
-        this.thumbUri = thumbUri;
+        this.thumbUri = thumb == null ? null : thumb.getUri();
         this.decryptedCacheUri = null;
+        this.lastModified = file.getLastModified();
         this.isDirectory = false;
-        this.fileType = FileType.fromFilename(encryptedName);
+        this.fileType = FileType.fromMimeType(file.getMimeType());
     }
 
     private GalleryFile(@NonNull Uri fileUri, List<GalleryFile> filesInDirectory) {
@@ -35,8 +37,21 @@ public class GalleryFile {
         this.name = encryptedName;
         this.thumbUri = null;
         this.decryptedCacheUri = null;
+        this.lastModified = System.currentTimeMillis();
         this.isDirectory = true;
         this.fileType = FileType.fromFilename(encryptedName);
+        this.filesInDirectory = filesInDirectory;
+    }
+
+    private GalleryFile(@NonNull CursorFile file, List<GalleryFile> filesInDirectory) {
+        this.fileUri = file.getUri();
+        this.encryptedName = file.getName();
+        this.name = encryptedName;
+        this.thumbUri = null;
+        this.decryptedCacheUri = null;
+        this.lastModified = System.currentTimeMillis();
+        this.isDirectory = true;
+        this.fileType = FileType.DIRECTORY;
         this.filesInDirectory = filesInDirectory;
     }
 
@@ -44,12 +59,20 @@ public class GalleryFile {
         return new GalleryFile(fileUri, filesInDirectory);
     }
 
-    public static GalleryFile asFile(Uri fileUri, @Nullable Uri thumbUri) {
+    public static GalleryFile asDirectory(CursorFile fileUri, List<GalleryFile> filesInDirectory) {
+        return new GalleryFile(fileUri, filesInDirectory);
+    }
+
+    public static GalleryFile asFile(CursorFile fileUri, @Nullable CursorFile thumbUri) {
         return new GalleryFile(fileUri, thumbUri);
     }
 
     public void setDecryptedCacheUri(Uri decryptedCacheUri) {
         this.decryptedCacheUri = decryptedCacheUri;
+    }
+
+    public long getLastModified() {
+        return lastModified;
     }
 
     @Nullable
@@ -104,7 +127,12 @@ public class GalleryFile {
         if (filesInDirectory == null || filesInDirectory.isEmpty()) {
             return null;
         }
-        return filesInDirectory.get(0);
+        for (GalleryFile g : filesInDirectory) {
+            if (!g.isDirectory()) {
+                return g;
+            }
+        }
+        return null;
     }
 
     public int getFileCount() {
@@ -118,5 +146,10 @@ public class GalleryFile {
             this.filesInDirectory = new ArrayList<>(filesInDirectory.size());
         }
         this.filesInDirectory.addAll(filesInDirectory);
+    }
+
+    @Override
+    public int compareTo(GalleryFile o) {
+        return Long.compare(o.lastModified, this.lastModified);
     }
 }

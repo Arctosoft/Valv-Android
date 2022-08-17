@@ -143,8 +143,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private void findFilesIn(Uri directoryUri) {
         setLoading(true);
         new Thread(() -> {
-            List<Uri> files = FileStuff.getFilesInFolder(getContentResolver(), directoryUri);
-            List<GalleryFile> galleryFiles = FileStuff.getEncryptedFilesInFolder(files);
+            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directoryUri);
 
             runOnUiThread(() -> {
                 setLoading(false);

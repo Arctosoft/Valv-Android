@@ -1,12 +1,14 @@
 package se.arctosoft.vault.data;
 
+import static android.provider.DocumentsContract.Document.MIME_TYPE_DIR;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import se.arctosoft.vault.encryption.Encryption;
 
 public enum FileType {
-    FOLDER(0, null),
+    DIRECTORY(0, null),
     IMAGE(1, Encryption.PREFIX_IMAGE_FILE),
     GIF(2, Encryption.PREFIX_GIF_FILE),
     VIDEO(3, Encryption.PREFIX_VIDEO_FILE);
@@ -34,6 +36,8 @@ public enum FileType {
             return FileType.IMAGE;
         } else if (mimeType.equals("image/gif")) {
             return FileType.GIF;
+        } else if (mimeType.equals(MIME_TYPE_DIR)) {
+            return FileType.DIRECTORY;
         } else if (mimeType.startsWith("image/")) {
             return FileType.IMAGE;
         } else {

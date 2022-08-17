@@ -65,7 +65,6 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         GalleryFile galleryFile = galleryFiles.get(position);
         if (galleryFile.isDirectory()) {
             GalleryFile firstFile = galleryFile.getFirstFile();
-            //Log.e(TAG, "onBindViewHolder: " + position + " " + firstFile);
             if (firstFile != null) {
                 Glide.with(context)
                         .load(firstFile.getThumbUri())
@@ -83,7 +82,6 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                             if (e != null) {
                                 for (Throwable t : e.getRootCauses()) {
                                     if (t instanceof InvalidPasswordException) {
-                                        //Log.e(TAG, "onLoadFailed: INVALID PASSWORD");
                                         synchronized (LOCK) {
                                             int pos = holder.getAdapterPosition();
                                             if (pos >= 0 && pos < galleryFiles.size()) {
@@ -112,13 +110,9 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
 
         holder.imageView.setOnClickListener(v -> {
             if (galleryFile.isDirectory()) {
-                //GalleryDirectoryActivity.LAST_POS = position;
                 context.startActivity(new Intent(context, GalleryDirectoryActivity.class)
                         .putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString()));
             } else {
-                //GalleryFullscreenActivity.FILES = galleryFiles;
-                //context.startActivity(new Intent(context, GalleryFullscreenActivity.class)
-                //        .putExtra(GalleryFullscreenActivity.EXTRA_POSITION, position));
                 if (onFileCLicked != null) {
                     onFileCLicked.onClick(holder.getAdapterPosition());
                 }
