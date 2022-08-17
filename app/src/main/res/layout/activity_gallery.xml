@@ -35,7 +35,9 @@
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
             android:layout_weight="1"
-            android:backgroundTint="@color/teal_200"
+            android:backgroundTint="?attr/button_secondary"
+            android:elevation="3dp"
+            android:stateListAnimator="@null"
             android:text="@string/gallery_import_files"
             app:icon="@drawable/ic_outline_library_add_24" />
 
@@ -45,6 +47,8 @@
             android:layout_height="wrap_content"
             android:layout_margin="12dp"
             android:layout_weight="1"
+            android:elevation="3dp"
+            android:stateListAnimator="@null"
             android:text="@string/gallery_add_folder"
             app:icon="@drawable/ic_outline_create_new_folder_24" />
 

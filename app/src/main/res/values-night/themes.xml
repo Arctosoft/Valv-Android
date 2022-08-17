@@ -2,12 +2,12 @@
     <!-- Base application theme. -->
     <style name="Theme.Vault" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_200</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorPrimary">@color/primary_night_color</item>
+        <item name="colorPrimaryVariant">@color/primary_night_dark_color</item>
         <item name="colorOnPrimary">@color/black</item>
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_200</item>
+        <item name="colorSecondary">@color/secondary_night_color</item>
+        <item name="colorSecondaryVariant">@color/secondary_night_dark_color</item>
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
@@ -16,5 +16,6 @@
         <item name="gallery_viewpager_buttons_background">@color/white10</item>
         <item name="gallery_viewpager_buttons">@color/textColorLight</item>
         <item name="toolbar_icon_tint">@color/white</item>
+        <item name="button_secondary">@color/secondary_night_color</item>
     </style>
 </resources>

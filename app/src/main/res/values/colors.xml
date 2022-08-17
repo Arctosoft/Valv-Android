@@ -11,6 +11,14 @@
     <color name="white10">#1AFFFFFF</color>
     <color name="textColorDark">#DF454545</color>
     <color name="textColorLight">#DFE8E8E8</color>
+    <color name="primary_color">#03a9f4</color>
+    <color name="primary_dark_color">#007ac1</color>
+    <color name="primary_night_color">#0793D3</color>
+    <color name="primary_night_dark_color">#1D76AA</color>
+    <color name="secondary_color">#3EBACA</color>
+    <color name="secondary_dark_color">#209AAA</color>
+    <color name="secondary_night_color">#13A2B5</color>
+    <color name="secondary_night_dark_color">#178493</color>
 
     <color name="lightColorToolbar">#FBFBFB</color>
     <color name="colorInvisible">#00FFFFFF</color>
