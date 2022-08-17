@@ -108,9 +108,10 @@ public class GalleryActivity extends AppCompatActivity {
                         int i = galleryFiles.indexOf(f);
                         if (i >= 0) {
                             galleryFiles.remove(i);
-                            galleryGridAdapter.notifyItemRemoved(i);
+                            //galleryGridAdapter.notifyItemRemoved(i);
                         }
                     }
+                    galleryGridAdapter.notifyDataSetChanged();
                     galleryGridAdapter.onSelectionModeChanged(false);
                 }));
     }

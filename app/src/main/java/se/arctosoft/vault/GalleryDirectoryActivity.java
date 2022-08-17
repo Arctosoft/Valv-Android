@@ -108,14 +108,16 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                                     Log.e(TAG, "setClickListeners: deleted " + i);
                                     if (i >= 0) {
                                         viewModel.getGalleryFiles().remove(i);
-                                        runOnUiThread(() -> {
+                                        /*runOnUiThread(() -> {
                                             galleryGridAdapter.notifyItemRemoved(i);
                                             galleryPagerAdapter.notifyItemRemoved(i);
-                                        });
+                                        });*/
                                     }
                                 }
                             }
                             runOnUiThread(() -> {
+                                galleryGridAdapter.notifyDataSetChanged();
+                                galleryPagerAdapter.notifyDataSetChanged();
                                 galleryGridAdapter.onSelectionModeChanged(false);
                                 setLoading(false);
                             });
