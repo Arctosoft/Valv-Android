@@ -6,4 +6,14 @@
         android:icon="@drawable/ic_outline_lock_24"
         android:title="@string/menu_lock_vault"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/select_all"
+        android:icon="@drawable/ic_baseline_select_all_24"
+        android:title="@string/menu_select_all"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/export_selected"
+        android:icon="@drawable/ic_outline_file_download_24"
+        android:title="@string/gallery_export_selected_files"
+        app:showAsAction="ifRoom"/>
 </menu>

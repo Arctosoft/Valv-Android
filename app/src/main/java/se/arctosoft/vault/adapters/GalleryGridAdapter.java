@@ -210,6 +210,14 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         setSelectMode(inSelectionMode);
     }
 
+    public void selectAll() {
+        synchronized (LOCK) {
+            selectedFiles.clear();
+            selectedFiles.addAll(galleryFiles);
+            notifyItemRangeChanged(0, galleryFiles.size(), true);
+        }
+    }
+
     @NonNull
     public List<GalleryFile> getSelectedFiles() {
         return selectedFiles;

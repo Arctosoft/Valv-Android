@@ -238,31 +238,29 @@ public class Encryption {
     public static void decryptAndExport(FragmentActivity context, Uri encryptedInput, Uri directoryUri, char[] password, IOnUriResult onUriResult) {
         DocumentFile documentFile = DocumentFile.fromTreeUri(context, directoryUri);
         DocumentFile file = documentFile.createFile("image/*", System.currentTimeMillis() + "_" + FileStuff.getFilenameFromUri(encryptedInput, true));
-        new Thread(() -> {
-            try {
-                InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
+        try {
+            InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
 
-                OutputStream fos = context.getContentResolver().openOutputStream(file.getUri());
-                Streams cis = getCipherInputStream(inputStream, password);
+            OutputStream fos = context.getContentResolver().openOutputStream(file.getUri());
+            Streams cis = getCipherInputStream(inputStream, password);
 
-                int read;
-                byte[] buffer = new byte[2048];
-                while ((read = cis.inputStream.read(buffer)) != -1) {
-                    fos.write(buffer, 0, read);
-                }
-                fos.close();
-                cis.close();
-                inputStream.close();
-
-                context.runOnUiThread(() -> onUriResult.onUriResult(file.getUri()));
-            } catch (GeneralSecurityException | IOException e) {
-                e.printStackTrace();
-                context.runOnUiThread(() -> onUriResult.onError(e));
-            } catch (InvalidPasswordException e) {
-                e.printStackTrace();
-                context.runOnUiThread(() -> onUriResult.onInvalidPassword(e));
+            int read;
+            byte[] buffer = new byte[2048];
+            while ((read = cis.inputStream.read(buffer)) != -1) {
+                fos.write(buffer, 0, read);
             }
-        }).start();
+            fos.close();
+            cis.close();
+            inputStream.close();
+
+            onUriResult.onUriResult(file.getUri());
+        } catch (GeneralSecurityException | IOException e) {
+            e.printStackTrace();
+            onUriResult.onError(e);
+        } catch (InvalidPasswordException e) {
+            e.printStackTrace();
+            onUriResult.onInvalidPassword(e);
+        }
     }
 
     public static void decryptToByteArray(FragmentActivity context, Uri encryptedInput, char[] password, IOnByteArrayResult onByteArrayResult) {

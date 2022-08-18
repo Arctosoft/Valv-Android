@@ -96,7 +96,8 @@ public class GalleryActivity extends AppCompatActivity {
     private void setClickListeners() {
         binding.btnAddFolder.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), REQUEST_ADD_DIRECTORY));
         binding.btnImportFiles.setOnClickListener(v -> FileStuff.pickImageFiles(this, REQUEST_IMPORT_IMAGES));
-        binding.btnRemoveFolder.setOnClickListener(v -> Dialogs.showConfirmationDialog(this, getString(R.string.dialog_remove_folder_title), getString(R.string.dialog_remove_folder_message),
+        binding.btnRemoveFolder.setOnClickListener(v -> Dialogs.showConfirmationDialog(this, getString(R.string.dialog_remove_folder_title),
+                getResources().getQuantityString(R.plurals.dialog_remove_folder_message, galleryGridAdapter.getSelectedFiles().size()),
                 (dialog, which) -> {
                     for (GalleryFile f : galleryGridAdapter.getSelectedFiles()) {
                         settings.removeGalleryDirectory(f.getUri());
@@ -123,7 +124,6 @@ public class GalleryActivity extends AppCompatActivity {
     private void setLoadingProgress(int progress, int total, String doneMB, String totalMB) {
         binding.cLLoading.cLLoading.setVisibility(View.VISIBLE);
         if (total > 0) {
-            Log.e(TAG, "setLoading: " + progress + " " + total + " " + doneMB + " " + totalMB);
             binding.cLLoading.txtImporting.setText(getString(R.string.gallery_importing_progress, progress, total, doneMB, totalMB));
             binding.cLLoading.txtImporting.setVisibility(View.VISIBLE);
         } else {

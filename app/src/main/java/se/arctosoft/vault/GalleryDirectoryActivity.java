@@ -20,16 +20,20 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import se.arctosoft.vault.adapters.GalleryGridAdapter;
 import se.arctosoft.vault.adapters.GalleryPagerAdapter;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.databinding.ActivityGalleryDirectoryBinding;
+import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.encryption.Password;
+import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
+import se.arctosoft.vault.utils.Toaster;
 import se.arctosoft.vault.viewmodel.GalleryDirectoryViewModel;
 
 public class GalleryDirectoryActivity extends AppCompatActivity {
@@ -45,6 +49,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private Settings settings;
     private Uri currentDirectory;
     private boolean inSelectionMode = false;
+    private boolean isExporting = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +83,16 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         binding.cLLoading.cLLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 
+    private void setLoadingProgress(int exported, int failed, int total) {
+        binding.cLLoading.cLLoading.setVisibility(View.VISIBLE);
+        if (total > 0) {
+            binding.cLLoading.txtImporting.setText(getString(R.string.gallery_exporting_progress, exported, total, failed));
+            binding.cLLoading.txtImporting.setVisibility(View.VISIBLE);
+        } else {
+            binding.cLLoading.txtImporting.setVisibility(View.GONE);
+        }
+    }
+
     private void init() {
         settings = Settings.getInstance(this);
         if (settings.isLocked()) {
@@ -95,7 +110,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     }
 
     private void setClickListeners() {
-        binding.btnDeleteFiles.setOnClickListener(v -> Dialogs.showConfirmationDialog(this, getString(R.string.dialog_delete_files_title), getString(R.string.dialog_delete_files_message),
+        binding.btnDeleteFiles.setOnClickListener(v -> Dialogs.showConfirmationDialog(this, getString(R.string.dialog_delete_files_title),
+                getResources().getQuantityString(R.plurals.dialog_delete_files_message, galleryGridAdapter.getSelectedFiles().size()),
                 (dialog, which) -> {
                     setLoading(true);
                     new Thread(() -> {
@@ -143,6 +159,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         } else {
             binding.lLSelectionButtons.setVisibility(View.GONE);
         }
+        invalidateOptionsMenu();
     }
 
     private void setupViewpager() {
@@ -212,6 +229,12 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         } else if (id == R.id.lock) {
             lock();
             return true;
+        } else if (id == R.id.select_all) {
+            galleryGridAdapter.selectAll();
+            return true;
+        } else if (id == R.id.export_selected) {
+            exportSelected();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -222,9 +245,55 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         startActivity(new Intent(this, LaunchActivity.class));
     }
 
+    private void exportSelected() {
+        Dialogs.showConfirmationDialog(this, getString(R.string.dialog_export_selected_title), getString(R.string.dialog_export_selected_message, FileStuff.getFilenameWithPathFromUri(currentDirectory)), (dialog, which) -> {
+            isExporting = true;
+            final List<GalleryFile> galleryFilesCopy = new ArrayList<>(galleryGridAdapter.getSelectedFiles());
+            setLoadingProgress(0, 0, galleryFilesCopy.size());
+            galleryGridAdapter.onSelectionModeChanged(false);
+            new Thread(() -> {
+                final int[] exported = {0};
+                final int[] failed = {0};
+                for (GalleryFile f : galleryFilesCopy) {
+                    if (isFinishing() || isDestroyed() || !isExporting) {
+                        break;
+                    }
+                    Encryption.decryptAndExport(this, f.getUri(), currentDirectory, settings.getTempPassword(), new Encryption.IOnUriResult() {
+                        @Override
+                        public void onUriResult(Uri outputUri) {
+                            exported[0]++;
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            failed[0]++;
+                        }
+
+                        @Override
+                        public void onInvalidPassword(InvalidPasswordException e) {
+                            failed[0]++;
+                        }
+                    });
+                    runOnUiThread(() -> setLoadingProgress(exported[0], failed[0], galleryFilesCopy.size()));
+                }
+                runOnUiThread(() -> {
+                    isExporting = false;
+                    setLoading(false);
+                    if (failed[0] == 0) {
+                        Toaster.getInstance(this).showLong(getString(R.string.gallery_selected_files_exported, exported[0]));
+                    } else {
+                        Toaster.getInstance(this).showLong(getString(R.string.gallery_selected_files_exported_with_failed, exported[0], failed[0]));
+                    }
+                });
+            }).start();
+        });
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_gallery_directory, menu);
+        menu.findItem(R.id.select_all).setVisible(inSelectionMode);
+        menu.findItem(R.id.export_selected).setVisible(inSelectionMode);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -232,6 +301,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     public void onBackPressed() {
         if (viewModel.isViewpagerVisible()) {
             showViewpager(false, viewModel.getCurrentPosition(), true);
+        } else if (isExporting) {
+            isExporting = false;
         } else if (inSelectionMode && galleryGridAdapter != null) {
             galleryGridAdapter.onSelectionModeChanged(false);
         } else {

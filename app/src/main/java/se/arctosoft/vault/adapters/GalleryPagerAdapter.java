@@ -3,7 +3,6 @@ package se.arctosoft.vault.adapters;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.net.Uri;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -193,22 +192,22 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             }
         }));
         holder.btnExport.setOnClickListener(v -> Dialogs.showConfirmationDialog(context, context.getString(R.string.dialog_export_title), context.getString(R.string.dialog_export_message),
-                (dialog, which) -> Encryption.decryptAndExport(context, galleryFile.getUri(), currentDirectory, Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
+                (dialog, which) -> new Thread(() -> Encryption.decryptAndExport(context, galleryFile.getUri(), currentDirectory, Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
                     @Override
                     public void onUriResult(Uri outputUri) {
-                        Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_exported, FileStuff.getFilenameWithPathFromUri(outputUri)));
+                        context.runOnUiThread(() -> Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_exported, FileStuff.getFilenameWithPathFromUri(outputUri))));
                     }
 
                     @Override
                     public void onError(Exception e) {
-                        Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_not_exported, e.getMessage()));
+                        context.runOnUiThread(() -> Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_not_exported, e.getMessage())));
                     }
 
                     @Override
                     public void onInvalidPassword(InvalidPasswordException e) {
                         //removeFileAt(holder.getAdapterPosition(), context);
                     }
-                })));
+                })).start()));
     }
 
     private void removeFileAt(int pos, FragmentActivity context) {
