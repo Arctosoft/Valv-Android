@@ -1,13 +1,22 @@
-# ValvAndroidVault
+# Valv
 An encrypted gallery vault for Android devices.
 
-Supports multiple vaults using different password.
+## Features
+- Supports images and GIFs (video support is under way)
+- Organise using folders
+- The app requires no permissions
+- Encrypted files are stored on-disk allowing for easy backups and transfers between devices
+- Supports multiple vaults by the use of different passwords
+- Day/night modes
+
+## Encryption
+Files are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.
 
 ## Get the app
 Pending release on Google Play.
 
-## Encryption
-Files are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.
+## Requirements
+- Android 9 or newer
 
 ## Screenshots
 ![Locked screen](https://api.arctosoft.com/screenshots/vault/5.png "Locked screen")
