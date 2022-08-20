@@ -36,6 +36,7 @@ public class GalleryActivity extends AppCompatActivity {
     private static final String TAG = "GalleryActivity";
     private static final int REQUEST_ADD_DIRECTORY = 1;
     private static final int REQUEST_IMPORT_IMAGES = 3;
+    private static final int REQUEST_IMPORT_VIDEOS = 4;
 
     private static final Object lock = new Object();
 
@@ -95,7 +96,7 @@ public class GalleryActivity extends AppCompatActivity {
 
     private void setClickListeners() {
         binding.btnAddFolder.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), REQUEST_ADD_DIRECTORY));
-        binding.btnImportFiles.setOnClickListener(v -> FileStuff.pickImageFiles(this, REQUEST_IMPORT_IMAGES));
+        binding.btnImportFiles.setOnClickListener(v -> showImportOverlay(true));
         binding.btnRemoveFolder.setOnClickListener(v -> Dialogs.showConfirmationDialog(this, getString(R.string.dialog_remove_folder_title),
                 getResources().getQuantityString(R.plurals.dialog_remove_folder_message, galleryGridAdapter.getSelectedFiles().size()),
                 (dialog, which) -> {
@@ -114,6 +115,19 @@ public class GalleryActivity extends AppCompatActivity {
                     }
                     galleryGridAdapter.onSelectionModeChanged(false);
                 }));
+        binding.btnImportImages.setOnClickListener(v -> {
+            FileStuff.pickImageFiles(this, REQUEST_IMPORT_IMAGES);
+            showImportOverlay(false);
+        });
+        binding.btnImportVideos.setOnClickListener(v -> {
+            FileStuff.pickVideoFiles(this, REQUEST_IMPORT_VIDEOS);
+            showImportOverlay(false);
+        });
+        binding.importChooseOverlay.setOnClickListener(v -> showImportOverlay(false));
+    }
+
+    private void showImportOverlay(boolean show) {
+        binding.cLImportChoose.setVisibility(show ? View.VISIBLE : View.GONE);
     }
 
     private void setLoading(boolean loading) {
@@ -169,48 +183,52 @@ public class GalleryActivity extends AppCompatActivity {
                     addDirectory(documentFile.getUri());
                 }
             }
-        } else if (requestCode == REQUEST_IMPORT_IMAGES && resultCode == Activity.RESULT_OK) {
+        } else if ((requestCode == REQUEST_IMPORT_IMAGES || requestCode == REQUEST_IMPORT_VIDEOS) && resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 List<DocumentFile> documentFiles = FileStuff.getDocumentsFromDirectoryResult(this, data);
                 if (!documentFiles.isEmpty()) {
-                    Dialogs.showImportGalleryChooseDestinationDialog(this, settings, directory -> {
-                        double totalSize = 0;
-                        for (DocumentFile file : documentFiles) {
-                            totalSize += (file.length() / 1000000.0);
-                        }
-                        final DecimalFormat decimalFormat = new DecimalFormat("0.00");
-                        final String totalMB = decimalFormat.format(totalSize);
-                        new Thread(() -> {
-                            final int[] progress = new int[]{1};
-                            final double[] bytesDone = new double[]{0};
-                            runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), "0", totalMB));
-                            for (DocumentFile file : documentFiles) {
-                                if (cancelTask) {
-                                    break;
-                                }
-                                boolean imported = false;
-                                try {
-                                    imported = Encryption.importImageFileToDirectory(this, file, directory, settings);
-                                } catch (SecurityException e) {
-                                    e.printStackTrace();
-                                }
-                                progress[0]++;
-                                bytesDone[0] += file.length();
-                                runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format(bytesDone[0] / 1000000.0), totalMB));
-                                if (!imported) {
-                                    runOnUiThread(() -> Toaster.getInstance(this).showLong("Failed to import " + file.getName()));
-                                }
-                            }
-                            runOnUiThread(() -> {
-                                Toaster.getInstance(this).showLong("Encrypted and imported " + (progress[0] - 1) + " files");
-                                findFolders();
-                            });
-
-                        }).start();
-                    });
+                    importFiles(documentFiles, requestCode == REQUEST_IMPORT_VIDEOS);
                 }
             }
         }
+    }
+
+    private void importFiles(List<DocumentFile> documentFiles, boolean isVideo) {
+        Dialogs.showImportGalleryChooseDestinationDialog(this, settings, directory -> {
+            double totalSize = 0;
+            for (DocumentFile file : documentFiles) {
+                totalSize += (file.length() / 1000000.0);
+            }
+            final DecimalFormat decimalFormat = new DecimalFormat("0.00");
+            final String totalMB = decimalFormat.format(totalSize);
+            new Thread(() -> {
+                final int[] progress = new int[]{1};
+                final double[] bytesDone = new double[]{0};
+                runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), "0", totalMB));
+                for (DocumentFile file : documentFiles) {
+                    if (cancelTask) {
+                        break;
+                    }
+                    boolean imported = false;
+                    try {
+                        imported = Encryption.importFileToDirectory(this, file, directory, settings, isVideo);
+                    } catch (SecurityException e) {
+                        e.printStackTrace();
+                    }
+                    progress[0]++;
+                    bytesDone[0] += file.length();
+                    runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format(bytesDone[0] / 1000000.0), totalMB));
+                    if (!imported) {
+                        runOnUiThread(() -> Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_error, file.getName())));
+                    }
+                }
+                runOnUiThread(() -> {
+                    Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_done, progress[0] - 1));
+                    findFolders();
+                });
+
+            }).start();
+        });
     }
 
     private void addDirectory(Uri directoryUri) {
@@ -264,6 +282,8 @@ public class GalleryActivity extends AppCompatActivity {
     public void onBackPressed() {
         if (binding.cLLoading.cLLoading.getVisibility() == View.VISIBLE) {
             cancelTask = true;
+        } else if (binding.cLImportChoose.getVisibility() == View.VISIBLE) {
+            showImportOverlay(false);
         } else if (inSelectionMode && galleryGridAdapter != null) {
             galleryGridAdapter.onSelectionModeChanged(false);
         } else {

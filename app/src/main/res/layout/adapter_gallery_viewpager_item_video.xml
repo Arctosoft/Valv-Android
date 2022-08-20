@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.exoplayer2.ui.StyledPlayerView
+        android:id="@+id/playerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:show_buffering="always" />
+
+    <RelativeLayout
+        android:id="@+id/rLPlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white10"
+        app:layout_constraintBottom_toBottomOf="@id/playerView"
+        app:layout_constraintTop_toTopOf="@id/playerView">
+
+        <ImageView
+            android:id="@+id/imgThumb"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_centerInParent="true"
+            android:backgroundTint="@color/white10"
+            android:src="@drawable/ic_baseline_play_arrow_24" />
+
+    </RelativeLayout>
+
+    <se.arctosoft.vault.views.PressableImageView
+        android:id="@+id/imgFullscreen"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/ic_round_fullscreen_24"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

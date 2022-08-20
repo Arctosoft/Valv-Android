@@ -72,6 +72,14 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.decryptedCacheUri = decryptedCacheUri;
     }
 
+    public boolean isVideo() {
+        return FileType.VIDEO == fileType;
+    }
+
+    public boolean isGif() {
+        return FileType.GIF == fileType;
+    }
+
     public long getLastModified() {
         return lastModified;
     }
