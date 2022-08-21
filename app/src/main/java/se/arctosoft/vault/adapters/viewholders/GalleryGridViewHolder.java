@@ -12,7 +12,7 @@ import com.google.android.material.checkbox.MaterialCheckBox;
 import se.arctosoft.vault.R;
 
 public class GalleryGridViewHolder extends RecyclerView.ViewHolder {
-    public final ImageView imageView;
+    public final ImageView imageView, imgType;
     public final TextView txtName;
     public final MaterialCheckBox checked;
 
@@ -21,5 +21,6 @@ public class GalleryGridViewHolder extends RecyclerView.ViewHolder {
         imageView = itemView.findViewById(R.id.imageView);
         txtName = itemView.findViewById(R.id.txtName);
         checked = itemView.findViewById(R.id.checked);
+        imgType = itemView.findViewById(R.id.imgType);
     }
 }

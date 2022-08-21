@@ -16,8 +16,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.viewpager2.widget.ViewPager2;
 
 import java.util.ArrayList;
@@ -104,7 +104,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         setClickListeners();
 
         if (!viewModel.isInitialised()) {
-            Log.e(TAG, "init: not initialised, find files");
+            //Log.e(TAG, "init: not initialised, find files");
             findFilesIn(currentDirectory);
         }
     }
@@ -121,7 +121,6 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                                 FileStuff.deleteFile(this, f.getThumbUri());
                                 if (deleted) {
                                     int i = viewModel.getGalleryFiles().indexOf(f);
-                                    Log.e(TAG, "setClickListeners: deleted " + i);
                                     if (i >= 0) {
                                         viewModel.getGalleryFiles().remove(i);
                                         runOnUiThread(() -> {
@@ -143,7 +142,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private void setupRecycler() {
         RecyclerView recyclerView = binding.recyclerView;
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
-        RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, spanCount, RecyclerView.VERTICAL, false);
+        RecyclerView.LayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, RecyclerView.VERTICAL);
         recyclerView.setLayoutManager(layoutManager);
         galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), true); // TODO setting to show/hide names
         galleryGridAdapter.setOnFileDeleted(pos -> galleryPagerAdapter.notifyItemRemoved(pos));
@@ -172,6 +171,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 super.onPageSelected(position);
                 binding.recyclerView.scrollToPosition(position);
                 viewModel.setCurrentPosition(position);
+                galleryPagerAdapter.releaseVideo();
             }
         });
         binding.viewPager.postDelayed(() -> {
@@ -183,6 +183,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private void showViewpager(boolean show, int pos, boolean animate) {
         //Log.e(TAG, "showViewpager: " + show + " " + pos);
         viewModel.setViewpagerVisible(show);
+        galleryPagerAdapter.setIsPagerShown(show);
         if (show) {
             binding.viewPager.setVisibility(View.VISIBLE);
             binding.viewPager.setCurrentItem(pos, false);
@@ -258,7 +259,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                     if (isFinishing() || isDestroyed() || !isExporting) {
                         break;
                     }
-                    Encryption.decryptAndExport(this, f.getUri(), currentDirectory, settings.getTempPassword(), new Encryption.IOnUriResult() {
+                    Encryption.IOnUriResult result = new Encryption.IOnUriResult() {
                         @Override
                         public void onUriResult(Uri outputUri) {
                             exported[0]++;
@@ -273,7 +274,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                         public void onInvalidPassword(InvalidPasswordException e) {
                             failed[0]++;
                         }
-                    });
+                    };
+                    Encryption.decryptAndExport(this, f.getUri(), currentDirectory, settings.getTempPassword(), result, f.isVideo());
                     runOnUiThread(() -> setLoadingProgress(exported[0], failed[0], galleryFilesCopy.size()));
                 }
                 runOnUiThread(() -> {

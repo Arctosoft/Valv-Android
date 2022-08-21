@@ -13,7 +13,7 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
         <item name="gallery_viewpager_background">@color/black</item>
-        <item name="gallery_viewpager_buttons_background">@color/white10</item>
+        <item name="gallery_viewpager_buttons_background">@color/viewpager_buttons_bg_night</item>
         <item name="gallery_viewpager_buttons">@color/textColorLight</item>
         <item name="toolbar_icon_tint">@color/white</item>
         <item name="button_secondary">@color/secondary_night_color</item>

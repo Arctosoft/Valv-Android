@@ -35,7 +35,7 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
     public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super InputStream> callback) {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            streams = Encryption.getCipherInputStream(inputStream, settings.getTempPassword());
+            streams = Encryption.getCipherInputStream(inputStream, settings.getTempPassword(), true);
             callback.onDataReady(streams.getInputStream());
         } catch (GeneralSecurityException | IOException | InvalidPasswordException e) {
             //e.printStackTrace();

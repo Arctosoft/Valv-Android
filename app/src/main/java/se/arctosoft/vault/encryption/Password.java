@@ -22,7 +22,7 @@ public class Password {
     private static final String TAG = "Password";
 
     public static void lock(Context context, @NonNull Settings settings) {
-        Log.e(TAG, "lock");
+        Log.d(TAG, "lock");
         settings.clearTempPassword();
         FileStuff.deleteCache(context);
         Glide.get(context).clearMemory();

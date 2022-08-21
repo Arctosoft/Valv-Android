@@ -48,7 +48,7 @@ public class FileStuff {
             String mimeType = c.getString(3);
             files.add(new CursorFile(name, uri, lastModified, mimeType));
         } while (c.moveToNext());
-        Log.e(TAG, "getFilesInFolder: found " + files.size() + " in " + pickedDir.getLastPathSegment());
+        //Log.e(TAG, "getFilesInFolder: found " + files.size() + " in " + pickedDir.getLastPathSegment());
         c.close();
         Collections.sort(files);
         return getEncryptedFilesInFolder(files);
@@ -64,7 +64,7 @@ public class FileStuff {
                 continue;
             }
 
-            if (file.getName().startsWith(Encryption.PREFIX_THUMB)) {
+            if (file.getName().startsWith(Encryption.PREFIX_THUMB) || file.getName().startsWith(Encryption.PREFIX_THUMB_VIDEO)) {
                 documentThumbs.add(file);
             } else {
                 documentFiles.add(file);
@@ -94,12 +94,20 @@ public class FileStuff {
     }
 
     public static void pickImageFiles(@NonNull FragmentActivity context, int requestCode) {
+        pickFiles(context, requestCode, "image/*");
+    }
+
+    private static void pickFiles(@NonNull FragmentActivity context, int requestCode, String mimeType) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("image/*");
+        intent.setType(mimeType);
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
 
         context.startActivityForResult(intent, requestCode);
+    }
+
+    public static void pickVideoFiles(@NonNull FragmentActivity context, int requestCode) {
+        pickFiles(context, requestCode, "video/*");
     }
 
     @NonNull
@@ -146,7 +154,7 @@ public class FileStuff {
         List<DocumentFile> documentFiles = new ArrayList<>();
         for (Uri uri : uris) {
             DocumentFile pickedFile = DocumentFile.fromSingleUri(context, uri);
-            if (pickedFile != null && pickedFile.getType() != null && pickedFile.getType().startsWith("image/") && !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX)) {
+            if (pickedFile != null && pickedFile.getType() != null && (pickedFile.getType().startsWith("image/") || pickedFile.getType().startsWith("video/")) && !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX)) {
                 documentFiles.add(pickedFile);
             }
         }

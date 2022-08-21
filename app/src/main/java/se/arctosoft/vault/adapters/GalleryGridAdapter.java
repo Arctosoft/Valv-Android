@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -79,7 +80,12 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
 
         updateSelectedView(holder, galleryFile);
         holder.txtName.setVisibility(showFileNames ? View.VISIBLE : View.GONE);
-
+        if (galleryFile.isGif() || galleryFile.isVideo()) {
+            holder.imgType.setVisibility(View.VISIBLE);
+            holder.imgType.setImageDrawable(ResourcesCompat.getDrawable(context.getResources(), galleryFile.isGif() ? R.drawable.ic_round_gif_24 : R.drawable.ic_outline_video_file_24, context.getTheme()));
+        } else {
+            holder.imgType.setVisibility(View.GONE);
+        }
         if (galleryFile.isDirectory()) {
             GalleryFile firstFile = galleryFile.getFirstFile();
             if (firstFile != null) {

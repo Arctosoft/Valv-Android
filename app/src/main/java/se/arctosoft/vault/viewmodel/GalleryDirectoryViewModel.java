@@ -28,7 +28,7 @@ public class GalleryDirectoryViewModel extends ViewModel {
     }
 
     public void setInitialised(List<GalleryFile> galleryFiles) {
-        Log.e(TAG, "setInitialised: " + galleryFiles.size());
+        //Log.e(TAG, "setInitialised: " + galleryFiles.size());
         if (initialised) {
             return;
         }

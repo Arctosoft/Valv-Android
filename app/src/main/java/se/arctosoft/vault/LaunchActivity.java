@@ -91,7 +91,7 @@ public class LaunchActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        Log.e(TAG, "onBackPressed: ");
+        Log.d(TAG, "onBackPressed: ");
         Password.lock(this, settings);
         finishAffinity();
         super.onBackPressed();

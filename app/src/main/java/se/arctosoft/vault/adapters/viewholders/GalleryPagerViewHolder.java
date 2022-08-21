@@ -4,12 +4,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
+import com.google.android.exoplayer2.ui.StyledPlayerView;
 
 import se.arctosoft.vault.R;
 
@@ -44,5 +46,20 @@ public class GalleryPagerViewHolder extends RecyclerView.ViewHolder {
             super(itemView);
             gifImageView = itemView.findViewById(R.id.gifImageView);
         }
+    }
+
+    public static class GalleryPagerVideoViewHolder extends GalleryPagerViewHolder {
+        public final StyledPlayerView playerView;
+        public final RelativeLayout rLPlay;
+        public final ImageView imgThumb, imgFullscreen;
+
+        public GalleryPagerVideoViewHolder(@NonNull View itemView) {
+            super(itemView);
+            playerView = itemView.findViewById(R.id.playerView);
+            rLPlay = itemView.findViewById(R.id.rLPlay);
+            imgThumb = itemView.findViewById(R.id.imgThumb);
+            imgFullscreen = itemView.findViewById(R.id.imgFullscreen);
+        }
+
     }
 }

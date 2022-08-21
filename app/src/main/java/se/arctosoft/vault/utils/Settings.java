@@ -49,7 +49,7 @@ public class Settings {
 
     @Override
     protected void finalize() throws Throwable {
-        Log.e(TAG, "finalize: ");
+        Log.d(TAG, "finalize: ");
         Password.lock(context, this);
         super.finalize();
     }
@@ -87,7 +87,7 @@ public class Settings {
         List<String> directories = getGalleryDirectories();
         String uriString = uri.toString();
         if (directories.contains(uriString)) {
-            Log.e(TAG, "addGalleryDirectory: uri already saved");
+            Log.d(TAG, "addGalleryDirectory: uri already saved");
             return false;
         }
         directories.add(0, uriString);
