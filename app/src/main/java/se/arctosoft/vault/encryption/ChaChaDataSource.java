@@ -26,31 +26,26 @@ public class ChaChaDataSource implements DataSource {
 
     private Encryption.Streams streams;
     private Uri uri;
-    private final Uri thumbUri;
 
-    public ChaChaDataSource(@NonNull Context context, @NonNull Uri thumbUri) {
-        Log.e(TAG, "ChaChaDataSource: created");
+    public ChaChaDataSource(@NonNull Context context) {
         this.context = context.getApplicationContext();
-        this.thumbUri = thumbUri;
     }
 
     @Override
     public long open(@NonNull DataSpec dataSpec) throws IOException {
-        Log.e(TAG, "open: " + dataSpec);
         uri = dataSpec.uri;
         try {
             InputStream fileStream = context.getContentResolver().openInputStream(uri);
-            InputStream thumbStream = context.getContentResolver().openInputStream(thumbUri);
-            streams = Encryption.getCipherInputStreamForVideo(fileStream, thumbStream, Settings.getInstance(context).getTempPassword());
+            streams = Encryption.getCipherInputStream(fileStream, Settings.getInstance(context).getTempPassword(), false);
         } catch (GeneralSecurityException | InvalidPasswordException e) {
             e.printStackTrace();
-            Log.e(TAG, "open error: " + e.getMessage());
+            Log.e(TAG, "open error", e);
             return 0;
         }
 
-        Log.e(TAG, "open: position " + dataSpec.position);
-        Log.e(TAG, "open: available: " + streams.getInputStream().available());
-        long skipped = forceSkip(dataSpec.position, (CipherInputStream) streams.getInputStream());//streams.getInputStream().skip(dataSpec.position);
+        if (dataSpec.position != 0) {
+            long skipped = forceSkip(dataSpec.position, (CipherInputStream) streams.getInputStream());
+        }
         return dataSpec.position;
     }
 
@@ -60,14 +55,12 @@ public class ChaChaDataSource implements DataSource {
             inputStream.read();
             skipped++;
         }
-        Log.e(TAG, "forceSkip: skipped " + skipped);
         return skipped;
     }
 
     @Override
-    public int read(@NonNull byte[] buffer, int offset, int length) throws IOException { // https://stackoverflow.com/questions/66884377/how-do-i-play-locally-stored-encrypted-video-files-in-android-studio
+    public int read(@NonNull byte[] buffer, int offset, int length) throws IOException {
         if (length == 0) {
-            Log.e(TAG, "read: length is 0");
             return 0;
         }
 
@@ -77,13 +70,12 @@ public class ChaChaDataSource implements DataSource {
     @Nullable
     @Override
     public Uri getUri() {
-        Log.e(TAG, "getUri: return " + uri);
         return uri;
     }
 
     @Override
     public void close() {
-        Log.e(TAG, "close: ");
+        Log.d(TAG, "close: ");
         if (streams != null) {
             streams.close();
         }

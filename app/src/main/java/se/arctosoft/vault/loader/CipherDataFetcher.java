@@ -16,7 +16,6 @@ import java.security.GeneralSecurityException;
 
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.exception.InvalidPasswordException;
-import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 
 public class CipherDataFetcher implements DataFetcher<InputStream> {
@@ -36,11 +35,7 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
     public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super InputStream> callback) {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            boolean isVideo = FileStuff.getFilenameFromUri(uri, false).contains(Encryption.PREFIX_THUMB_VIDEO);
-            Log.e(TAG, "loadData: video? " + isVideo);
-            streams = isVideo
-                    ? Encryption.getCipherInputStreamForVideoThumbnail(inputStream, settings.getTempPassword())
-                    : Encryption.getCipherInputStream(inputStream, settings.getTempPassword(), true);
+            streams = Encryption.getCipherInputStream(inputStream, settings.getTempPassword(), true);
             callback.onDataReady(streams.getInputStream());
         } catch (GeneralSecurityException | IOException | InvalidPasswordException e) {
             //e.printStackTrace();

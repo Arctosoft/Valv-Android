@@ -3,7 +3,6 @@ package se.arctosoft.vault.encryption;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.util.Log;
-import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -43,7 +42,6 @@ import se.arctosoft.vault.utils.Settings;
 public class Encryption {
     private static final String TAG = "Encryption";
     private static final String CIPHER = "ChaCha20/NONE/NoPadding";
-    private static final String CIPHER_VIDEO = CIPHER; //"AES/GCM/NoPadding";
     private static final String KEY_ALGORITHM = "PBKDF2withHmacSHA512";
     private static final int ITERATION_COUNT = 20000;
     private static final int KEY_LENGTH = 256;
@@ -68,9 +66,12 @@ public class Encryption {
         DocumentFile file = directory.createFile(isVideo ? "video/*" : "image/*", FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + name);
         DocumentFile thumb = directory.createFile("image/jpg", (isVideo ? PREFIX_THUMB_VIDEO : PREFIX_THUMB) + name);
 
+        if (file == null) {
+            return false;
+        }
         try {
-            Streams streams = createThumb(context, sourceFile.getUri(), thumb, tempPassword, isVideo); // Need to create thumb before the file to save IV and SALT
-            createFile(context, sourceFile.getUri(), streams.getVideoData(), file, tempPassword, isVideo);
+            createFile(context, sourceFile.getUri(), file, tempPassword);
+            createThumb(context, sourceFile.getUri(), thumb, tempPassword);
         } catch (GeneralSecurityException | IOException | ExecutionException | InterruptedException e) {
             e.printStackTrace();
             file.delete();
@@ -99,38 +100,17 @@ public class Encryption {
         private final InputStream inputStream;
         private final CipherOutputStream outputStream;
         private final SecretKey secretKey;
-        private Pair<byte[], byte[]> videoData;
 
         private Streams(@NonNull InputStream inputStream, @NonNull CipherOutputStream outputStream, @NonNull SecretKey secretKey) {
             this.inputStream = inputStream;
             this.outputStream = outputStream;
             this.secretKey = secretKey;
-            this.videoData = null;
         }
 
         private Streams(@NonNull InputStream inputStream, @NonNull SecretKey secretKey) {
             this.inputStream = inputStream;
             this.outputStream = null;
             this.secretKey = secretKey;
-            this.videoData = null;
-        }
-
-        /**
-         * Set video IV and SALT
-         *
-         * @param videoData pair of IV and SALT
-         */
-        private void setVideoData(Pair<byte[], byte[]> videoData) {
-            this.videoData = videoData;
-        }
-
-        /**
-         * Video IV and SALT
-         *
-         * @return a pair of IV (first) and SALT (second)
-         */
-        private Pair<byte[], byte[]> getVideoData() {
-            return videoData;
         }
 
         @NonNull
@@ -159,10 +139,8 @@ public class Encryption {
         }
     }
 
-    private static void createFile(FragmentActivity context, Uri input, Pair<byte[], byte[]> videoData, DocumentFile outputFile, char[] password, boolean isVideo) throws GeneralSecurityException, IOException {
-        Streams streams = isVideo
-                ? getCipherOutputStreamForVideo(context, input, videoData, outputFile, password, false)
-                : getCipherOutputStream(context, input, outputFile, password, false);
+    private static void createFile(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password) throws GeneralSecurityException, IOException {
+        Streams streams = getCipherOutputStream(context, input, outputFile, password, false);
 
         int read;
         byte[] buffer = new byte[2048];
@@ -173,10 +151,8 @@ public class Encryption {
         streams.close();
     }
 
-    private static Streams createThumb(FragmentActivity context, Uri input, DocumentFile outputThumbFile, char[] password, boolean isVideo) throws GeneralSecurityException, IOException, ExecutionException, InterruptedException {
-        Streams streams = isVideo
-                ? getCipherOutputStreamForVideo(context, input, null, outputThumbFile, password, true)
-                : getCipherOutputStream(context, input, outputThumbFile, password, true);
+    private static void createThumb(FragmentActivity context, Uri input, DocumentFile outputThumbFile, char[] password) throws GeneralSecurityException, IOException, ExecutionException, InterruptedException {
+        Streams streams = getCipherOutputStream(context, input, outputThumbFile, password, true);
 
         Bitmap bitmap = Glide.with(context)
                 .asBitmap()
@@ -192,7 +168,35 @@ public class Encryption {
         bitmap.recycle();
 
         streams.close();
-        return streams;
+    }
+
+    public static Streams getCipherInputStream(@NonNull InputStream inputStream, char[] password, boolean isThumb) throws IOException, GeneralSecurityException, InvalidPasswordException {
+        byte[] salt = new byte[SALT_LENGTH];
+        byte[] ivBytes = new byte[IV_LENGTH];
+        byte[] checkBytes1 = new byte[CHECK_LENGTH];
+        byte[] checkBytes2 = new byte[CHECK_LENGTH];
+
+        inputStream.read(salt);
+        inputStream.read(ivBytes);
+        if (isThumb) {
+            inputStream.read(checkBytes1);
+        }
+
+        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
+        KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
+        SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
+
+        Cipher cipher = Cipher.getInstance(CIPHER);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
+        CipherInputStream cipherInputStream = new MyCipherInputStream(inputStream, cipher);
+        if (isThumb) {
+            cipherInputStream.read(checkBytes2);
+            if (!Arrays.equals(checkBytes1, checkBytes2)) {
+                throw new InvalidPasswordException("Invalid password");
+            }
+        }
+        return new Streams(cipherInputStream, secretKey);
     }
 
     private static Streams getCipherOutputStream(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, boolean isThumb) throws GeneralSecurityException, IOException {
@@ -221,49 +225,6 @@ public class Encryption {
         return new Streams(inputStream, cipherOutputStream, secretKey);
     }
 
-    private static Streams getCipherOutputStreamForVideo(FragmentActivity context, Uri input, Pair<byte[], byte[]> videoData, DocumentFile outputFile, char[] password, boolean isThumb) throws GeneralSecurityException, IOException {
-        SecureRandom sr = SecureRandom.getInstanceStrong();
-        byte[] salt = new byte[SALT_LENGTH];
-        byte[] ivBytes = new byte[IV_LENGTH];
-        byte[] checkBytes = new byte[CHECK_LENGTH];
-        if (isThumb) {
-            generateSecureRandom(sr, salt, ivBytes, checkBytes);
-        } else {
-            //InputStream thumbStream = context.getContentResolver().openInputStream(thumbUri);
-            // The salt and iv are stored in the thumbnail for video files:
-            // SALT IV CHECK  SALT IV
-            //    -THUMB-     -FILE-
-            salt = videoData.first;
-            ivBytes = videoData.second;
-        }
-
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
-        KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
-        SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
-
-        Cipher cipher = Cipher.getInstance(isThumb ? CIPHER : CIPHER_VIDEO);
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
-
-        InputStream inputStream = context.getContentResolver().openInputStream(input);
-        OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(outputFile.getUri()), 1024 * 32);
-        if (isThumb) {
-            writeSaltAndIV(true, salt, ivBytes, checkBytes, fos);
-            generateSecureRandom(sr, salt, ivBytes, null);
-            writeSaltAndIV(false, salt, ivBytes, null, fos); // Write the IV and SALT for the video file in the thumbnail
-            fos.flush();
-        }
-        CipherOutputStream cipherOutputStream = new CipherOutputStream(fos, cipher);
-        if (isThumb) {
-            cipherOutputStream.write(checkBytes);
-        }
-        Streams streams = new Streams(inputStream, cipherOutputStream, secretKey);
-        if (isThumb) {
-            streams.setVideoData(new Pair<>(salt, ivBytes));
-        }
-        return streams;
-    }
-
     private static void generateSecureRandom(SecureRandom sr, byte[] salt, byte[] ivBytes, @Nullable byte[] checkBytes) {
         sr.nextBytes(salt);
         sr.nextBytes(ivBytes);
@@ -280,7 +241,7 @@ public class Encryption {
         }
     }
 
-    public static void decryptToCache(FragmentActivity context, Uri encryptedInput, char[] password, IOnUriResult onUriResult, boolean isVideo, Uri thumbUri) {
+    public static void decryptToCache(FragmentActivity context, Uri encryptedInput, char[] password, IOnUriResult onUriResult) {
         new Thread(() -> {
             try {
                 InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
@@ -288,9 +249,7 @@ public class Encryption {
                 Path file = Files.createTempFile("temp_", ".dcrpt");
                 Uri fileUri = Uri.fromFile(file.toFile());
                 OutputStream fos = context.getContentResolver().openOutputStream(fileUri);
-                Streams cis = isVideo ?
-                        getCipherInputStreamForVideo(inputStream, context.getContentResolver().openInputStream(thumbUri), password)
-                        : getCipherInputStream(inputStream, password, false);
+                Streams cis = getCipherInputStream(inputStream, password, false);
 
                 int read;
                 byte[] buffer = new byte[2048];
@@ -313,20 +272,14 @@ public class Encryption {
         }).start();
     }
 
-    public static void decryptAndExportImage(FragmentActivity context, Uri encryptedInput, Uri directoryUri, char[] password, IOnUriResult onUriResult) {
-        decryptAndExportVideo(context, encryptedInput, directoryUri, password, onUriResult, false, null);
-    }
-
-    public static void decryptAndExportVideo(FragmentActivity context, Uri encryptedInput, Uri directoryUri, char[] password, IOnUriResult onUriResult, boolean isVideo, Uri thumbUri) {
+    public static void decryptAndExport(FragmentActivity context, Uri encryptedInput, Uri directoryUri, char[] password, IOnUriResult onUriResult, boolean isVideo) {
         DocumentFile documentFile = DocumentFile.fromTreeUri(context, directoryUri);
         DocumentFile file = documentFile.createFile(isVideo ? "video/*" : "image/*", System.currentTimeMillis() + "_" + FileStuff.getFilenameFromUri(encryptedInput, true));
         try {
             InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
 
             OutputStream fos = context.getContentResolver().openOutputStream(file.getUri());
-            Streams cis = isVideo
-                    ? getCipherInputStreamForVideo(inputStream, context.getContentResolver().openInputStream(thumbUri), password)
-                    : getCipherInputStream(inputStream, password, false);
+            Streams cis = getCipherInputStream(inputStream, password, false);
 
             int read;
             byte[] buffer = new byte[2048];
@@ -377,92 +330,6 @@ public class Encryption {
 
         return buffer.toByteArray();
     }*/
-
-    public static Streams getCipherInputStreamForVideo(@NonNull InputStream fileStream, @NonNull InputStream thumbStream, char[] password) throws IOException, GeneralSecurityException, InvalidPasswordException {
-        byte[] salt = new byte[SALT_LENGTH];
-        byte[] ivBytes = new byte[IV_LENGTH];
-        byte[] checkBytes = new byte[CHECK_LENGTH];
-
-        // The salt and iv are stored in the thumbnail for video files:
-        // SALT IV CHECK  SALT IV
-        //    -THUMB-     -FILE-
-        thumbStream.read(salt);
-        thumbStream.read(ivBytes);
-        thumbStream.read(checkBytes);
-        thumbStream.read(salt);
-        thumbStream.read(ivBytes);
-        thumbStream.close();
-
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
-        KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
-        SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
-
-        Cipher cipher = Cipher.getInstance(CIPHER_VIDEO);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-        CipherInputStream cipherInputStream = new MyCipherInputStream(fileStream, cipher);
-        return new Streams(cipherInputStream, secretKey);
-    }
-
-    public static Streams getCipherInputStream(@NonNull InputStream inputStream, char[] password, boolean isThumb) throws IOException, GeneralSecurityException, InvalidPasswordException {
-        byte[] salt = new byte[SALT_LENGTH];
-        byte[] ivBytes = new byte[IV_LENGTH];
-        byte[] checkBytes1 = new byte[CHECK_LENGTH];
-        byte[] checkBytes2 = new byte[CHECK_LENGTH];
-
-        inputStream.read(salt);
-        inputStream.read(ivBytes);
-        if (isThumb) {
-            inputStream.read(checkBytes1);
-        }
-
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
-        KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
-        SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
-
-        Cipher cipher = Cipher.getInstance(CIPHER);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-        CipherInputStream cipherInputStream = new MyCipherInputStream(inputStream, cipher);
-        if (isThumb) {
-            cipherInputStream.read(checkBytes2);
-            if (!Arrays.equals(checkBytes1, checkBytes2)) {
-                throw new InvalidPasswordException("Invalid password");
-            }
-        }
-        return new Streams(cipherInputStream, secretKey);
-    }
-
-    public static Streams getCipherInputStreamForVideoThumbnail(@NonNull InputStream inputStream, char[] password) throws IOException, GeneralSecurityException, InvalidPasswordException {
-        byte[] salt = new byte[SALT_LENGTH];
-        byte[] ivBytes = new byte[IV_LENGTH];
-        byte[] checkBytes1 = new byte[CHECK_LENGTH];
-        byte[] checkBytes2 = new byte[CHECK_LENGTH];
-
-        inputStream.read(salt, 0, salt.length);
-        inputStream.read(ivBytes, 0, ivBytes.length);
-        inputStream.read(checkBytes1, 0, checkBytes1.length);
-
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
-        KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
-        SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
-
-        salt = new byte[SALT_LENGTH];
-        ivBytes = new byte[IV_LENGTH];
-        // read file IV and SALT
-        inputStream.read(salt, 0, salt.length);
-        inputStream.read(ivBytes, 0, ivBytes.length);
-
-        Cipher cipher = Cipher.getInstance(CIPHER);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-        CipherInputStream cipherInputStream = new MyCipherInputStream(inputStream, cipher);
-        cipherInputStream.read(checkBytes2);
-        if (!Arrays.equals(checkBytes1, checkBytes2)) {
-            throw new InvalidPasswordException("Invalid password");
-        }
-        return new Streams(cipherInputStream, secretKey);
-    }
 
     public interface IOnUriResult {
         void onUriResult(Uri outputUri);

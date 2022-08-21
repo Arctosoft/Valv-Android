@@ -3,7 +3,6 @@ package se.arctosoft.vault.adapters;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.net.Uri;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,9 +21,10 @@ import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
+import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.material.color.MaterialColors;
 
 import java.lang.ref.WeakReference;
@@ -34,10 +34,10 @@ import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryPagerViewHolder;
 import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
+import se.arctosoft.vault.encryption.ChaCha20DataSourceFactory;
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
-import se.arctosoft.vault.utils.CacheDataSourceFactory;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
@@ -123,16 +123,16 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         holder.imgFullscreen.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         holder.rLPlay.setOnClickListener(v -> {
             holder.rLPlay.setVisibility(View.GONE);
-            if (galleryFile.getDecryptedCacheUri() != null) {
-                playVideo(context, galleryFile.getDecryptedCacheUri(), holder);
-            } else {
+            //if (galleryFile.getDecryptedCacheUri() != null) {
+            playVideo(context, galleryFile.getUri(), holder, galleryFile);
+            /*} else {
                 Encryption.decryptToCache(context, galleryFile.getUri(), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
                     @Override
                     public void onUriResult(Uri outputUri) {
                         galleryFile.setDecryptedCacheUri(outputUri);
                         Log.e(TAG, "onUriResult: created " + outputUri);
                         if (holder.getBindingAdapterPosition() == position && isPagerShown) {
-                            playVideo(context, outputUri, holder);
+                            playVideo(context, outputUri, holder, galleryFile);
                         }
                     }
 
@@ -145,31 +145,31 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                     public void onInvalidPassword(InvalidPasswordException e) {
                         e.printStackTrace();
                     }
-                }, true, galleryFile.getThumbUri());
-            }
+                });
+            }*/
         });
     }
 
-    private void playVideo(FragmentActivity context, Uri outputUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
+    private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, GalleryFile galleryFile) {
         lastPlayerPos = holder.getBindingAdapterPosition();
         if (player == null) {
-            //DefaultDataSource.Factory defaultFactory = new DefaultDataSource.Factory(context);
-            //DataSource.Factory dataSourceFactory = new ChaCha20DataSourceFactory(context, galleryFile.getThumbUri(), defaultFactory.createDataSource());
-            //ProgressiveMediaSource mediaSource = new ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(galleryFile.getUri()));
+            DataSource.Factory dataSourceFactory = new ChaCha20DataSourceFactory(context);
+            //DefaultDataSource.Factory defaultFactory = new DefaultDataSource.Factory(context, dataSourceFactory);
+            ProgressiveMediaSource.Factory progressiveFactory = new ProgressiveMediaSource.Factory(dataSourceFactory);
             player = new ExoPlayer.Builder(context)
-                    //.setMediaSourceFactory(new ProgressiveMediaSource.Factory(dataSourceFactory))
+                    .setMediaSourceFactory(progressiveFactory)
                     .build();
             player.setRepeatMode(Player.REPEAT_MODE_ONE);
         }
-        CacheDataSourceFactory cacheDataSourceFactory = new CacheDataSourceFactory(context, 300 * 1024 * 1024, 50 * 1024 * 1024);
-        MediaSource videoSource = new ProgressiveMediaSource.Factory(cacheDataSourceFactory).createMediaSource(MediaItem.fromUri(outputUri));
-        /*MediaItem mediaItem = new MediaItem.Builder()
+        //CacheDataSourceFactory cacheDataSourceFactory = new CacheDataSourceFactory(context, 300 * 1024 * 1024, 50 * 1024 * 1024);
+        //MediaSource videoSource = new ProgressiveMediaSource.Factory(cacheDataSourceFactory).createMediaSource(MediaItem.fromUri(outputUri));
+        MediaItem mediaItem = new MediaItem.Builder()
                 .setMimeType("video/mp4")
-                .setUri(outputUri)
+                .setUri(fileUri)
                 .build();
-        player.setMediaItem(mediaItem);*/
+        player.setMediaItem(mediaItem);
         holder.playerView.setControllerShowTimeoutMs(1500);
-        player.setMediaSource(videoSource);
+        //player.setMediaSource(videoSource);
         player.addListener(new Player.Listener() {
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
@@ -191,7 +191,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
 
     private void setupImageView(GalleryPagerViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder) {
-            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setOnClickListener(v -> onItemPressed(context, holder));
+            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setOnClickListener(v -> onItemPressed(context));
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setMinimumDpi(40);
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setOnStateChangedListener(new SubsamplingScaleImageView.OnStateChangedListener() {
                 @Override
@@ -205,7 +205,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 }
             });
         } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
-            ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).gifImageView.setOnClickListener(v -> onItemPressed(context, holder));
+            ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).gifImageView.setOnClickListener(v -> onItemPressed(context));
         }
         if (galleryFile.getDecryptedCacheUri() == null) {
             new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
@@ -227,13 +227,13 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                     //Log.e(TAG, "onInvalidPassword: " + e.getMessage());
                     //removeFileAt(holder.getAdapterPosition(), context);
                 }
-            }, false, null)).start();
+            })).start();
         } else {
             loadImage(galleryFile.getDecryptedCacheUri(), holder, context);
         }
     }
 
-    private void onItemPressed(FragmentActivity context, GalleryPagerViewHolder holder) {
+    private void onItemPressed(FragmentActivity context) {
         //context.onBackPressed();
         //toggleFullscreen(context);
         setFullscreen(context, !this.isFullscreen);
@@ -319,11 +319,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                             //removeFileAt(holder.getAdapterPosition(), context);
                         }
                     };
-                    if (galleryFile.isVideo()) {
-                        Encryption.decryptAndExportVideo(context, galleryFile.getUri(), currentDirectory, Settings.getInstance(context).getTempPassword(), result, true, galleryFile.getThumbUri());
-                    } else {
-                        Encryption.decryptAndExportImage(context, galleryFile.getUri(), currentDirectory, Settings.getInstance(context).getTempPassword(), result);
-                    }
+                    Encryption.decryptAndExport(context, galleryFile.getUri(), currentDirectory, Settings.getInstance(context).getTempPassword(), result, galleryFile.isVideo());
                 }).start()));
     }
 
@@ -364,19 +360,20 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         return galleryFiles.size();
     }
 
-    public void pauseVideo() {
+    public void releaseVideo() {
         if (player != null) {
-            player.pause();
+            player.release();
+            player = null;
         }
         if (lastPlayerPos >= 0) {
-            playerView.postDelayed(() -> notifyItemChanged(lastPlayerPos), 1);
+            playerView.postDelayed(() -> notifyItemChanged(lastPlayerPos), 100);
         }
     }
 
     public void setIsPagerShown(boolean isPagerShown) {
         this.isPagerShown = isPagerShown;
         if (!isPagerShown) {
-            pauseVideo();
+            releaseVideo();
         }
         setFullscreen(weakReference.get(), false);
     }

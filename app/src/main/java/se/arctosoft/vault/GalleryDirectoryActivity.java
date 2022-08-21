@@ -121,7 +121,6 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                                 FileStuff.deleteFile(this, f.getThumbUri());
                                 if (deleted) {
                                     int i = viewModel.getGalleryFiles().indexOf(f);
-                                    Log.e(TAG, "setClickListeners: deleted " + i);
                                     if (i >= 0) {
                                         viewModel.getGalleryFiles().remove(i);
                                         runOnUiThread(() -> {
@@ -172,7 +171,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 super.onPageSelected(position);
                 binding.recyclerView.scrollToPosition(position);
                 viewModel.setCurrentPosition(position);
-                galleryPagerAdapter.pauseVideo();
+                galleryPagerAdapter.releaseVideo();
             }
         });
         binding.viewPager.postDelayed(() -> {
@@ -276,11 +275,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                             failed[0]++;
                         }
                     };
-                    if (f.isVideo()) {
-                        Encryption.decryptAndExportVideo(this, f.getUri(), currentDirectory, settings.getTempPassword(), result, true, f.getThumbUri());
-                    } else {
-                        Encryption.decryptAndExportImage(this, f.getUri(), currentDirectory, settings.getTempPassword(), result);
-                    }
+                    Encryption.decryptAndExport(this, f.getUri(), currentDirectory, settings.getTempPassword(), result, f.isVideo());
                     runOnUiThread(() -> setLoadingProgress(exported[0], failed[0], galleryFilesCopy.size()));
                 }
                 runOnUiThread(() -> {

@@ -9,16 +9,14 @@ import com.google.android.exoplayer2.upstream.DataSource;
 
 public class ChaCha20DataSourceFactory implements DataSource.Factory {
     private final Context context;
-    private final Uri thumbUri;
 
-    public ChaCha20DataSourceFactory(Context context, Uri thumbUri) {
+    public ChaCha20DataSourceFactory(Context context) {
         this.context = context;
-        this.thumbUri = thumbUri;
     }
 
     @NonNull
     @Override
     public DataSource createDataSource() {
-        return new ChaChaDataSource(context, thumbUri);
+        return new ChaChaDataSource(context);
     }
 }

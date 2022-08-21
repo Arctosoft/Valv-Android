@@ -299,7 +299,7 @@ public class GalleryActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        Log.e(TAG, "onDestroy: ");
+        Log.d(TAG, "onDestroy: ");
         //lock();
         super.onDestroy();
     }
