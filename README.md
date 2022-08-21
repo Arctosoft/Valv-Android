@@ -23,3 +23,6 @@ Pending release on Google Play.
 ![Gallery](https://api.arctosoft.com/screenshots/vault/6.png "Gallery")
 ![Gallery folder](https://api.arctosoft.com/screenshots/vault/3.png "Gallery folder")
 ![Fullscreen](https://api.arctosoft.com/screenshots/vault/4.png "Fullscreen")
+
+## 
+This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
