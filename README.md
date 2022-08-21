@@ -2,7 +2,7 @@
 An encrypted gallery vault for Android devices.
 
 ## Features
-- Supports images and GIFs (video support is under way)
+- Supports images, GIFs and videos
 - Organise using folders
 - The app requires no permissions
 - Encrypted files are stored on-disk allowing for easy backups and transfers between devices
@@ -13,7 +13,9 @@ An encrypted gallery vault for Android devices.
 Files are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.
 
 ## Get the app
-Pending release on Google Play.
+[<img src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" 
+      alt="Download from Google Play" 
+      height="80">](https://play.google.com/store/apps/details?id=se.arctosoft.vault)
 
 ## Requirements
 - Android 9 or newer
