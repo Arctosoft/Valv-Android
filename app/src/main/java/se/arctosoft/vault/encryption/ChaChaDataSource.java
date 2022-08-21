@@ -46,7 +46,7 @@ public class ChaChaDataSource implements DataSource {
         if (dataSpec.position != 0) {
             long skipped = forceSkip(dataSpec.position, (CipherInputStream) streams.getInputStream());
         }
-        return dataSpec.position;
+        return dataSpec.length;
     }
 
     private long forceSkip(long skipBytes, CipherInputStream inputStream) throws IOException {
