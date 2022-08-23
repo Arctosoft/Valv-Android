@@ -83,11 +83,11 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginBottom="20dp"
-        android:background="@color/colorInvisible"
+        android:background="@color/color_invisible"
         android:text="@string/help"
-        android:textColor="@color/colorTextYellow"
+        android:textColor="@color/color_text_yellow"
         app:icon="@drawable/ic_outline_tips_and_updates_24"
-        app:iconTint="@color/colorTextYellow"
+        app:iconTint="@color/color_text_yellow"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 

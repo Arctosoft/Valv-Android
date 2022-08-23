@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,7 +30,7 @@ public class FileStuff {
         List<CursorFile> files = new ArrayList<>();
         Cursor c = context.getContentResolver().query(
                 realUri,
-                new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_LAST_MODIFIED, DocumentsContract.Document.COLUMN_MIME_TYPE},
+                new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_LAST_MODIFIED, DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.COLUMN_SIZE},
                 null,
                 null,
                 null);
@@ -46,7 +45,8 @@ public class FileStuff {
             String name = c.getString(1);
             long lastModified = c.getLong(2);
             String mimeType = c.getString(3);
-            files.add(new CursorFile(name, uri, lastModified, mimeType));
+            long size = c.getLong(4);
+            files.add(new CursorFile(name, uri, lastModified, mimeType, size));
         } while (c.moveToNext());
         //Log.e(TAG, "getFilesInFolder: found " + files.size() + " in " + pickedDir.getLastPathSegment());
         c.close();
@@ -60,11 +60,11 @@ public class FileStuff {
         List<CursorFile> documentThumbs = new ArrayList<>();
         List<GalleryFile> galleryFiles = new ArrayList<>();
         for (CursorFile file : files) {
-            if (!file.getName().startsWith(Encryption.ENCRYPTED_PREFIX) && !file.isDirectory()) {
+            if (!file.getName().startsWith(Encryption.ENCRYPTED_PREFIX) || file.isDirectory()) {
                 continue;
             }
 
-            if (file.getName().startsWith(Encryption.PREFIX_THUMB) || file.getName().startsWith(Encryption.PREFIX_THUMB_VIDEO)) {
+            if (file.getName().startsWith(Encryption.PREFIX_THUMB)) {
                 documentThumbs.add(file);
             } else {
                 documentFiles.add(file);
@@ -72,10 +72,10 @@ public class FileStuff {
         }
 
         for (CursorFile file : documentFiles) {
-            if (file.isDirectory()) {
-                //galleryFiles.add(GalleryFile.asDirectory(file, null)); // TODO fix later
-                continue;
-            }
+            //if (file.isDirectory()) {
+            //galleryFiles.add(GalleryFile.asDirectory(file, null)); // TODO fix later
+            //    continue;
+            //}
             file.setUnencryptedName(FileStuff.getUnencryptedFileName(file.getName()));
             boolean foundThumb = false;
             for (CursorFile thumb : documentThumbs) {

@@ -54,7 +54,6 @@ public class Encryption {
     public static final String ENCRYPTED_PREFIX = ".arcv1.";
     public static final String PREFIX_VIDEO_FILE = ".arcv1.v-";
     public static final String PREFIX_THUMB = ".arcv1.t-";
-    public static final String PREFIX_THUMB_VIDEO = ".arcv1.tv-";
 
     public static boolean importFileToDirectory(FragmentActivity context, DocumentFile sourceFile, DocumentFile directory, Settings settings, boolean isVideo) {
         char[] tempPassword = settings.getTempPassword();
@@ -64,7 +63,7 @@ public class Encryption {
 
         String name = sourceFile.getName();
         DocumentFile file = directory.createFile(isVideo ? "video/*" : "image/*", FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + name);
-        DocumentFile thumb = directory.createFile("image/jpg", (isVideo ? PREFIX_THUMB_VIDEO : PREFIX_THUMB) + name);
+        DocumentFile thumb = directory.createFile("image/jpg", PREFIX_THUMB + name);
 
         if (file == null) {
             return false;

@@ -15,21 +15,19 @@
     <RelativeLayout
         android:id="@+id/rLPlay"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/white10"
-        app:layout_constraintBottom_toBottomOf="@id/playerView"
-        app:layout_constraintTop_toTopOf="@id/playerView">
+        android:layout_height="match_parent">
 
         <ImageView
             android:id="@+id/imgThumb"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:adjustViewBounds="true" />
 
         <ImageView
             android:layout_width="64dp"
             android:layout_height="64dp"
             android:layout_centerInParent="true"
-            android:backgroundTint="@color/white10"
             android:src="@drawable/ic_baseline_play_arrow_24" />
 
     </RelativeLayout>
@@ -41,6 +39,5 @@
         android:src="@drawable/ic_round_fullscreen_24"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

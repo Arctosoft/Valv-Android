@@ -17,7 +17,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private final String encryptedName, name;
     private final boolean isDirectory;
     private final Uri fileUri;
-    private final long lastModified;
+    private final long lastModified, size;
     private Uri thumbUri, decryptedCacheUri;
     private List<GalleryFile> filesInDirectory;
 
@@ -30,6 +30,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.lastModified = file.getLastModified();
         this.isDirectory = false;
         this.fileType = FileType.fromMimeType(file.getMimeType());
+        this.size = file.getSize();
     }
 
     private GalleryFile(@NonNull Uri fileUri, List<GalleryFile> filesInDirectory) {
@@ -42,6 +43,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.isDirectory = true;
         this.fileType = FileType.fromFilename(encryptedName);
         this.filesInDirectory = filesInDirectory;
+        this.size = 0;
     }
 
     private GalleryFile(@NonNull CursorFile file, List<GalleryFile> filesInDirectory) {
@@ -54,6 +56,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.isDirectory = true;
         this.fileType = FileType.DIRECTORY;
         this.filesInDirectory = filesInDirectory;
+        this.size = 0;
     }
 
     public static GalleryFile asDirectory(Uri fileUri, List<GalleryFile> filesInDirectory) {
@@ -80,8 +83,8 @@ public class GalleryFile implements Comparable<GalleryFile> {
         return FileType.GIF == fileType;
     }
 
-    public long getLastModified() {
-        return lastModified;
+    public long getSize() {
+        return size;
     }
 
     @Nullable
