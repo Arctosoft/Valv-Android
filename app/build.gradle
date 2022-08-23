@@ -9,7 +9,7 @@ android {
         applicationId "se.arctosoft.vault"
         minSdk 28
         targetSdk 32
-        versionCode 3
+        versionCode 4
         versionName "1.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
