@@ -2,7 +2,7 @@
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="activity_horizontal_margin">16dp</dimen>
     <dimen name="activity_vertical_margin">16dp</dimen>
-    <dimen name="grid_item_margin">1dp</dimen>
+    <dimen name="grid_item_margin">0dp</dimen>
     <dimen name="grid_card_corner_radius">5dp</dimen>
     <dimen name="fullscreen_icon_size">28dp</dimen>
     <dimen name="fullscreen_buttons_padding">12dp</dimen>

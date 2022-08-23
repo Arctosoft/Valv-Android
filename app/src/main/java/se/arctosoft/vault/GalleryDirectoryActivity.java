@@ -230,6 +230,9 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         } else if (id == R.id.lock) {
             lock();
             return true;
+        } else if (id == R.id.toggle_filename) {
+            galleryGridAdapter.toggleFilenames();
+            return true;
         } else if (id == R.id.select_all) {
             galleryGridAdapter.selectAll();
             return true;
@@ -292,8 +295,9 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(@NonNull Menu menu) {
         getMenuInflater().inflate(R.menu.menu_gallery_directory, menu);
+        menu.findItem(R.id.toggle_filename).setVisible(!inSelectionMode);
         menu.findItem(R.id.select_all).setVisible(inSelectionMode);
         menu.findItem(R.id.export_selected).setVisible(inSelectionMode);
         return super.onCreateOptionsMenu(menu);

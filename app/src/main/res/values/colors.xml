@@ -11,8 +11,10 @@
     <color name="viewpager_buttons_bg_night">#99000000</color>
     <color name="black10">#1A000000</color>
     <color name="white10">#1AFFFFFF</color>
-    <color name="textColorDark">#DF454545</color>
-    <color name="textColorLight">#DFE8E8E8</color>
+    <color name="text_color_dark">#DF454545</color>
+    <color name="text_color_light">#DFE8E8E8</color>
+    <color name="grid_stroke_color_night">#0CFFFFFF</color>
+    <color name="grid_stroke_color_day">#0D000000</color>
     <color name="primary_color">#03a9f4</color>
     <color name="primary_dark_color">#007ac1</color>
     <color name="primary_night_color">#0793D3</color>
@@ -23,7 +25,7 @@
     <color name="secondary_night_dark_color">#178493</color>
     <color name="button_warning_color">#CA1818</color>
 
-    <color name="lightColorToolbar">#FBFBFB</color>
-    <color name="colorInvisible">#00FFFFFF</color>
-    <color name="colorTextYellow">#F6DB41</color>
+    <color name="light_color_toolbar">#FBFBFB</color>
+    <color name="color_invisible">#00FFFFFF</color>
+    <color name="color_text_yellow">#F6DB41</color>
 </resources>

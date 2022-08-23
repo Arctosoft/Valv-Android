@@ -4,7 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="@dimen/grid_item_margin"
-    app:cardCornerRadius="@dimen/grid_card_corner_radius">
+    app:cardCornerRadius="@dimen/grid_card_corner_radius"
+    app:strokeColor="?attr/gallery_grid_stroke"
+    app:strokeWidth="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"

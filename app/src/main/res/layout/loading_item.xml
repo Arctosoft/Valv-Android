@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/cLLoading"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="0dp"
     android:clickable="true"
     android:focusable="true"
     android:visibility="gone"
@@ -13,8 +13,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:alpha="0.7"
-        android:background="@color/white" />
+        android:background="?attr/gallery_viewpager_buttons_background" />
 
     <ProgressBar
         android:id="@+id/progressBar"
@@ -45,7 +44,7 @@
         android:text="@string/loading"
         android:textAlignment="center"
         android:textSize="14sp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/txtLoading" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

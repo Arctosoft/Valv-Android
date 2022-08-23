@@ -14,10 +14,11 @@
         <!-- Customize your theme here. -->
         <item name="gallery_viewpager_background">@color/white</item>
         <item name="gallery_viewpager_buttons_background">@color/viewpager_buttons_bg_day</item>
-        <item name="gallery_viewpager_buttons">@color/textColorDark</item>
+        <item name="gallery_viewpager_buttons">@color/text_color_dark</item>
         <item name="toolbar_icon_tint">@color/black</item>
         <item name="button_secondary">@color/secondary_color</item>
         <item name="button_warning">@color/button_warning_color</item>
+        <item name="gallery_grid_stroke">@color/grid_stroke_color_day</item>
     </style>
 
     <!--<style name="Theme.Vault.NoActionBar">

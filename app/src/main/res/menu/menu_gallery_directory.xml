@@ -7,6 +7,11 @@
         android:title="@string/menu_lock_vault"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/toggle_filename"
+        android:icon="@drawable/ic_round_view_compact_24"
+        android:title="@string/menu_toggle_filename"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/select_all"
         android:icon="@drawable/ic_baseline_select_all_24"
         android:title="@string/menu_select_all"

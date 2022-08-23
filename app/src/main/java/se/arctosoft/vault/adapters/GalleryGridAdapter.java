@@ -42,11 +42,21 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
 
     private final WeakReference<FragmentActivity> weakReference;
     private final List<GalleryFile> galleryFiles, selectedFiles;
-    private final boolean showFileNames;
+    private boolean showFileNames;
     private IOnFileDeleted onFileDeleted;
     private IOnFileClicked onFileCLicked;
     private IOnSelectionModeChanged onSelectionModeChanged;
     private boolean selectMode;
+
+    private static class Payload {
+        private static final int TYPE_SELECT_ALL = 0;
+        private static final int TYPE_TOGGLE_FILENAME = 1;
+        private final int type;
+
+        private Payload(int type) {
+            this.type = type;
+        }
+    }
 
     public GalleryGridAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, boolean showFileNames) {
         this.weakReference = new WeakReference<>(context);
@@ -95,9 +105,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                         .apply(GlideStuff.getRequestOptions())
                         .into(holder.imageView);
             }
-            if (showFileNames) {
-                holder.txtName.setText(context.getString(R.string.gallery_adapter_folder_name, galleryFile.getNameWithPath(), galleryFile.getFileCount()));
-            }
+            holder.txtName.setText(context.getString(R.string.gallery_adapter_folder_name, galleryFile.getNameWithPath(), galleryFile.getFileCount()));
         } else {
             Glide.with(context)
                     .load(galleryFile.getThumbUri())
@@ -164,10 +172,15 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     public void onBindViewHolder(@NonNull GalleryGridViewHolder holder, int position, @NonNull List<Object> payloads) {
         boolean found = false;
         for (Object o : payloads) {
-            if (o instanceof Boolean) {
-                updateSelectedView(holder, galleryFiles.get(position));
-                found = true;
-                break;
+            if (o instanceof Payload) {
+                if (((Payload) o).type == Payload.TYPE_SELECT_ALL) {
+                    updateSelectedView(holder, galleryFiles.get(position));
+                    found = true;
+                    break;
+                } else if (((Payload) o).type == Payload.TYPE_TOGGLE_FILENAME) {
+                    holder.txtName.setVisibility(showFileNames ? View.VISIBLE : View.GONE);
+                    found = true;
+                }
             }
         }
         if (!found) {
@@ -178,11 +191,11 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     private void setSelectMode(boolean selectionMode) {
         if (selectionMode && !selectMode) {
             selectMode = true;
-            notifyItemRangeChanged(0, galleryFiles.size(), true);
+            notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
         } else if (!selectionMode && selectMode) {
             selectMode = false;
             selectedFiles.clear();
-            notifyItemRangeChanged(0, galleryFiles.size(), false);
+            notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
         }
         if (onSelectionModeChanged != null) {
             onSelectionModeChanged.onSelectionModeChanged(selectMode);
@@ -225,8 +238,13 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         synchronized (LOCK) {
             selectedFiles.clear();
             selectedFiles.addAll(galleryFiles);
-            notifyItemRangeChanged(0, galleryFiles.size(), true);
+            notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
         }
+    }
+
+    public void toggleFilenames() {
+        showFileNames = !showFileNames;
+        notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_TOGGLE_FILENAME));
     }
 
     @NonNull
