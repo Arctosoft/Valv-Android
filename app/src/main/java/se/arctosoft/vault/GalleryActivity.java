@@ -224,9 +224,20 @@ public class GalleryActivity extends AppCompatActivity {
                 }
                 runOnUiThread(() -> {
                     Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_done, progress[0] - 1));
-                    findFolders();
+                    setLoading(false);
                 });
-
+                synchronized (lock) {
+                    for (int i = 0; i < this.galleryFiles.size(); i++) {
+                        GalleryFile g = this.galleryFiles.get(i);
+                        if (g.getUri().equals(directory.getUri())) {
+                            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directory.getUri());
+                            g.setFilesInDirectory(galleryFiles);
+                            int finalI = i;
+                            runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(finalI));
+                            break;
+                        }
+                    }
+                }
             }).start();
         });
     }
@@ -241,18 +252,22 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     private void addDirectories(@NonNull List<Uri> directories) {
-        List<GalleryFile> galleryDirectories = new ArrayList<>(directories.size());
-        for (Uri directory : directories) {
-            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directory);
-            galleryDirectories.add(GalleryFile.asDirectory(directory, galleryFiles));
+        for (int i = 0; i < directories.size(); i++) {
+            Uri uri = directories.get(i);
+            GalleryFile galleryFile = GalleryFile.asDirectory(uri, null);
+            runOnUiThread(() -> {
+                synchronized (lock) {
+                    this.galleryFiles.add(galleryFile);
+                    galleryGridAdapter.notifyItemInserted(this.galleryFiles.size() - 1);
+                }
+            });
+            new Thread(() -> {
+                List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, uri);
+                galleryFile.setFilesInDirectory(galleryFiles);
+                runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(this.galleryFiles.indexOf(galleryFile)));
+            }).start();
         }
-        runOnUiThread(() -> {
-            setLoading(false);
-            synchronized (lock) {
-                this.galleryFiles.addAll(0, galleryDirectories);
-                galleryGridAdapter.notifyItemRangeInserted(0, galleryDirectories.size());
-            }
-        });
+        runOnUiThread(() -> setLoading(false));
     }
 
     @Override

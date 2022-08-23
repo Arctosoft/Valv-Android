@@ -8,7 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -24,7 +23,6 @@ import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DefaultDataSource;
 import com.google.android.material.color.MaterialColors;
 
 import java.lang.ref.WeakReference;
@@ -70,15 +68,15 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     public GalleryPagerViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
         ConstraintLayout v = (ConstraintLayout) layoutInflater.inflate(R.layout.adapter_gallery_viewpager_item, parent, false);
-        FrameLayout fLContent = v.findViewById(R.id.fLContent);
+        ViewGroup view = v.findViewById(R.id.content);
         if (viewType == FileType.IMAGE.i) {
-            fLContent.addView(layoutInflater.inflate(R.layout.adapter_gallery_viewpager_item_image, fLContent, false));
+            view.addView(layoutInflater.inflate(R.layout.adapter_gallery_viewpager_item_image, view, false));
             return new GalleryPagerViewHolder.GalleryPagerImageViewHolder(v);
         } else if (viewType == FileType.GIF.i) {
-            fLContent.addView(layoutInflater.inflate(R.layout.adapter_gallery_viewpager_item_gif, fLContent, false));
+            view.addView(layoutInflater.inflate(R.layout.adapter_gallery_viewpager_item_gif, view, false));
             return new GalleryPagerViewHolder.GalleryPagerGifViewHolder(v);
         } else {
-            fLContent.addView(layoutInflater.inflate(R.layout.adapter_gallery_viewpager_item_video, fLContent, false));
+            view.addView(layoutInflater.inflate(R.layout.adapter_gallery_viewpager_item_video, view, false));
             return new GalleryPagerViewHolder.GalleryPagerVideoViewHolder(v);
         }
     }
@@ -90,7 +88,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
 
         holder.txtName.setText(galleryFile.getName());
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder) {
-            setupVideoView((GalleryPagerViewHolder.GalleryPagerVideoViewHolder) holder, context, galleryFile, position);
+            setupVideoView((GalleryPagerViewHolder.GalleryPagerVideoViewHolder) holder, context, galleryFile);
         } else {
             setupImageView(holder, context, galleryFile);
         }
@@ -114,8 +112,9 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         }
     }
 
-    private void setupVideoView(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, FragmentActivity context, GalleryFile galleryFile, int position) {
+    private void setupVideoView(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         holder.rLPlay.setVisibility(View.VISIBLE);
+        holder.playerView.setVisibility(View.INVISIBLE);
         Glide.with(context)
                 .load(galleryFile.getThumbUri())
                 .into(holder.imgThumb);
@@ -123,46 +122,21 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         holder.imgFullscreen.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         holder.rLPlay.setOnClickListener(v -> {
             holder.rLPlay.setVisibility(View.GONE);
-            //if (galleryFile.getDecryptedCacheUri() != null) {
-            playVideo(context, galleryFile.getUri(), holder, galleryFile);
-            /*} else {
-                Encryption.decryptToCache(context, galleryFile.getUri(), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
-                    @Override
-                    public void onUriResult(Uri outputUri) {
-                        galleryFile.setDecryptedCacheUri(outputUri);
-                        Log.e(TAG, "onUriResult: created " + outputUri);
-                        if (holder.getBindingAdapterPosition() == position && isPagerShown) {
-                            playVideo(context, outputUri, holder, galleryFile);
-                        }
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onInvalidPassword(InvalidPasswordException e) {
-                        e.printStackTrace();
-                    }
-                });
-            }*/
+            holder.playerView.setVisibility(View.VISIBLE);
+            playVideo(context, galleryFile.getUri(), holder);
         });
     }
 
-    private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, GalleryFile galleryFile) {
+    private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
         lastPlayerPos = holder.getBindingAdapterPosition();
         if (player == null) {
             DataSource.Factory dataSourceFactory = new ChaCha20DataSourceFactory(context);
-            //DefaultDataSource.Factory defaultFactory = new DefaultDataSource.Factory(context, dataSourceFactory);
             ProgressiveMediaSource.Factory progressiveFactory = new ProgressiveMediaSource.Factory(dataSourceFactory);
             player = new ExoPlayer.Builder(context)
                     .setMediaSourceFactory(progressiveFactory)
                     .build();
             player.setRepeatMode(Player.REPEAT_MODE_ONE);
         }
-        //CacheDataSourceFactory cacheDataSourceFactory = new CacheDataSourceFactory(context, 300 * 1024 * 1024, 50 * 1024 * 1024);
-        //MediaSource videoSource = new ProgressiveMediaSource.Factory(cacheDataSourceFactory).createMediaSource(MediaItem.fromUri(outputUri));
         MediaItem mediaItem = new MediaItem.Builder()
                 .setMimeType("video/mp4")
                 .setUri(fileUri)
@@ -365,7 +339,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             player.release();
             player = null;
         }
-        if (lastPlayerPos >= 0) {
+        if (lastPlayerPos >= 0 && playerView != null) {
             playerView.postDelayed(() -> notifyItemChanged(lastPlayerPos), 100);
         }
     }

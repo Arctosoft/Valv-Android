@@ -6,21 +6,26 @@ import android.provider.DocumentsContract;
 public class CursorFile implements Comparable<CursorFile> {
     private final String name;
     private final Uri uri;
-    private final long lastModified;
+    private final long lastModified, size;
     private final String mimeType;
     private final boolean isDirectory;
     private String unencryptedName;
 
-    public CursorFile(String name, Uri uri, long lastModified, String mimeType) {
+    public CursorFile(String name, Uri uri, long lastModified, String mimeType, long size) {
         this.name = name;
         this.uri = uri;
         this.lastModified = lastModified;
         this.mimeType = mimeType;
+        this.size = size;
         this.isDirectory = DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType);
     }
 
     public void setUnencryptedName(String unencryptedName) {
         this.unencryptedName = unencryptedName;
+    }
+
+    public long getSize() {
+        return size;
     }
 
     public String getUnencryptedName() {

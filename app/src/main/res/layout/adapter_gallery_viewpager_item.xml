@@ -5,8 +5,8 @@
     android:layout_height="match_parent"
     android:animateLayoutChanges="true">
 
-    <FrameLayout
-        android:id="@+id/fLContent"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/content"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

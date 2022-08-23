@@ -33,6 +33,7 @@ import se.arctosoft.vault.interfaces.IOnFileClicked;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.interfaces.IOnSelectionModeChanged;
 import se.arctosoft.vault.utils.GlideStuff;
+import se.arctosoft.vault.utils.StringStuff;
 
 public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHolder> implements IOnSelectionModeChanged {
     private static final String TAG = "GalleryFolderAdapter";
@@ -122,7 +123,11 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                     })
                     .into(holder.imageView);
             if (showFileNames) {
-                holder.txtName.setText(galleryFile.getName());
+                if (galleryFile.getSize() > 0) {
+                    holder.txtName.setText(context.getString(R.string.gallery_adapter_file_name, galleryFile.getNameWithPath(), StringStuff.bytesToReadableString(galleryFile.getSize())));
+                } else {
+                    holder.txtName.setText(galleryFile.getName());
+                }
             }
         }
         holder.imageView.setOnClickListener(v -> {
