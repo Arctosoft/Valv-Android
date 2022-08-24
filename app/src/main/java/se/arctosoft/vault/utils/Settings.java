@@ -86,11 +86,19 @@ public class Settings {
     public boolean addGalleryDirectory(@NonNull Uri uri) {
         List<String> directories = getGalleryDirectories();
         String uriString = uri.toString();
+        boolean reordered = false;
         if (directories.contains(uriString)) {
             Log.d(TAG, "addGalleryDirectory: uri already saved");
-            return false;
+            if (directories.remove(uriString)) {
+                directories.add(0, uriString);
+                reordered = true;
+            } else {
+                return false;
+            }
         }
-        directories.add(0, uriString);
+        if (!reordered) {
+            directories.add(0, uriString);
+        }
         getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
         return true;
     }
