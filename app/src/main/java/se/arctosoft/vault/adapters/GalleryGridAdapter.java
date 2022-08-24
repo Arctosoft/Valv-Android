@@ -131,7 +131,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                     })
                     .into(holder.imageView);
             if (galleryFile.getSize() > 0) {
-                holder.txtName.setText(context.getString(R.string.gallery_adapter_file_name, galleryFile.getNameWithPath(), StringStuff.bytesToReadableString(galleryFile.getSize())));
+                holder.txtName.setText(context.getString(R.string.gallery_adapter_file_name, galleryFile.getName(), StringStuff.bytesToReadableString(galleryFile.getSize())));
             } else {
                 holder.txtName.setText(galleryFile.getName());
             }

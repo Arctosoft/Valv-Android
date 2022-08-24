@@ -233,7 +233,13 @@ public class GalleryActivity extends AppCompatActivity {
                             List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directory.getUri());
                             g.setFilesInDirectory(galleryFiles);
                             int finalI = i;
-                            runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(finalI));
+                            settings.addGalleryDirectory(g.getUri());
+                            GalleryFile removed = this.galleryFiles.remove(finalI);
+                            this.galleryFiles.add(0, removed);
+                            runOnUiThread(() -> {
+                                galleryGridAdapter.notifyItemMoved(finalI, 0);
+                                galleryGridAdapter.notifyItemChanged(0);
+                            });
                             break;
                         }
                     }
