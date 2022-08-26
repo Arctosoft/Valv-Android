@@ -20,6 +20,7 @@ import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 
+import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,11 +29,13 @@ import se.arctosoft.vault.GalleryDirectoryActivity;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryGridViewHolder;
 import se.arctosoft.vault.data.GalleryFile;
+import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.interfaces.IOnFileClicked;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.interfaces.IOnSelectionModeChanged;
 import se.arctosoft.vault.utils.GlideStuff;
+import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.StringStuff;
 
 public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHolder> implements IOnSelectionModeChanged {
@@ -42,6 +45,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
 
     private final WeakReference<FragmentActivity> weakReference;
     private final List<GalleryFile> galleryFiles, selectedFiles;
+    private final Settings settings;
     private boolean showFileNames;
     private IOnFileDeleted onFileDeleted;
     private IOnFileClicked onFileCLicked;
@@ -51,6 +55,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     private static class Payload {
         private static final int TYPE_SELECT_ALL = 0;
         private static final int TYPE_TOGGLE_FILENAME = 1;
+        private static final int TYPE_NEW_FILENAME = 2;
         private final int type;
 
         private Payload(int type) {
@@ -63,6 +68,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         this.galleryFiles = galleryFiles;
         this.showFileNames = showFileNames;
         this.selectedFiles = new ArrayList<>();
+        this.settings = Settings.getInstance(context);
     }
 
     public void setOnFileCLicked(IOnFileClicked onFileCLicked) {
@@ -86,7 +92,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
 
     @Override
     public void onBindViewHolder(@NonNull GalleryGridViewHolder holder, int position) {
-        Context context = weakReference.get();
+        FragmentActivity context = weakReference.get();
         GalleryFile galleryFile = galleryFiles.get(position);
 
         updateSelectedView(holder, galleryFile);
@@ -116,7 +122,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                             if (e != null) {
                                 for (Throwable t : e.getRootCauses()) {
                                     if (t instanceof InvalidPasswordException) {
-                                        removeItem(holder.getAdapterPosition());
+                                        removeItem(holder.getBindingAdapterPosition());
                                         break;
                                     }
                                 }
@@ -126,16 +132,50 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
 
                         @Override
                         public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                            loadOriginalFilename(galleryFile, context, holder, holder.getBindingAdapterPosition());
                             return false;
                         }
                     })
                     .into(holder.imageView);
-            if (galleryFile.getSize() > 0) {
-                holder.txtName.setText(context.getString(R.string.gallery_adapter_file_name, galleryFile.getName(), StringStuff.bytesToReadableString(galleryFile.getSize())));
-            } else {
-                holder.txtName.setText(galleryFile.getName());
-            }
+            setItemFilename(holder, context, galleryFile);
         }
+        setClickListener(holder, context, galleryFile);
+    }
+
+    private void loadOriginalFilename(@NonNull GalleryFile galleryFile, FragmentActivity context, @NonNull GalleryGridViewHolder holder, int position) {
+        if (position < 0 || position >= galleryFiles.size() - 1) {
+            return;
+        }
+        if (!galleryFile.isDirectory() && galleryFile.getOriginalName() == null) {
+            new Thread(() -> {
+                try {
+                    String originalFilename = Encryption.getOriginalFilename(context.getContentResolver().openInputStream(galleryFile.getUri()), settings.getTempPassword(), false);
+                    galleryFile.setOriginalName(originalFilename);
+                    if (showFileNames) {
+                        int pos = holder.getBindingAdapterPosition();
+                        if (pos == position) {
+                            context.runOnUiThread(() -> setItemFilename(holder, context, galleryFile));
+                        } else if (pos >= 0 && pos < galleryFiles.size()) {
+                            context.runOnUiThread(() -> notifyItemChanged(pos, new Payload(Payload.TYPE_NEW_FILENAME)));
+                        }
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                    galleryFile.setOriginalName("");
+                }
+            }).start();
+        }
+    }
+
+    private void setItemFilename(@NonNull GalleryGridViewHolder holder, Context context, @NonNull GalleryFile galleryFile) {
+        if (galleryFile.getSize() > 0) {
+            holder.txtName.setText(context.getString(R.string.gallery_adapter_file_name, galleryFile.getName(), StringStuff.bytesToReadableString(galleryFile.getSize())));
+        } else {
+            holder.txtName.setText(galleryFile.getName());
+        }
+    }
+
+    private void setClickListener(@NonNull GalleryGridViewHolder holder, Context context, GalleryFile galleryFile) {
         holder.imageView.setOnClickListener(v -> {
             if (selectMode) {
                 boolean selected = !selectedFiles.contains(galleryFile);
@@ -177,6 +217,9 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                     break;
                 } else if (((Payload) o).type == Payload.TYPE_TOGGLE_FILENAME) {
                     holder.txtName.setVisibility(showFileNames ? View.VISIBLE : View.GONE);
+                    found = true;
+                } else if (((Payload) o).type == Payload.TYPE_NEW_FILENAME) {
+                    setItemFilename(holder, weakReference.get(), galleryFiles.get(holder.getBindingAdapterPosition()));
                     found = true;
                 }
             }

@@ -33,7 +33,7 @@ import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryPagerViewHolder;
 import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
-import se.arctosoft.vault.encryption.ChaCha20DataSourceFactory;
+import se.arctosoft.vault.encryption.MyDataSourceFactory;
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
@@ -131,7 +131,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
         lastPlayerPos = holder.getBindingAdapterPosition();
         if (player == null) {
-            DataSource.Factory dataSourceFactory = new ChaCha20DataSourceFactory(context);
+            DataSource.Factory dataSourceFactory = new MyDataSourceFactory(context);
             ProgressiveMediaSource.Factory progressiveFactory = new ProgressiveMediaSource.Factory(dataSourceFactory);
             player = new ExoPlayer.Builder(context)
                     .setMediaSourceFactory(progressiveFactory)

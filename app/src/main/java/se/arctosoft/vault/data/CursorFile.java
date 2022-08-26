@@ -9,7 +9,7 @@ public class CursorFile implements Comparable<CursorFile> {
     private final long lastModified, size;
     private final String mimeType;
     private final boolean isDirectory;
-    private String unencryptedName;
+    private String nameWithoutPrefix;
 
     public CursorFile(String name, Uri uri, long lastModified, String mimeType, long size) {
         this.name = name;
@@ -20,16 +20,16 @@ public class CursorFile implements Comparable<CursorFile> {
         this.lastModified = isDirectory ? System.currentTimeMillis() : lastModified;
     }
 
-    public void setUnencryptedName(String unencryptedName) {
-        this.unencryptedName = unencryptedName;
+    public void setNameWithoutPrefix(String nameWithoutPrefix) {
+        this.nameWithoutPrefix = nameWithoutPrefix;
     }
 
     public long getSize() {
         return size;
     }
 
-    public String getUnencryptedName() {
-        return unencryptedName;
+    public String getNameWithoutPrefix() {
+        return nameWithoutPrefix;
     }
 
     public boolean isDirectory() {

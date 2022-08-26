@@ -76,11 +76,11 @@ public class FileStuff {
             //galleryFiles.add(GalleryFile.asDirectory(file, null)); // TODO fix later
             //    continue;
             //}
-            file.setUnencryptedName(FileStuff.getUnencryptedFileName(file.getName()));
+            file.setNameWithoutPrefix(FileStuff.getNameWithoutPrefix(file.getName()));
             boolean foundThumb = false;
             for (CursorFile thumb : documentThumbs) {
-                thumb.setUnencryptedName(FileStuff.getUnencryptedFileName(thumb.getName()));
-                if (file.getUnencryptedName().equals(thumb.getUnencryptedName())) {
+                thumb.setNameWithoutPrefix(FileStuff.getNameWithoutPrefix(thumb.getName()));
+                if (file.getNameWithoutPrefix().equals(thumb.getNameWithoutPrefix())) {
                     galleryFiles.add(GalleryFile.asFile(file, thumb));
                     foundThumb = true;
                     break;
@@ -135,7 +135,7 @@ public class FileStuff {
         return s;
     }
 
-    public static String getUnencryptedFileName(@NonNull String s) {
+    public static String getNameWithoutPrefix(@NonNull String s) {
         return s.split("-", 2)[1];
     }
 

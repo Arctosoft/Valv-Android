@@ -20,14 +20,14 @@ import javax.crypto.CipherInputStream;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.utils.Settings;
 
-public class ChaChaDataSource implements DataSource {
-    private static final String TAG = "ChaChaDataSource";
+public class MyDataSource implements DataSource {
+    private static final String TAG = "MyDataSource";
     private final Context context;
 
     private Encryption.Streams streams;
     private Uri uri;
 
-    public ChaChaDataSource(@NonNull Context context) {
+    public MyDataSource(@NonNull Context context) {
         this.context = context.getApplicationContext();
     }
 

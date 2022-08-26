@@ -39,6 +39,7 @@ import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
+import se.arctosoft.vault.utils.StringStuff;
 
 public class Encryption {
     private static final String TAG = "Encryption";
@@ -62,16 +63,16 @@ public class Encryption {
             throw new RuntimeException("No password");
         }
 
-        String name = sourceFile.getName();
-        DocumentFile file = directory.createFile(sourceFile.getType(), FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + name);
-        DocumentFile thumb = directory.createFile(sourceFile.getType(), PREFIX_THUMB + name);
+        String generatedName = StringStuff.getRandomFileName();
+        DocumentFile file = directory.createFile(sourceFile.getType(), FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + generatedName);
+        DocumentFile thumb = directory.createFile(sourceFile.getType(), PREFIX_THUMB + generatedName);
 
         if (file == null) {
             Log.e(TAG, "importFileToDirectory: could not create file from " + sourceFile.getUri());
             return new Pair<>(false, false);
         }
         try {
-            createFile(context, sourceFile.getUri(), file, tempPassword);
+            createFile(context, sourceFile.getUri(), file, tempPassword, sourceFile.getName());
         } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
             file.delete();
@@ -79,7 +80,7 @@ public class Encryption {
         }
         boolean createdThumb = false;
         try {
-            createThumb(context, sourceFile.getUri(), thumb, tempPassword);
+            createThumb(context, sourceFile.getUri(), thumb, tempPassword, sourceFile.getName());
             createdThumb = true;
         } catch (GeneralSecurityException | IOException | ExecutionException | InterruptedException e) {
             e.printStackTrace();
@@ -107,22 +108,30 @@ public class Encryption {
         private final InputStream inputStream;
         private final CipherOutputStream outputStream;
         private final SecretKey secretKey;
+        private final String originalFileName;
 
         private Streams(@NonNull InputStream inputStream, @NonNull CipherOutputStream outputStream, @NonNull SecretKey secretKey) {
             this.inputStream = inputStream;
             this.outputStream = outputStream;
             this.secretKey = secretKey;
+            this.originalFileName = "";
         }
 
-        private Streams(@NonNull InputStream inputStream, @NonNull SecretKey secretKey) {
+        private Streams(@NonNull InputStream inputStream, @NonNull SecretKey secretKey, @NonNull String originalFileName) {
             this.inputStream = inputStream;
             this.outputStream = null;
             this.secretKey = secretKey;
+            this.originalFileName = originalFileName;
         }
 
         @NonNull
         public InputStream getInputStream() {
             return inputStream;
+        }
+
+        @NonNull
+        public String getOriginalFileName() {
+            return originalFileName;
         }
 
         public void close() {
@@ -146,8 +155,8 @@ public class Encryption {
         }
     }
 
-    private static void createFile(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password) throws GeneralSecurityException, IOException {
-        Streams streams = getCipherOutputStream(context, input, outputFile, password, false);
+    private static void createFile(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
+        Streams streams = getCipherOutputStream(context, input, outputFile, password, false, sourceFileName);
 
         int read;
         byte[] buffer = new byte[2048];
@@ -158,8 +167,8 @@ public class Encryption {
         streams.close();
     }
 
-    private static void createThumb(FragmentActivity context, Uri input, DocumentFile outputThumbFile, char[] password) throws GeneralSecurityException, IOException, ExecutionException, InterruptedException {
-        Streams streams = getCipherOutputStream(context, input, outputThumbFile, password, true);
+    private static void createThumb(FragmentActivity context, Uri input, DocumentFile outputThumbFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException, ExecutionException, InterruptedException {
+        Streams streams = getCipherOutputStream(context, input, outputThumbFile, password, true, sourceFileName);
 
         Bitmap bitmap = Glide.with(context)
                 .asBitmap()
@@ -203,10 +212,26 @@ public class Encryption {
                 throw new InvalidPasswordException("Invalid password");
             }
         }
-        return new Streams(cipherInputStream, secretKey);
+        StringBuilder sb = new StringBuilder();
+        if (cipherInputStream.read() == 0x0A) {
+            int count = 0;
+            byte[] read = new byte[1];
+            while ((cipherInputStream.read(read)) > 0) {
+                if (read[0] == 0x0A) {
+                    break;
+                }
+                sb.append(new String(read));
+                if (++count > 300) {
+                    throw new IOException("Not valid file");
+                }
+            }
+        } else {
+            throw new IOException("Not valid file");
+        }
+        return new Streams(cipherInputStream, secretKey, sb.toString());
     }
 
-    private static Streams getCipherOutputStream(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, boolean isThumb) throws GeneralSecurityException, IOException {
+    private static Streams getCipherOutputStream(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, boolean isThumb, String sourceFileName) throws GeneralSecurityException, IOException {
         SecureRandom sr = SecureRandom.getInstanceStrong();
         byte[] salt = new byte[SALT_LENGTH];
         byte[] ivBytes = new byte[IV_LENGTH];
@@ -229,7 +254,21 @@ public class Encryption {
         if (isThumb) {
             cipherOutputStream.write(checkBytes);
         }
+        cipherOutputStream.write(("\n" + sourceFileName + "\n").getBytes());
         return new Streams(inputStream, cipherOutputStream, secretKey);
+    }
+
+    @NonNull
+    public static String getOriginalFilename(@NonNull InputStream inputStream, char[] password, boolean isThumb) {
+        String name = "";
+        try {
+            Streams streams = getCipherInputStream(inputStream, password, isThumb);
+            name = streams.originalFileName;
+            streams.close();
+        } catch (IOException | GeneralSecurityException | InvalidPasswordException e) {
+            e.printStackTrace();
+        }
+        return name;
     }
 
     private static void generateSecureRandom(SecureRandom sr, byte[] salt, byte[] ivBytes, @Nullable byte[] checkBytes) {
