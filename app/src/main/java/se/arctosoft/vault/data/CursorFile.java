@@ -14,10 +14,10 @@ public class CursorFile implements Comparable<CursorFile> {
     public CursorFile(String name, Uri uri, long lastModified, String mimeType, long size) {
         this.name = name;
         this.uri = uri;
-        this.lastModified = lastModified;
         this.mimeType = mimeType;
         this.size = size;
         this.isDirectory = DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType);
+        this.lastModified = isDirectory ? System.currentTimeMillis() : lastModified;
     }
 
     public void setUnencryptedName(String unencryptedName) {
@@ -54,9 +54,6 @@ public class CursorFile implements Comparable<CursorFile> {
 
     @Override
     public int compareTo(CursorFile o) {
-        if (o.isDirectory) {
-            return 1;
-        }
         return Long.compare(o.lastModified, this.lastModified);
     }
 }
