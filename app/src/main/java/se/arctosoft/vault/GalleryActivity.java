@@ -7,6 +7,7 @@ import android.icu.text.DecimalFormat;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -187,13 +188,13 @@ public class GalleryActivity extends AppCompatActivity {
             if (data != null) {
                 List<DocumentFile> documentFiles = FileStuff.getDocumentsFromDirectoryResult(this, data);
                 if (!documentFiles.isEmpty()) {
-                    importFiles(documentFiles, requestCode == REQUEST_IMPORT_VIDEOS);
+                    importFiles(documentFiles);
                 }
             }
         }
     }
 
-    private void importFiles(List<DocumentFile> documentFiles, boolean isVideo) {
+    private void importFiles(List<DocumentFile> documentFiles) {
         Dialogs.showImportGalleryChooseDestinationDialog(this, settings, directory -> {
             double totalSize = 0;
             for (DocumentFile file : documentFiles) {
@@ -209,17 +210,19 @@ public class GalleryActivity extends AppCompatActivity {
                     if (cancelTask) {
                         break;
                     }
-                    boolean imported = false;
+                    Pair<Boolean, Boolean> imported = new Pair<>(false, false);
                     try {
-                        imported = Encryption.importFileToDirectory(this, file, directory, settings, isVideo);
+                        imported = Encryption.importFileToDirectory(this, file, directory, settings);
                     } catch (SecurityException e) {
                         e.printStackTrace();
                     }
                     progress[0]++;
                     bytesDone[0] += file.length();
                     runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format(bytesDone[0] / 1000000.0), totalMB));
-                    if (!imported) {
+                    if (!imported.first) {
                         runOnUiThread(() -> Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_error, file.getName())));
+                    } else if (!imported.second) {
+                        runOnUiThread(() -> Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_error_no_thumb, file.getName())));
                     }
                 }
                 runOnUiThread(() -> {

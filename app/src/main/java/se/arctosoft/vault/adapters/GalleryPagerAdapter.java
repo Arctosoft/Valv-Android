@@ -19,6 +19,7 @@ import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
@@ -138,7 +139,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             player.setRepeatMode(Player.REPEAT_MODE_ONE);
         }
         MediaItem mediaItem = new MediaItem.Builder()
-                .setMimeType("video/mp4")
+                .setMimeType("video/*")
                 .setUri(fileUri)
                 .build();
         player.setMediaItem(mediaItem);
@@ -149,6 +150,12 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             public void onIsPlayingChanged(boolean isPlaying) {
                 Player.Listener.super.onIsPlayingChanged(isPlaying);
                 holder.lLButtons.setVisibility(isPlaying ? View.INVISIBLE : View.VISIBLE);
+            }
+
+            @Override
+            public void onPlayerError(@NonNull PlaybackException error) {
+                Player.Listener.super.onPlayerError(error);
+                Toaster.getInstance(context).showLong(context.getString(R.string.gallery_video_error, error.getMessage()));
             }
         });
         if (playerView != null) {

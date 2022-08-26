@@ -44,7 +44,9 @@
     <string name="gallery_importing_progress">Importing %1$d out of %2$d\n%3$s/%4$s MB</string>
     <string name="gallery_exporting_progress">Exporting %1$d out of %2$d\nFailed: %3$d</string>
     <string name="gallery_importing_error">Failed to import %1$s</string>
+    <string name="gallery_importing_error_no_thumb">Failed to create thumb for %1$s</string>
     <string name="gallery_importing_done">Encrypted and imported %1$d files</string>
+    <string name="gallery_video_error">Playback error: %1$s</string>
 
     <string name="dialog_remove_folder_title">Remove?</string>
     <plurals name="dialog_remove_folder_message">

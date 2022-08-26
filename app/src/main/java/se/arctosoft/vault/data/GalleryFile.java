@@ -140,7 +140,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
             return null;
         }
         for (GalleryFile g : filesInDirectory) {
-            if (!g.isDirectory()) {
+            if (!g.isDirectory() && g.hasThumb()) {
                 return g;
             }
         }

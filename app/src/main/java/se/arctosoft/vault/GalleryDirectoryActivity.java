@@ -50,6 +50,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private Uri currentDirectory;
     private boolean inSelectionMode = false;
     private boolean isExporting = false;
+    private boolean isCancelled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,6 +118,10 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                     new Thread(() -> {
                         synchronized (lock) {
                             for (GalleryFile f : galleryGridAdapter.getSelectedFiles()) {
+                                if (isCancelled) {
+                                    isCancelled = false;
+                                    break;
+                                }
                                 boolean deleted = FileStuff.deleteFile(this, f.getUri());
                                 FileStuff.deleteFile(this, f.getThumbUri());
                                 if (deleted) {
@@ -309,6 +314,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             showViewpager(false, viewModel.getCurrentPosition(), true);
         } else if (isExporting) {
             isExporting = false;
+        } else if (binding.cLLoading.cLLoading.getVisibility() == View.VISIBLE) {
+            isCancelled = true;
         } else if (inSelectionMode && galleryGridAdapter != null) {
             galleryGridAdapter.onSelectionModeChanged(false);
         } else {

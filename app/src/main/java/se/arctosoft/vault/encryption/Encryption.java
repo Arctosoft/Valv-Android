@@ -3,6 +3,7 @@ package se.arctosoft.vault.encryption;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.util.Log;
+import android.util.Pair;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -55,29 +56,36 @@ public class Encryption {
     public static final String PREFIX_VIDEO_FILE = ".arcv1.v-";
     public static final String PREFIX_THUMB = ".arcv1.t-";
 
-    public static boolean importFileToDirectory(FragmentActivity context, DocumentFile sourceFile, DocumentFile directory, Settings settings, boolean isVideo) {
+    public static Pair<Boolean, Boolean> importFileToDirectory(FragmentActivity context, DocumentFile sourceFile, DocumentFile directory, Settings settings) {
         char[] tempPassword = settings.getTempPassword();
         if (tempPassword == null || tempPassword.length == 0) {
             throw new RuntimeException("No password");
         }
 
         String name = sourceFile.getName();
-        DocumentFile file = directory.createFile(isVideo ? "video/*" : "image/*", FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + name);
-        DocumentFile thumb = directory.createFile("image/jpg", PREFIX_THUMB + name);
+        DocumentFile file = directory.createFile(sourceFile.getType(), FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + name);
+        DocumentFile thumb = directory.createFile(sourceFile.getType(), PREFIX_THUMB + name);
 
         if (file == null) {
-            return false;
+            Log.e(TAG, "importFileToDirectory: could not create file from " + sourceFile.getUri());
+            return new Pair<>(false, false);
         }
         try {
             createFile(context, sourceFile.getUri(), file, tempPassword);
-            createThumb(context, sourceFile.getUri(), thumb, tempPassword);
-        } catch (GeneralSecurityException | IOException | ExecutionException | InterruptedException e) {
+        } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
             file.delete();
-            thumb.delete();
-            return false;
+            return new Pair<>(false, false);
         }
-        return true;
+        boolean createdThumb = false;
+        try {
+            createThumb(context, sourceFile.getUri(), thumb, tempPassword);
+            createdThumb = true;
+        } catch (GeneralSecurityException | IOException | ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            thumb.delete();
+        }
+        return new Pair<>(true, createdThumb);
     }
 
     /*public static void writeFile(FragmentActivity context, Uri input, DocumentFile file, DocumentFile thumb, char[] password, IOnUriResult onUriResult) {
