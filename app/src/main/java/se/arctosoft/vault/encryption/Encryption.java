@@ -51,11 +51,11 @@ public class Encryption {
     private static final int IV_LENGTH = 12;
     private static final int CHECK_LENGTH = 12;
 
-    public static final String PREFIX_IMAGE_FILE = ".arcv1.i-";
-    public static final String PREFIX_GIF_FILE = ".arcv1.g-";
-    public static final String ENCRYPTED_PREFIX = ".arcv1.";
-    public static final String PREFIX_VIDEO_FILE = ".arcv1.v-";
-    public static final String PREFIX_THUMB = ".arcv1.t-";
+    public static final String ENCRYPTED_PREFIX = ".valv.";
+    public static final String PREFIX_IMAGE_FILE = ".valv.i.1-";
+    public static final String PREFIX_GIF_FILE = ".valv.g.1-";
+    public static final String PREFIX_VIDEO_FILE = ".valv.v.1-";
+    public static final String PREFIX_THUMB = ".valv.t.1-";
 
     public static Pair<Boolean, Boolean> importFileToDirectory(FragmentActivity context, DocumentFile sourceFile, DocumentFile directory, Settings settings) {
         char[] tempPassword = settings.getTempPassword();
@@ -88,21 +88,6 @@ public class Encryption {
         }
         return new Pair<>(true, createdThumb);
     }
-
-    /*public static void writeFile(FragmentActivity context, Uri input, DocumentFile file, DocumentFile thumb, char[] password, IOnUriResult onUriResult) {
-        new Thread(() -> {
-            try {
-                createFile(context, input, file, password);
-
-                createThumb(context, input, thumb, password);
-
-                context.runOnUiThread(() -> onUriResult.onUriResult(file.getUri()));
-            } catch (GeneralSecurityException | IOException | ExecutionException | InterruptedException e) {
-                e.printStackTrace();
-                context.runOnUiThread(() -> onUriResult.onError(e));
-            }
-        }).start();
-    }*/
 
     public static class Streams {
         private final InputStream inputStream;
@@ -263,7 +248,7 @@ public class Encryption {
         String name = "";
         try {
             Streams streams = getCipherInputStream(inputStream, password, isThumb);
-            name = streams.originalFileName;
+            name = streams.getOriginalFileName();
             streams.close();
         } catch (IOException | GeneralSecurityException | InvalidPasswordException e) {
             e.printStackTrace();

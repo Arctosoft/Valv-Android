@@ -37,7 +37,7 @@ import se.arctosoft.vault.viewmodel.GalleryDirectoryViewModel;
 
 public class GalleryDirectoryActivity extends AppCompatActivity {
     private static final String TAG = "GalleryDirectoryActivity";
-    private static final Object lock = new Object();
+    private static final Object LOCK = new Object();
     public static final String EXTRA_DIRECTORY = "d";
 
     private ActivityGalleryDirectoryBinding binding;
@@ -81,15 +81,16 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
 
     private void setLoading(boolean loading) {
         binding.cLLoading.cLLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
+        binding.cLLoading.txtProgress.setVisibility(View.GONE);
     }
 
-    private void setLoadingProgress(int exported, int failed, int total) {
+    private void setLoadingWithProgress(int progress, int failed, int total, int stringId) {
         binding.cLLoading.cLLoading.setVisibility(View.VISIBLE);
         if (total > 0) {
-            binding.cLLoading.txtImporting.setText(getString(R.string.gallery_exporting_progress, exported, total, failed));
-            binding.cLLoading.txtImporting.setVisibility(View.VISIBLE);
+            binding.cLLoading.txtProgress.setText(getString(stringId, progress, total, failed));
+            binding.cLLoading.txtProgress.setVisibility(View.VISIBLE);
         } else {
-            binding.cLLoading.txtImporting.setVisibility(View.GONE);
+            binding.cLLoading.txtProgress.setVisibility(View.GONE);
         }
     }
 
@@ -111,35 +112,41 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private void setClickListeners() {
         binding.btnDeleteFiles.setOnClickListener(v -> Dialogs.showConfirmationDialog(this, getString(R.string.dialog_delete_files_title),
                 getResources().getQuantityString(R.plurals.dialog_delete_files_message, galleryGridAdapter.getSelectedFiles().size()),
-                (dialog, which) -> {
-                    setLoading(true);
-                    new Thread(() -> {
-                        synchronized (lock) {
-                            for (GalleryFile f : galleryGridAdapter.getSelectedFiles()) {
-                                if (isCancelled) {
-                                    isCancelled = false;
-                                    break;
-                                }
-                                boolean deleted = FileStuff.deleteFile(this, f.getUri());
-                                FileStuff.deleteFile(this, f.getThumbUri());
-                                if (deleted) {
-                                    int i = viewModel.getGalleryFiles().indexOf(f);
-                                    if (i >= 0) {
-                                        viewModel.getGalleryFiles().remove(i);
-                                        runOnUiThread(() -> {
-                                            galleryGridAdapter.notifyItemRemoved(i);
-                                            galleryPagerAdapter.notifyItemRemoved(i);
-                                        });
-                                    }
-                                }
-                            }
+                (dialog, which) -> deleteSelectedFiles()));
+    }
+
+    private void deleteSelectedFiles() { // TODO run in parallel to make it faster, ExecutorService
+        setLoading(true);
+        new Thread(() -> {
+            synchronized (LOCK) {
+                int count = 0;
+                int failed = 0;
+                final int total = galleryGridAdapter.getSelectedFiles().size();
+                for (GalleryFile f : galleryGridAdapter.getSelectedFiles()) {
+                    if (isCancelled) {
+                        isCancelled = false;
+                        break;
+                    }
+                    setLoadingWithProgress(++count, failed, total, R.string.gallery_deleting_progress);
+                    boolean deleted = FileStuff.deleteFile(this, f.getUri());
+                    FileStuff.deleteFile(this, f.getThumbUri());
+                    if (deleted) {
+                        int i = viewModel.getGalleryFiles().indexOf(f);
+                        if (i >= 0) {
+                            viewModel.getGalleryFiles().remove(i);
                             runOnUiThread(() -> {
-                                galleryGridAdapter.onSelectionModeChanged(false);
-                                setLoading(false);
+                                galleryGridAdapter.notifyItemRemoved(i);
+                                galleryPagerAdapter.notifyItemRemoved(i);
                             });
                         }
-                    }).start();
-                }));
+                    }
+                }
+                runOnUiThread(() -> {
+                    galleryGridAdapter.onSelectionModeChanged(false);
+                    setLoading(false);
+                });
+            }
+        }).start();
     }
 
     private void setupRecycler() {
@@ -222,7 +229,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 setLoading(false);
-                synchronized (lock) {
+                synchronized (LOCK) {
                     if (viewModel.isInitialised()) {
                         return;
                     }
@@ -282,7 +289,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         Dialogs.showConfirmationDialog(this, getString(R.string.dialog_export_selected_title), getString(R.string.dialog_export_selected_message, FileStuff.getFilenameWithPathFromUri(currentDirectory)), (dialog, which) -> {
             isExporting = true;
             final List<GalleryFile> galleryFilesCopy = new ArrayList<>(galleryGridAdapter.getSelectedFiles());
-            setLoadingProgress(0, 0, galleryFilesCopy.size());
+            setLoadingWithProgress(0, 0, galleryFilesCopy.size(), R.string.gallery_exporting_progress);
             galleryGridAdapter.onSelectionModeChanged(false);
             new Thread(() -> {
                 final int[] exported = {0};
@@ -308,7 +315,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                         }
                     };
                     Encryption.decryptAndExport(this, f.getUri(), currentDirectory, settings.getTempPassword(), result, f.isVideo());
-                    runOnUiThread(() -> setLoadingProgress(exported[0], failed[0], galleryFilesCopy.size()));
+                    runOnUiThread(() -> setLoadingWithProgress(exported[0], failed[0], galleryFilesCopy.size(), R.string.gallery_exporting_progress));
                 }
                 runOnUiThread(() -> {
                     isExporting = false;

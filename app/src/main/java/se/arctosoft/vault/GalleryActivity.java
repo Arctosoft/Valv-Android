@@ -134,16 +134,16 @@ public class GalleryActivity extends AppCompatActivity {
 
     private void setLoading(boolean loading) {
         binding.cLLoading.cLLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
-        binding.cLLoading.txtImporting.setVisibility(View.GONE);
+        binding.cLLoading.txtProgress.setVisibility(View.GONE);
     }
 
     private void setLoadingProgress(int progress, int total, String doneMB, String totalMB) {
         binding.cLLoading.cLLoading.setVisibility(View.VISIBLE);
         if (total > 0) {
-            binding.cLLoading.txtImporting.setText(getString(R.string.gallery_importing_progress, progress, total, doneMB, totalMB));
-            binding.cLLoading.txtImporting.setVisibility(View.VISIBLE);
+            binding.cLLoading.txtProgress.setText(getString(R.string.gallery_importing_progress, progress, total, doneMB, totalMB));
+            binding.cLLoading.txtProgress.setVisibility(View.VISIBLE);
         } else {
-            binding.cLLoading.txtImporting.setVisibility(View.GONE);
+            binding.cLLoading.txtProgress.setVisibility(View.GONE);
         }
     }
 
