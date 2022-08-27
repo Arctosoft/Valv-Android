@@ -227,6 +227,7 @@ public class GalleryActivity extends AppCompatActivity {
                 runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), "0", totalMB));
                 for (DocumentFile file : documentFiles) {
                     if (cancelTask) {
+                        cancelTask = false;
                         break;
                     }
                     Pair<Boolean, Boolean> imported = new Pair<>(false, false);
