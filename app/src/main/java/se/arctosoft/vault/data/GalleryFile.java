@@ -20,6 +20,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private final long lastModified, size;
     private Uri thumbUri, decryptedCacheUri;
     private List<GalleryFile> filesInDirectory;
+    private String originalName;
 
     private GalleryFile(@NonNull CursorFile file, @Nullable CursorFile thumb) {
         this.fileUri = file.getUri();
@@ -71,6 +72,15 @@ public class GalleryFile implements Comparable<GalleryFile> {
         return new GalleryFile(fileUri, thumbUri);
     }
 
+    public void setOriginalName(String originalName) {
+        this.originalName = originalName;
+    }
+
+    @Nullable
+    public String getOriginalName() {
+        return originalName;
+    }
+
     public void setDecryptedCacheUri(Uri decryptedCacheUri) {
         this.decryptedCacheUri = decryptedCacheUri;
     }
@@ -101,7 +111,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
     }
 
     public String getName() {
-        return name;
+        return (originalName != null && !originalName.isEmpty()) ? originalName : name;
     }
 
     public String getEncryptedName() {
@@ -140,7 +150,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
             return null;
         }
         for (GalleryFile g : filesInDirectory) {
-            if (!g.isDirectory()) {
+            if (!g.isDirectory() && g.hasThumb()) {
                 return g;
             }
         }
