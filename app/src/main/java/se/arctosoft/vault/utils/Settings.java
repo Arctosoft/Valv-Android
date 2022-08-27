@@ -7,24 +7,23 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.documentfile.provider.DocumentFile;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import se.arctosoft.vault.data.StoredDirectory;
 import se.arctosoft.vault.encryption.Password;
+import se.arctosoft.vault.interfaces.IOnDirectoryAdded;
 
 public class Settings {
     private static final String TAG = "Settings";
     private static final String SHARED_PREFERENCES_NAME = "prefs";
     private static final String PREF_DIRECTORIES = "p.gallery.dirs";
-    private static final String PREF_PASSWORD_HASH = "p.p";
 
     private final Context context;
     private static Settings settings;
-    // TODO add e.g. "hello" to encrypted file and check it on decrypt. If it does not say "hello" the supplied password is incorrect
 
     private char[] password = null;
 
@@ -74,96 +73,101 @@ public class Settings {
         }
     }
 
-    @Nullable
-    public String getPasswordHash() {
-        return getSharedPrefs().getString(PREF_PASSWORD_HASH, null);
-    }
-
-    public void setPasswordHash(@Nullable String hash) {
-        getSharedPrefsEditor().putString(PREF_PASSWORD_HASH, hash).apply();
-    }
-
-    public boolean addGalleryDirectory(@NonNull Uri uri) {
-        List<String> directories = getGalleryDirectories();
-        String uriString = uri.toString();
-        boolean reordered = false;
-        if (directories.contains(uriString)) {
-            Log.d(TAG, "addGalleryDirectory: uri already saved");
-            if (directories.remove(uriString)) {
-                directories.add(0, uriString);
-                reordered = true;
-            } else {
-                return false;
+    public void addGalleryDirectory(@NonNull Uri uri, @Nullable IOnDirectoryAdded onDirectoryAdded) {
+        List<StoredDirectory> directories = getGalleryDirectories(false);
+        boolean isRootDir = true;
+        Uri parentFolder = null;
+        for (StoredDirectory storedDirectory : directories) {
+            if (!storedDirectory.isRootDir()) {
+                continue;
+            }
+            if (!uri.equals(storedDirectory.getUri()) && uri.getLastPathSegment().startsWith(storedDirectory.getUri().getLastPathSegment())) { // prevent adding a child of an already added folder
+                isRootDir = false;
+                parentFolder = storedDirectory.getUri();
+                break;
             }
         }
-        if (!reordered) {
-            directories.add(0, uriString);
+        String uriString = uri.toString();
+        StoredDirectory newDir = new StoredDirectory(uriString, isRootDir);
+        boolean reordered = false;
+        if (directories.contains(newDir)) {
+            Log.d(TAG, "addGalleryDirectory: uri already saved");
+            if (directories.remove(newDir)) {
+                directories.add(0, newDir);
+                reordered = true;
+            }
+        } else {
+            directories.add(0, newDir);
         }
         getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
-        return true;
+        if (onDirectoryAdded != null) {
+            if (reordered) {
+                onDirectoryAdded.onAlreadyExists(isRootDir);
+            } else if (isRootDir) {
+                onDirectoryAdded.onAddedAsRoot();
+            } else {
+                onDirectoryAdded.onAddedAsChildOf(parentFolder);
+            }
+        }
     }
 
     public void removeGalleryDirectory(@NonNull Uri uri) {
-        List<String> directories = getGalleryDirectories();
-        directories.remove(uri.toString());
+        List<StoredDirectory> directories = getGalleryDirectories(false);
+        directories.remove(new StoredDirectory(uri.toString(), false));
+        getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
+    }
+
+    public void removeGalleryDirectories(@NonNull List<Uri> uris) {
+        List<StoredDirectory> directories = getGalleryDirectories(false);
+        for (Uri u : uris) {
+            directories.remove(new StoredDirectory(u.toString(), false));
+        }
         getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
     }
 
     @NonNull
-    private String stringListAsString(@NonNull List<String> list) {
+    private String stringListAsString(@NonNull List<StoredDirectory> list) {
         if (list.isEmpty()) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        Iterator<String> iterator = list.iterator();
+        Iterator<StoredDirectory> iterator = list.iterator();
         while (iterator.hasNext()) {
-            sb.append(iterator.next());
+            sb.append(iterator.next().toString());
             if (iterator.hasNext()) {
                 sb.append("\n");
             }
         }
-        //Log.e(TAG, "stringListAsString: " + sb);
         return sb.toString();
     }
 
     @NonNull
-    public List<Uri> getGalleryDirectoriesAsUri() {
-        List<String> directories = getGalleryDirectories();
-        //Log.e(TAG, "getGalleryDirectoriesAsUri: " + directories.size());
+    public List<Uri> getGalleryDirectoriesAsUri(boolean rootDirsOnly) {
+        List<StoredDirectory> directories = getGalleryDirectories(rootDirsOnly);
         List<Uri> uris = new ArrayList<>(directories.size());
-        for (String s : directories) {
+        for (StoredDirectory s : directories) {
             if (s != null) {
-                uris.add(Uri.parse(s));
+                uris.add(s.getUri());
             }
         }
         return uris;
     }
 
     @NonNull
-    public List<DocumentFile> getGalleryDirectoriesAsDocumentFile(Context context) {
-        List<Uri> uris = getGalleryDirectoriesAsUri();
-        List<DocumentFile> documentFiles = new ArrayList<>(uris.size());
-        for (Uri uri : uris) {
-            DocumentFile pickedDir = DocumentFile.fromTreeUri(context, uri);
-            if (pickedDir != null && pickedDir.isDirectory()) {
-                documentFiles.add(pickedDir);
-            }
-        }
-        return documentFiles;
-    }
-
-    @NonNull
-    private List<String> getGalleryDirectories() {
+    private List<StoredDirectory> getGalleryDirectories(boolean rootDirsOnly) {
         String s = getSharedPrefs().getString(PREF_DIRECTORIES, null);
-        List<String> uris = new ArrayList<>();
+        List<StoredDirectory> storedDirectories = new ArrayList<>();
         if (s != null && !s.isEmpty()) {
             String[] split = s.split("\n");
             for (String value : split) {
                 if (value != null && !value.isEmpty()) {
-                    uris.add(value);
+                    boolean isRootDir = value.charAt(0) == '1';
+                    if (!rootDirsOnly || isRootDir) {
+                        storedDirectories.add(new StoredDirectory(value.substring(1), isRootDir));
+                    }
                 }
             }
         }
-        return uris;
+        return storedDirectories;
     }
 }

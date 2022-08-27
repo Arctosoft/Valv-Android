@@ -7,6 +7,7 @@ import android.icu.text.DecimalFormat;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -27,6 +28,7 @@ import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.databinding.ActivityGalleryBinding;
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.encryption.Password;
+import se.arctosoft.vault.interfaces.IOnDirectoryAdded;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
@@ -74,7 +76,7 @@ public class GalleryActivity extends AppCompatActivity {
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, spanCount, RecyclerView.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
-        galleryGridAdapter = new GalleryGridAdapter(this, galleryFiles, true);
+        galleryGridAdapter = new GalleryGridAdapter(this, galleryFiles, true, true);
         recyclerView.setAdapter(galleryGridAdapter);
         galleryGridAdapter.setOnSelectionModeChanged(this::onSelectionModeChanged);
 
@@ -132,16 +134,16 @@ public class GalleryActivity extends AppCompatActivity {
 
     private void setLoading(boolean loading) {
         binding.cLLoading.cLLoading.setVisibility(loading ? View.VISIBLE : View.GONE);
-        binding.cLLoading.txtImporting.setVisibility(View.GONE);
+        binding.cLLoading.txtProgress.setVisibility(View.GONE);
     }
 
     private void setLoadingProgress(int progress, int total, String doneMB, String totalMB) {
         binding.cLLoading.cLLoading.setVisibility(View.VISIBLE);
         if (total > 0) {
-            binding.cLLoading.txtImporting.setText(getString(R.string.gallery_importing_progress, progress, total, doneMB, totalMB));
-            binding.cLLoading.txtImporting.setVisibility(View.VISIBLE);
+            binding.cLLoading.txtProgress.setText(getString(R.string.gallery_importing_progress, progress, total, doneMB, totalMB));
+            binding.cLLoading.txtProgress.setVisibility(View.VISIBLE);
         } else {
-            binding.cLLoading.txtImporting.setVisibility(View.GONE);
+            binding.cLLoading.txtProgress.setVisibility(View.GONE);
         }
     }
 
@@ -155,7 +157,7 @@ public class GalleryActivity extends AppCompatActivity {
                     galleryGridAdapter.notifyItemRangeRemoved(0, size);
                 }
             });
-            List<Uri> directories = settings.getGalleryDirectoriesAsUri();
+            List<Uri> directories = settings.getGalleryDirectoriesAsUri(true);
 
             List<Uri> uriFiles = new ArrayList<>(directories.size());
             for (Uri uri : directories) {
@@ -177,23 +179,41 @@ public class GalleryActivity extends AppCompatActivity {
         if (requestCode == REQUEST_ADD_DIRECTORY && resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 Uri uri = data.getData();
-                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 DocumentFile documentFile = DocumentFile.fromTreeUri(this, uri);
-                if (settings.addGalleryDirectory(documentFile.getUri())) {
-                    addDirectory(documentFile.getUri());
-                }
+                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                settings.addGalleryDirectory(documentFile.getUri(), new IOnDirectoryAdded() {
+                    @Override
+                    public void onAddedAsRoot() {
+                        Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder, FileStuff.getFilenameWithPathFromUri(uri)));
+                        addDirectory(documentFile.getUri());
+                    }
+
+                    @Override
+                    public void onAddedAsChildOf(@NonNull Uri parentUri) {
+                        Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder_child, FileStuff.getFilenameWithPathFromUri(uri), FileStuff.getFilenameWithPathFromUri(parentUri)));
+                    }
+
+                    @Override
+                    public void onAlreadyExists(boolean isRootDir) {
+                        Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder_duplicate, FileStuff.getFilenameWithPathFromUri(uri)));
+                        if (isRootDir) {
+                            findFolders();
+                        }
+                    }
+                });
+
             }
         } else if ((requestCode == REQUEST_IMPORT_IMAGES || requestCode == REQUEST_IMPORT_VIDEOS) && resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 List<DocumentFile> documentFiles = FileStuff.getDocumentsFromDirectoryResult(this, data);
                 if (!documentFiles.isEmpty()) {
-                    importFiles(documentFiles, requestCode == REQUEST_IMPORT_VIDEOS);
+                    importFiles(documentFiles);
                 }
             }
         }
     }
 
-    private void importFiles(List<DocumentFile> documentFiles, boolean isVideo) {
+    private void importFiles(List<DocumentFile> documentFiles) {
         Dialogs.showImportGalleryChooseDestinationDialog(this, settings, directory -> {
             double totalSize = 0;
             for (DocumentFile file : documentFiles) {
@@ -209,17 +229,19 @@ public class GalleryActivity extends AppCompatActivity {
                     if (cancelTask) {
                         break;
                     }
-                    boolean imported = false;
+                    Pair<Boolean, Boolean> imported = new Pair<>(false, false);
                     try {
-                        imported = Encryption.importFileToDirectory(this, file, directory, settings, isVideo);
+                        imported = Encryption.importFileToDirectory(this, file, directory, settings);
                     } catch (SecurityException e) {
                         e.printStackTrace();
                     }
                     progress[0]++;
                     bytesDone[0] += file.length();
                     runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format(bytesDone[0] / 1000000.0), totalMB));
-                    if (!imported) {
+                    if (!imported.first) {
                         runOnUiThread(() -> Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_error, file.getName())));
+                    } else if (!imported.second) {
+                        runOnUiThread(() -> Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_error_no_thumb, file.getName())));
                     }
                 }
                 runOnUiThread(() -> {
@@ -233,7 +255,7 @@ public class GalleryActivity extends AppCompatActivity {
                             List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directory.getUri());
                             g.setFilesInDirectory(galleryFiles);
                             int finalI = i;
-                            settings.addGalleryDirectory(g.getUri());
+                            settings.addGalleryDirectory(g.getUri(), null);
                             GalleryFile removed = this.galleryFiles.remove(finalI);
                             this.galleryFiles.add(0, removed);
                             runOnUiThread(() -> {
@@ -282,9 +304,12 @@ public class GalleryActivity extends AppCompatActivity {
         if (id == android.R.id.home) {
             onBackPressed();
             return true;
-        } else if (id == R.id.import_files) {
-            FileStuff.pickImageFiles(this, REQUEST_IMPORT_IMAGES);
-            return true;
+        } else if (id == R.id.edit_included_folders) {
+            Dialogs.showEditIncludedFolders(this, settings, selectedToRemove -> {
+                settings.removeGalleryDirectories(selectedToRemove);
+                Toaster.getInstance(this).showLong(getResources().getQuantityString(R.plurals.edit_included_removed, selectedToRemove.size(), selectedToRemove.size()));
+                findFolders();
+            });
         } else if (id == R.id.about) {
             Dialogs.showTextDialog(this, getString(R.string.dialog_about_title), getString(R.string.dialog_about_message, BuildConfig.BUILD_TYPE, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE));
         } else if (id == R.id.lock) {

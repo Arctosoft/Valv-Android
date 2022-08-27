@@ -2,7 +2,6 @@ package se.arctosoft.vault.loader;
 
 import android.content.Context;
 import android.net.Uri;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -45,13 +44,11 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "cleanup: ");
         cancel();
     }
 
     @Override
     public void cancel() {
-        Log.i(TAG, "cancel:");
         if (streams != null) {
             streams.close(); // interrupts decode if any
         }

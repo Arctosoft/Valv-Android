@@ -6,13 +6,9 @@
         android:icon="@drawable/ic_outline_lock_24"
         android:title="@string/menu_lock_vault"
         app:showAsAction="ifRoom" />
-    <!--<item
+    <item
         android:id="@+id/edit_included_folders"
         android:title="@string/menu_gallery_edit_included_folders"
-        app:showAsAction="never" />-->
-    <item
-        android:id="@+id/import_files"
-        android:title="@string/menu_gallery_import"
         app:showAsAction="never" />
     <item
         android:id="@+id/about"

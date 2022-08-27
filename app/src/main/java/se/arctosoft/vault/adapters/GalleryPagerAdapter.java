@@ -19,12 +19,14 @@ import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.MediaItem;
+import com.google.android.exoplayer2.PlaybackException;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.ui.StyledPlayerView;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.material.color.MaterialColors;
 
+import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
 import java.util.List;
 
@@ -32,8 +34,8 @@ import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryPagerViewHolder;
 import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
-import se.arctosoft.vault.encryption.ChaCha20DataSourceFactory;
 import se.arctosoft.vault.encryption.Encryption;
+import se.arctosoft.vault.encryption.MyDataSourceFactory;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.utils.Dialogs;
@@ -49,8 +51,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private final IOnFileDeleted onFileDeleted;
     private final Uri currentDirectory;
     private boolean isFullscreen;
-    private boolean isPagerShown;
-
+    private final Settings settings;
     private ExoPlayer player;
     private StyledPlayerView playerView;
     private int lastPlayerPos = -1;
@@ -61,6 +62,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         this.onFileDeleted = onFileDeleted;
         this.currentDirectory = currentDirectory;
         this.isFullscreen = false;
+        this.settings = Settings.getInstance(context);
     }
 
     @NonNull
@@ -93,6 +95,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             setupImageView(holder, context, galleryFile);
         }
         setupButtons(holder, context, galleryFile);
+        loadOriginalFilename(galleryFile, context, holder, position);
     }
 
     @Override
@@ -104,11 +107,39 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                     showButtons(holder, !((Boolean) o));
                     found = true;
                     break;
+                } else if (o instanceof GalleryGridAdapter.Payload) {
+                    if (((GalleryGridAdapter.Payload) o).getType() == GalleryGridAdapter.Payload.TYPE_NEW_FILENAME) {
+                        holder.txtName.setText(galleryFiles.get(position).getName());
+                        found = true;
+                    }
                 }
             }
         }
         if (!found) {
             super.onBindViewHolder(holder, position, payloads);
+        }
+    }
+
+    private void loadOriginalFilename(@NonNull GalleryFile galleryFile, FragmentActivity context, @NonNull GalleryPagerViewHolder holder, int position) {
+        if (position < 0 || position >= galleryFiles.size() - 1) {
+            return;
+        }
+        if (!galleryFile.isDirectory() && galleryFile.getOriginalName() == null) {
+            new Thread(() -> {
+                try {
+                    String originalFilename = Encryption.getOriginalFilename(context.getContentResolver().openInputStream(galleryFile.getUri()), settings.getTempPassword(), false);
+                    galleryFile.setOriginalName(originalFilename);
+                    int pos = holder.getBindingAdapterPosition();
+                    if (pos == position) {
+                        context.runOnUiThread(() -> holder.txtName.setText(galleryFile.getName()));
+                    } else if (pos >= 0 && pos < galleryFiles.size()) {
+                        context.runOnUiThread(() -> notifyItemChanged(pos, new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_NEW_FILENAME)));
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                    galleryFile.setOriginalName("");
+                }
+            }).start();
         }
     }
 
@@ -130,7 +161,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
         lastPlayerPos = holder.getBindingAdapterPosition();
         if (player == null) {
-            DataSource.Factory dataSourceFactory = new ChaCha20DataSourceFactory(context);
+            DataSource.Factory dataSourceFactory = new MyDataSourceFactory(context);
             ProgressiveMediaSource.Factory progressiveFactory = new ProgressiveMediaSource.Factory(dataSourceFactory);
             player = new ExoPlayer.Builder(context)
                     .setMediaSourceFactory(progressiveFactory)
@@ -138,7 +169,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             player.setRepeatMode(Player.REPEAT_MODE_ONE);
         }
         MediaItem mediaItem = new MediaItem.Builder()
-                .setMimeType("video/mp4")
+                .setMimeType("video/*")
                 .setUri(fileUri)
                 .build();
         player.setMediaItem(mediaItem);
@@ -149,6 +180,12 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             public void onIsPlayingChanged(boolean isPlaying) {
                 Player.Listener.super.onIsPlayingChanged(isPlaying);
                 holder.lLButtons.setVisibility(isPlaying ? View.INVISIBLE : View.VISIBLE);
+            }
+
+            @Override
+            public void onPlayerError(@NonNull PlaybackException error) {
+                Player.Listener.super.onPlayerError(error);
+                Toaster.getInstance(context).showLong(context.getString(R.string.gallery_video_error, error.getMessage()));
             }
         });
         if (playerView != null) {
@@ -344,9 +381,14 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         }
     }
 
-    public void setIsPagerShown(boolean isPagerShown) {
-        this.isPagerShown = isPagerShown;
-        if (!isPagerShown) {
+    public void pauseVideo() {
+        if (player != null) {
+            player.pause();
+        }
+    }
+
+    public void showPager(boolean showPager) {
+        if (!showPager) {
             releaseVideo();
         }
         setFullscreen(weakReference.get(), false);
