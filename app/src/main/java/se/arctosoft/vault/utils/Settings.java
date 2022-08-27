@@ -128,6 +128,14 @@ public class Settings {
         getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
     }
 
+    public void removeGalleryDirectories(@NonNull List<Uri> uris) {
+        List<StoredDirectory> directories = getGalleryDirectories(false);
+        for (Uri u : uris) {
+            directories.remove(new StoredDirectory(u.toString(), false));
+        }
+        getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
+    }
+
     @NonNull
     private String stringListAsString(@NonNull List<StoredDirectory> list) {
         if (list.isEmpty()) {

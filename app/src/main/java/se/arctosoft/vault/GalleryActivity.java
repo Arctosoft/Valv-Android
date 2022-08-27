@@ -304,6 +304,12 @@ public class GalleryActivity extends AppCompatActivity {
         if (id == android.R.id.home) {
             onBackPressed();
             return true;
+        } else if (id == R.id.edit_included_folders) {
+            Dialogs.showEditIncludedFolders(this, settings, selectedToRemove -> {
+                settings.removeGalleryDirectories(selectedToRemove);
+                Toaster.getInstance(this).showLong(getResources().getQuantityString(R.plurals.edit_included_removed, selectedToRemove.size(), selectedToRemove.size()));
+                findFolders();
+            });
         } else if (id == R.id.about) {
             Dialogs.showTextDialog(this, getString(R.string.dialog_about_title), getString(R.string.dialog_about_message, BuildConfig.BUILD_TYPE, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE));
         } else if (id == R.id.lock) {

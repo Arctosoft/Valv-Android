@@ -10,6 +10,7 @@
     <string name="help">Help</string>
     <string name="delete">Delete</string>
     <string name="export">Export</string>
+    <string name="remove">Remove</string>
 
     <string name="launcher_title">Vault locked</string>
     <string name="launcher_subtitle">Enter decryption password</string>
@@ -62,6 +63,11 @@
         <item quantity="other">Delete the selected files permanently? This action is irreversible</item>
     </plurals>
     <string name="dialog_import_to_title">Destination</string>
+    <string name="dialog_edit_included_title">Select folders to remove</string>
+    <plurals name="edit_included_removed">
+        <item quantity="one">Removed %1$d folder</item>
+        <item quantity="other">Removed %1$d folders</item>
+    </plurals>
     <string name="dialog_export_title">Export?</string>
     <string name="dialog_export_message">Decrypt and export this file?</string>
     <string name="dialog_export_selected_title">Export?</string>
