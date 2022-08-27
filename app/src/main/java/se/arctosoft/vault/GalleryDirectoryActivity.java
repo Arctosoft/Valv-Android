@@ -119,7 +119,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         setLoading(true);
         new Thread(() -> {
             synchronized (LOCK) {
-                int count = 0;
+                final int[] count = {0};
                 int failed = 0;
                 final int total = galleryGridAdapter.getSelectedFiles().size();
                 for (GalleryFile f : galleryGridAdapter.getSelectedFiles()) {
@@ -127,7 +127,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                         isCancelled = false;
                         break;
                     }
-                    setLoadingWithProgress(++count, failed, total, R.string.gallery_deleting_progress);
+                    runOnUiThread(() -> setLoadingWithProgress(++count[0], failed, total, R.string.gallery_deleting_progress));
                     boolean deleted = FileStuff.deleteFile(this, f.getUri());
                     FileStuff.deleteFile(this, f.getThumbUri());
                     if (deleted) {
