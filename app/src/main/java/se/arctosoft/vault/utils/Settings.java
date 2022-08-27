@@ -21,7 +21,6 @@ public class Settings {
     private static final String TAG = "Settings";
     private static final String SHARED_PREFERENCES_NAME = "prefs";
     private static final String PREF_DIRECTORIES = "p.gallery.dirs";
-    private static final String PREF_PASSWORD_HASH = "p.p";
 
     private final Context context;
     private static Settings settings;
@@ -74,15 +73,6 @@ public class Settings {
         }
     }
 
-    @Nullable
-    public String getPasswordHash() {
-        return getSharedPrefs().getString(PREF_PASSWORD_HASH, null);
-    }
-
-    public void setPasswordHash(@Nullable String hash) {
-        getSharedPrefsEditor().putString(PREF_PASSWORD_HASH, hash).apply();
-    }
-
     public void addGalleryDirectory(@NonNull Uri uri, @Nullable IOnDirectoryAdded onDirectoryAdded) {
         List<StoredDirectory> directories = getGalleryDirectories(false);
         boolean isRootDir = true;
@@ -106,8 +96,7 @@ public class Settings {
                 directories.add(0, newDir);
                 reordered = true;
             }
-        }
-        if (!reordered) {
+        } else {
             directories.add(0, newDir);
         }
         getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
