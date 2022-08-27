@@ -47,7 +47,24 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.size = 0;
     }
 
+    private GalleryFile(@NonNull CursorFile file, List<GalleryFile> filesInDirectory) {
+        this.fileUri = file.getUri();
+        this.encryptedName = file.getName();
+        this.name = encryptedName;
+        this.thumbUri = null;
+        this.decryptedCacheUri = null;
+        this.lastModified = System.currentTimeMillis();
+        this.isDirectory = true;
+        this.fileType = FileType.DIRECTORY;
+        this.filesInDirectory = filesInDirectory;
+        this.size = 0;
+    }
+
     public static GalleryFile asDirectory(Uri fileUri, List<GalleryFile> filesInDirectory) {
+        return new GalleryFile(fileUri, filesInDirectory);
+    }
+
+    public static GalleryFile asDirectory(CursorFile fileUri, List<GalleryFile> filesInDirectory) {
         return new GalleryFile(fileUri, filesInDirectory);
     }
 

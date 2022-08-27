@@ -28,6 +28,9 @@
     <string name="gallery_adapter_folder_name">%1$s (%2$d)</string>
     <string name="gallery_adapter_file_name">%1$s (%2$s)</string>
     <string name="gallery_add_folder">Add a folder</string>
+    <string name="gallery_added_folder">Added %1$s</string>
+    <string name="gallery_added_folder_duplicate">You have already added %1$s</string>
+    <string name="gallery_added_folder_child">Added %1$s as a child of %2$s</string>
     <string name="gallery_import_files">Import files</string>
     <string name="gallery_import_images">Images/GIFs</string>
     <string name="gallery_import_videos">Videos</string>

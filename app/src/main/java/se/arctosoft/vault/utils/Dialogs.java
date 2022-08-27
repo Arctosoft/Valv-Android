@@ -19,7 +19,7 @@ public class Dialogs {
     private static final String TAG = "Dialogs";
 
     public static void showImportGalleryChooseDestinationDialog(Context context, Settings settings, IOnDirectorySelected onDirectorySelected) {
-        List<Uri> directories = settings.getGalleryDirectoriesAsUri();
+        List<Uri> directories = settings.getGalleryDirectoriesAsUri(false);
         String[] names = new String[directories.size()];
         for (int i = 0; i < names.length; i++) {
             names[i] = FileStuff.getFilenameWithPathFromUri(directories.get(i));

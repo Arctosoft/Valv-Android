@@ -20,7 +20,6 @@ import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 
-import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,13 +28,11 @@ import se.arctosoft.vault.GalleryDirectoryActivity;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryGridViewHolder;
 import se.arctosoft.vault.data.GalleryFile;
-import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.interfaces.IOnFileClicked;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.interfaces.IOnSelectionModeChanged;
 import se.arctosoft.vault.utils.GlideStuff;
-import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.StringStuff;
 
 public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHolder> implements IOnSelectionModeChanged {
@@ -45,30 +42,34 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
 
     private final WeakReference<FragmentActivity> weakReference;
     private final List<GalleryFile> galleryFiles, selectedFiles;
-    private final Settings settings;
     private boolean showFileNames;
     private IOnFileDeleted onFileDeleted;
     private IOnFileClicked onFileCLicked;
     private IOnSelectionModeChanged onSelectionModeChanged;
     private boolean selectMode;
+    private final boolean isRootDir;
 
-    private static class Payload {
-        private static final int TYPE_SELECT_ALL = 0;
-        private static final int TYPE_TOGGLE_FILENAME = 1;
-        private static final int TYPE_NEW_FILENAME = 2;
+    static class Payload {
+        static final int TYPE_SELECT_ALL = 0;
+        static final int TYPE_TOGGLE_FILENAME = 1;
+        static final int TYPE_NEW_FILENAME = 2;
         private final int type;
 
-        private Payload(int type) {
+        Payload(int type) {
             this.type = type;
+        }
+
+        int getType() {
+            return type;
         }
     }
 
-    public GalleryGridAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, boolean showFileNames) {
+    public GalleryGridAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, boolean showFileNames, boolean isRootDir) {
         this.weakReference = new WeakReference<>(context);
         this.galleryFiles = galleryFiles;
         this.showFileNames = showFileNames;
         this.selectedFiles = new ArrayList<>();
-        this.settings = Settings.getInstance(context);
+        this.isRootDir = isRootDir;
     }
 
     public void setOnFileCLicked(IOnFileClicked onFileCLicked) {
@@ -96,10 +97,14 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         GalleryFile galleryFile = galleryFiles.get(position);
 
         updateSelectedView(holder, galleryFile);
-        holder.txtName.setVisibility(showFileNames ? View.VISIBLE : View.GONE);
-        if (galleryFile.isGif() || galleryFile.isVideo()) {
+        holder.txtName.setVisibility(showFileNames || galleryFile.isDirectory() ? View.VISIBLE : View.GONE);
+        holder.imageView.setImageDrawable(null);
+        if (galleryFile.isGif() || galleryFile.isVideo() || galleryFile.isDirectory()) {
             holder.imgType.setVisibility(View.VISIBLE);
-            holder.imgType.setImageDrawable(ResourcesCompat.getDrawable(context.getResources(), galleryFile.isGif() ? R.drawable.ic_round_gif_24 : R.drawable.ic_outline_video_file_24, context.getTheme()));
+            holder.imgType.setImageDrawable(ResourcesCompat.getDrawable(context.getResources(), galleryFile.isGif()
+                            ? R.drawable.ic_round_gif_24 : (galleryFile.isVideo()
+                            ? R.drawable.ic_outline_video_file_24 : R.drawable.ic_round_folder_open_24),
+                    context.getTheme()));
         } else {
             holder.imgType.setVisibility(View.GONE);
         }
@@ -132,7 +137,6 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
 
                         @Override
                         public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                            loadOriginalFilename(galleryFile, context, holder, holder.getBindingAdapterPosition());
                             return false;
                         }
                     })
@@ -140,31 +144,6 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             setItemFilename(holder, context, galleryFile);
         }
         setClickListener(holder, context, galleryFile);
-    }
-
-    private void loadOriginalFilename(@NonNull GalleryFile galleryFile, FragmentActivity context, @NonNull GalleryGridViewHolder holder, int position) {
-        if (position < 0 || position >= galleryFiles.size() - 1) {
-            return;
-        }
-        if (!galleryFile.isDirectory() && galleryFile.getOriginalName() == null) {
-            new Thread(() -> {
-                try {
-                    String originalFilename = Encryption.getOriginalFilename(context.getContentResolver().openInputStream(galleryFile.getUri()), settings.getTempPassword(), false);
-                    galleryFile.setOriginalName(originalFilename);
-                    if (showFileNames) {
-                        int pos = holder.getBindingAdapterPosition();
-                        if (pos == position) {
-                            context.runOnUiThread(() -> setItemFilename(holder, context, galleryFile));
-                        } else if (pos >= 0 && pos < galleryFiles.size()) {
-                            context.runOnUiThread(() -> notifyItemChanged(pos, new Payload(Payload.TYPE_NEW_FILENAME)));
-                        }
-                    }
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                    galleryFile.setOriginalName("");
-                }
-            }).start();
-        }
     }
 
     private void setItemFilename(@NonNull GalleryGridViewHolder holder, Context context, @NonNull GalleryFile galleryFile) {
@@ -177,7 +156,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
 
     private void setClickListener(@NonNull GalleryGridViewHolder holder, Context context, GalleryFile galleryFile) {
         holder.imageView.setOnClickListener(v -> {
-            if (selectMode) {
+            if (selectMode && (isRootDir || !galleryFile.isDirectory())) {
                 boolean selected = !selectedFiles.contains(galleryFile);
                 if (selected) {
                     selectedFiles.add(galleryFile);
@@ -194,14 +173,16 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                             .putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString()));
                 } else {
                     if (onFileCLicked != null) {
-                        onFileCLicked.onClick(holder.getAdapterPosition());
+                        onFileCLicked.onClick(holder.getBindingAdapterPosition());
                     }
                 }
             }
         });
         holder.imageView.setOnLongClickListener(v -> {
-            setSelectMode(true);
-            holder.imageView.performClick();
+            if (isRootDir || !galleryFile.isDirectory()) {
+                setSelectMode(true);
+                holder.imageView.performClick();
+            }
             return true;
         });
     }
@@ -216,7 +197,8 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                     found = true;
                     break;
                 } else if (((Payload) o).type == Payload.TYPE_TOGGLE_FILENAME) {
-                    holder.txtName.setVisibility(showFileNames ? View.VISIBLE : View.GONE);
+                    GalleryFile galleryFile = galleryFiles.get(position);
+                    holder.txtName.setVisibility(showFileNames || galleryFile.isDirectory() ? View.VISIBLE : View.GONE);
                     found = true;
                 } else if (((Payload) o).type == Payload.TYPE_NEW_FILENAME) {
                     setItemFilename(holder, weakReference.get(), galleryFiles.get(holder.getBindingAdapterPosition()));
@@ -244,7 +226,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     }
 
     private void updateSelectedView(GalleryGridViewHolder holder, GalleryFile galleryFile) {
-        if (selectMode) {
+        if (selectMode && (isRootDir || !galleryFile.isDirectory())) {
             holder.checked.setVisibility(View.VISIBLE);
             holder.checked.setChecked(selectedFiles.contains(galleryFile));
         } else {
@@ -278,7 +260,15 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     public void selectAll() {
         synchronized (LOCK) {
             selectedFiles.clear();
-            selectedFiles.addAll(galleryFiles);
+            if (isRootDir) {
+                selectedFiles.addAll(galleryFiles);
+            } else {
+                for (GalleryFile g : galleryFiles) {
+                    if (!g.isDirectory()) {
+                        selectedFiles.add(g);
+                    }
+                }
+            }
             notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
         }
     }

@@ -48,7 +48,6 @@ public class FileStuff {
             long size = c.getLong(4);
             files.add(new CursorFile(name, uri, lastModified, mimeType, size));
         } while (c.moveToNext());
-        //Log.e(TAG, "getFilesInFolder: found " + files.size() + " in " + pickedDir.getLastPathSegment());
         c.close();
         Collections.sort(files);
         return getEncryptedFilesInFolder(files);
@@ -60,7 +59,7 @@ public class FileStuff {
         List<CursorFile> documentThumbs = new ArrayList<>();
         List<GalleryFile> galleryFiles = new ArrayList<>();
         for (CursorFile file : files) {
-            if (!file.getName().startsWith(Encryption.ENCRYPTED_PREFIX) || file.isDirectory()) {
+            if (!file.getName().startsWith(Encryption.ENCRYPTED_PREFIX) && !file.isDirectory()) {
                 continue;
             }
 
@@ -72,10 +71,10 @@ public class FileStuff {
         }
 
         for (CursorFile file : documentFiles) {
-            //if (file.isDirectory()) {
-            //galleryFiles.add(GalleryFile.asDirectory(file, null)); // TODO fix later
-            //    continue;
-            //}
+            if (file.isDirectory()) {
+                galleryFiles.add(GalleryFile.asDirectory(file, null)); // TODO fix later
+                continue;
+            }
             file.setNameWithoutPrefix(FileStuff.getNameWithoutPrefix(file.getName()));
             boolean foundThumb = false;
             for (CursorFile thumb : documentThumbs) {

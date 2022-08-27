@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -105,7 +104,6 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         setClickListeners();
 
         if (!viewModel.isInitialised()) {
-            //Log.e(TAG, "init: not initialised, find files");
             findFilesIn(currentDirectory);
         }
     }
@@ -149,7 +147,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, RecyclerView.VERTICAL);
         recyclerView.setLayoutManager(layoutManager);
-        galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), true); // TODO setting to show/hide names
+        galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), true, false); // TODO setting to show/hide names
         galleryGridAdapter.setOnFileDeleted(pos -> galleryPagerAdapter.notifyItemRemoved(pos));
         recyclerView.setAdapter(galleryGridAdapter);
         galleryGridAdapter.setOnFileCLicked(pos -> showViewpager(true, pos, true));
@@ -188,7 +186,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private void showViewpager(boolean show, int pos, boolean animate) {
         //Log.e(TAG, "showViewpager: " + show + " " + pos);
         viewModel.setViewpagerVisible(show);
-        galleryPagerAdapter.setIsPagerShown(show);
+        galleryPagerAdapter.showPager(show);
         if (show) {
             binding.viewPager.setVisibility(View.VISIBLE);
             binding.viewPager.setCurrentItem(pos, false);
@@ -211,6 +209,16 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         setLoading(true);
         new Thread(() -> {
             List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directoryUri);
+            for (int i = 0; i < galleryFiles.size(); i++) {
+                GalleryFile g = galleryFiles.get(i);
+                if (g.isDirectory()) {
+                    int finalI = i;
+                    new Thread(() -> {
+                        g.setFilesInDirectory(FileStuff.getFilesInFolder(this, g.getUri()));
+                        runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(finalI));
+                    }).start();
+                }
+            }
 
             runOnUiThread(() -> {
                 setLoading(false);
@@ -224,6 +232,22 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 }
             });
         }).start();
+    }
+
+    @Override
+    protected void onStop() {
+        if (galleryPagerAdapter != null) {
+            galleryPagerAdapter.pauseVideo();
+        }
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (galleryPagerAdapter != null) {
+            galleryPagerAdapter.releaseVideo();
+        }
+        super.onDestroy();
     }
 
     @Override
