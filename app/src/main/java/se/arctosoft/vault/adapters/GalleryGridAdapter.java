@@ -99,7 +99,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         updateSelectedView(holder, galleryFile);
         holder.txtName.setVisibility(showFileNames || galleryFile.isDirectory() ? View.VISIBLE : View.GONE);
         holder.imageView.setImageDrawable(null);
-        if (galleryFile.isGif() || galleryFile.isVideo() || galleryFile.isDirectory()) {
+        if (!isRootDir && (galleryFile.isGif() || galleryFile.isVideo() || galleryFile.isDirectory())) {
             holder.imgType.setVisibility(View.VISIBLE);
             holder.imgType.setImageDrawable(ResourcesCompat.getDrawable(context.getResources(), galleryFile.isGif()
                             ? R.drawable.ic_round_gif_24 : (galleryFile.isVideo()
