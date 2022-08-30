@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.viewpager2.widget.ViewPager2;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import se.arctosoft.vault.adapters.GalleryGridAdapter;
@@ -122,6 +123,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 final int[] count = {0};
                 int failed = 0;
                 final int total = galleryGridAdapter.getSelectedFiles().size();
+                final List<Integer> positionsDeleted = new ArrayList<>();
                 for (GalleryFile f : galleryGridAdapter.getSelectedFiles()) {
                     if (isCancelled) {
                         isCancelled = false;
@@ -133,15 +135,17 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                     if (deleted) {
                         int i = viewModel.getGalleryFiles().indexOf(f);
                         if (i >= 0) {
-                            viewModel.getGalleryFiles().remove(i);
-                            runOnUiThread(() -> {
-                                galleryGridAdapter.notifyItemRemoved(i);
-                                galleryPagerAdapter.notifyItemRemoved(i);
-                            });
+                            positionsDeleted.add(i);
                         }
                     }
                 }
                 runOnUiThread(() -> {
+                    Collections.sort(positionsDeleted);
+                    for (int i = positionsDeleted.size() - 1; i >= 0; i--) {
+                        viewModel.getGalleryFiles().remove(i);
+                        galleryGridAdapter.notifyItemRemoved(i);
+                        galleryPagerAdapter.notifyItemRemoved(i);
+                    }
                     galleryGridAdapter.onSelectionModeChanged(false);
                     setLoading(false);
                 });
