@@ -64,6 +64,7 @@
         <item quantity="other">Delete the selected files permanently? This action is irreversible</item>
     </plurals>
     <string name="dialog_import_to_title">Destination</string>
+    <string name="dialog_import_to_button_neutral">Add new</string>
     <string name="dialog_edit_included_title">Select folders to remove</string>
     <plurals name="edit_included_removed">
         <item quantity="one">Removed %1$d folder</item>

@@ -17,7 +17,7 @@ public class CursorFile implements Comparable<CursorFile> {
         this.mimeType = mimeType;
         this.size = size;
         this.isDirectory = DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType);
-        this.lastModified = isDirectory ? System.currentTimeMillis() : lastModified;
+        this.lastModified = lastModified;
     }
 
     public void setNameWithoutPrefix(String nameWithoutPrefix) {
