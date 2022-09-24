@@ -50,7 +50,9 @@ public class FileStuff {
         } while (c.moveToNext());
         c.close();
         Collections.sort(files);
-        return getEncryptedFilesInFolder(files);
+        List<GalleryFile> encryptedFilesInFolder = getEncryptedFilesInFolder(files);
+        Collections.sort(encryptedFilesInFolder);
+        return encryptedFilesInFolder;
     }
 
     @NonNull
