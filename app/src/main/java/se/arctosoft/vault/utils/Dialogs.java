@@ -28,11 +28,14 @@ public class Dialogs {
                 .setTitle(context.getString(R.string.dialog_import_to_title))
                 .setItems(names, (dialog, which) -> onDirectorySelected.onDirectorySelected(DocumentFile.fromTreeUri(context, directories.get(which))))
                 .setNegativeButton(android.R.string.cancel, null)
+                .setNeutralButton(R.string.dialog_import_to_button_neutral, (dialog, which) -> onDirectorySelected.onOtherDirectory())
                 .show();
     }
 
     public interface IOnDirectorySelected {
         void onDirectorySelected(@NonNull DocumentFile directory);
+
+        void onOtherDirectory();
     }
 
     public interface IOnEditedIncludedFolders {

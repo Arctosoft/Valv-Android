@@ -17,6 +17,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.documentfile.provider.DocumentFile;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -33,6 +34,7 @@ import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.Toaster;
+import se.arctosoft.vault.viewmodel.GalleryViewModel;
 
 public class GalleryActivity extends AppCompatActivity {
     private static final String TAG = "GalleryActivity";
@@ -42,6 +44,7 @@ public class GalleryActivity extends AppCompatActivity {
 
     private static final Object lock = new Object();
 
+    private GalleryViewModel viewModel;
     private ActivityGalleryBinding binding;
     private GalleryGridAdapter galleryGridAdapter;
     private List<GalleryFile> galleryFiles;
@@ -66,6 +69,7 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     private void init() {
+        viewModel = new ViewModelProvider(this).get(GalleryViewModel.class);
         settings = Settings.getInstance(this);
         if (settings.isLocked()) {
             finish();
@@ -176,32 +180,38 @@ public class GalleryActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_ADD_DIRECTORY && resultCode == Activity.RESULT_OK) {
-            if (data != null) {
-                Uri uri = data.getData();
-                DocumentFile documentFile = DocumentFile.fromTreeUri(this, uri);
-                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                settings.addGalleryDirectory(documentFile.getUri(), new IOnDirectoryAdded() {
-                    @Override
-                    public void onAddedAsRoot() {
-                        Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder, FileStuff.getFilenameWithPathFromUri(uri)));
-                        addDirectory(documentFile.getUri());
-                    }
-
-                    @Override
-                    public void onAddedAsChildOf(@NonNull Uri parentUri) {
-                        Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder_child, FileStuff.getFilenameWithPathFromUri(uri), FileStuff.getFilenameWithPathFromUri(parentUri)));
-                    }
-
-                    @Override
-                    public void onAlreadyExists(boolean isRootDir) {
-                        Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder_duplicate, FileStuff.getFilenameWithPathFromUri(uri)));
-                        if (isRootDir) {
-                            findFolders();
+        if (requestCode == REQUEST_ADD_DIRECTORY) {
+            if (resultCode == Activity.RESULT_OK) {
+                if (data != null) {
+                    Uri uri = data.getData();
+                    DocumentFile documentFile = DocumentFile.fromTreeUri(this, uri);
+                    getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    settings.addGalleryDirectory(documentFile.getUri(), new IOnDirectoryAdded() {
+                        @Override
+                        public void onAddedAsRoot() {
+                            Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder, FileStuff.getFilenameWithPathFromUri(uri)));
+                            addDirectory(documentFile.getUri());
                         }
-                    }
-                });
 
+                        @Override
+                        public void onAddedAsChildOf(@NonNull Uri parentUri) {
+                            Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder_child, FileStuff.getFilenameWithPathFromUri(uri), FileStuff.getFilenameWithPathFromUri(parentUri)));
+                        }
+
+                        @Override
+                        public void onAlreadyExists(boolean isRootDir) {
+                            Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder_duplicate, FileStuff.getFilenameWithPathFromUri(uri)));
+                            if (isRootDir) {
+                                findFolders();
+                            }
+                        }
+                    });
+                    if (viewModel.getFilesToAdd() != null) {
+                        importFiles(viewModel.getFilesToAdd());
+                    }
+                }
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+                viewModel.setFilesToAdd(null);
             }
         } else if ((requestCode == REQUEST_IMPORT_IMAGES || requestCode == REQUEST_IMPORT_VIDEOS) && resultCode == Activity.RESULT_OK) {
             if (data != null) {
@@ -214,61 +224,74 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     private void importFiles(List<DocumentFile> documentFiles) {
-        Dialogs.showImportGalleryChooseDestinationDialog(this, settings, directory -> {
+        Dialogs.showImportGalleryChooseDestinationDialog(this, settings, new Dialogs.IOnDirectorySelected() {
+            @Override
+            public void onDirectorySelected(@NonNull DocumentFile directory) {
+                importToDirectory(documentFiles, directory);
+            }
+
+            @Override
+            public void onOtherDirectory() {
+                viewModel.setFilesToAdd(documentFiles);
+                binding.btnAddFolder.performClick();
+            }
+        });
+    }
+
+    private void importToDirectory(@NonNull List<DocumentFile> documentFiles, @NonNull DocumentFile directory) {
+        new Thread(() -> {
             double totalSize = 0;
             for (DocumentFile file : documentFiles) {
                 totalSize += (file.length() / 1000000.0);
             }
             final DecimalFormat decimalFormat = new DecimalFormat("0.00");
             final String totalMB = decimalFormat.format(totalSize);
-            new Thread(() -> {
-                final int[] progress = new int[]{1};
-                final double[] bytesDone = new double[]{0};
-                runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), "0", totalMB));
-                for (DocumentFile file : documentFiles) {
-                    if (cancelTask) {
-                        cancelTask = false;
+            final int[] progress = new int[]{1};
+            final double[] bytesDone = new double[]{0};
+            runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), "0", totalMB));
+            for (DocumentFile file : documentFiles) {
+                if (cancelTask) {
+                    cancelTask = false;
+                    break;
+                }
+                Pair<Boolean, Boolean> imported = new Pair<>(false, false);
+                try {
+                    imported = Encryption.importFileToDirectory(GalleryActivity.this, file, directory, settings);
+                } catch (SecurityException e) {
+                    e.printStackTrace();
+                }
+                progress[0]++;
+                bytesDone[0] += file.length();
+                runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format(bytesDone[0] / 1000000.0), totalMB));
+                if (!imported.first) {
+                    runOnUiThread(() -> Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_error, file.getName())));
+                } else if (!imported.second) {
+                    runOnUiThread(() -> Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_error_no_thumb, file.getName())));
+                }
+            }
+            runOnUiThread(() -> {
+                Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_done, progress[0] - 1));
+                setLoading(false);
+            });
+            settings.addGalleryDirectory(directory.getUri(), null);
+            synchronized (lock) {
+                for (int i = 0; i < GalleryActivity.this.galleryFiles.size(); i++) {
+                    GalleryFile g = GalleryActivity.this.galleryFiles.get(i);
+                    if (g.getUri().equals(directory.getUri())) {
+                        List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(GalleryActivity.this, directory.getUri());
+                        g.setFilesInDirectory(galleryFiles);
+                        int finalI = i;
+                        GalleryFile removed = GalleryActivity.this.galleryFiles.remove(finalI);
+                        GalleryActivity.this.galleryFiles.add(0, removed);
+                        runOnUiThread(() -> {
+                            galleryGridAdapter.notifyItemMoved(finalI, 0);
+                            galleryGridAdapter.notifyItemChanged(0);
+                        });
                         break;
                     }
-                    Pair<Boolean, Boolean> imported = new Pair<>(false, false);
-                    try {
-                        imported = Encryption.importFileToDirectory(this, file, directory, settings);
-                    } catch (SecurityException e) {
-                        e.printStackTrace();
-                    }
-                    progress[0]++;
-                    bytesDone[0] += file.length();
-                    runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format(bytesDone[0] / 1000000.0), totalMB));
-                    if (!imported.first) {
-                        runOnUiThread(() -> Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_error, file.getName())));
-                    } else if (!imported.second) {
-                        runOnUiThread(() -> Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_error_no_thumb, file.getName())));
-                    }
                 }
-                runOnUiThread(() -> {
-                    Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_done, progress[0] - 1));
-                    setLoading(false);
-                });
-                settings.addGalleryDirectory(directory.getUri(), null);
-                synchronized (lock) {
-                    for (int i = 0; i < this.galleryFiles.size(); i++) {
-                        GalleryFile g = this.galleryFiles.get(i);
-                        if (g.getUri().equals(directory.getUri())) {
-                            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directory.getUri());
-                            g.setFilesInDirectory(galleryFiles);
-                            int finalI = i;
-                            GalleryFile removed = this.galleryFiles.remove(finalI);
-                            this.galleryFiles.add(0, removed);
-                            runOnUiThread(() -> {
-                                galleryGridAdapter.notifyItemMoved(finalI, 0);
-                                galleryGridAdapter.notifyItemChanged(0);
-                            });
-                            break;
-                        }
-                    }
-                }
-            }).start();
-        });
+            }
+        }).start();
     }
 
     private void addDirectory(Uri directoryUri) {
