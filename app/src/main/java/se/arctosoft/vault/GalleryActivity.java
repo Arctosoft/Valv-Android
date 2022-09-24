@@ -249,6 +249,7 @@ public class GalleryActivity extends AppCompatActivity {
                     Toaster.getInstance(this).showLong(getString(R.string.gallery_importing_done, progress[0] - 1));
                     setLoading(false);
                 });
+                settings.addGalleryDirectory(directory.getUri(), null);
                 synchronized (lock) {
                     for (int i = 0; i < this.galleryFiles.size(); i++) {
                         GalleryFile g = this.galleryFiles.get(i);
@@ -256,7 +257,6 @@ public class GalleryActivity extends AppCompatActivity {
                             List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directory.getUri());
                             g.setFilesInDirectory(galleryFiles);
                             int finalI = i;
-                            settings.addGalleryDirectory(g.getUri(), null);
                             GalleryFile removed = this.galleryFiles.remove(finalI);
                             this.galleryFiles.add(0, removed);
                             runOnUiThread(() -> {

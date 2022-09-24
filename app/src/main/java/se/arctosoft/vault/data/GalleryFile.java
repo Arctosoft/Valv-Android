@@ -53,23 +53,23 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.name = encryptedName;
         this.thumbUri = null;
         this.decryptedCacheUri = null;
-        this.lastModified = System.currentTimeMillis();
+        this.lastModified = file.getLastModified();
         this.isDirectory = true;
         this.fileType = FileType.DIRECTORY;
         this.filesInDirectory = filesInDirectory;
         this.size = 0;
     }
 
-    public static GalleryFile asDirectory(Uri fileUri, List<GalleryFile> filesInDirectory) {
-        return new GalleryFile(fileUri, filesInDirectory);
+    public static GalleryFile asDirectory(Uri directoryUri, List<GalleryFile> filesInDirectory) {
+        return new GalleryFile(directoryUri, filesInDirectory);
     }
 
-    public static GalleryFile asDirectory(CursorFile fileUri, List<GalleryFile> filesInDirectory) {
-        return new GalleryFile(fileUri, filesInDirectory);
+    public static GalleryFile asDirectory(CursorFile cursorFile, List<GalleryFile> filesInDirectory) {
+        return new GalleryFile(cursorFile, filesInDirectory);
     }
 
-    public static GalleryFile asFile(CursorFile fileUri, @Nullable CursorFile thumbUri) {
-        return new GalleryFile(fileUri, thumbUri);
+    public static GalleryFile asFile(CursorFile cursorFile, @Nullable CursorFile thumbUri) {
+        return new GalleryFile(cursorFile, thumbUri);
     }
 
     public void setOriginalName(String originalName) {
@@ -137,6 +137,10 @@ public class GalleryFile implements Comparable<GalleryFile> {
 
     public boolean isDirectory() {
         return isDirectory;
+    }
+
+    public long getLastModified() {
+        return lastModified;
     }
 
     @Nullable
