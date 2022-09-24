@@ -220,16 +220,6 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         setLoading(true);
         new Thread(() -> {
             List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directoryUri);
-            for (int i = 0; i < galleryFiles.size(); i++) {
-                GalleryFile g = galleryFiles.get(i);
-                if (g.isDirectory()) {
-                    int finalI = i;
-                    new Thread(() -> {
-                        g.setFilesInDirectory(FileStuff.getFilesInFolder(this, g.getUri()));
-                        runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(finalI));
-                    }).start();
-                }
-            }
 
             runOnUiThread(() -> {
                 setLoading(false);
@@ -242,6 +232,17 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                     galleryPagerAdapter.notifyItemRangeInserted(0, galleryFiles.size());
                 }
             });
+
+            for (int i = 0; i < galleryFiles.size(); i++) {
+                GalleryFile g = galleryFiles.get(i);
+                if (g.isDirectory()) {
+                    int finalI = i;
+                    new Thread(() -> {
+                        g.setFilesInDirectory(FileStuff.getFilesInFolder(this, g.getUri()));
+                        runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(finalI));
+                    }).start();
+                }
+            }
         }).start();
     }
 
