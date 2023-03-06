@@ -21,6 +21,8 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,6 +53,7 @@ public class GalleryActivity extends AppCompatActivity {
     private Settings settings;
     private boolean cancelTask = false;
     private boolean inSelectionMode = false;
+    private Snackbar snackBarBackPressed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -356,6 +359,10 @@ public class GalleryActivity extends AppCompatActivity {
             showImportOverlay(false);
         } else if (inSelectionMode && galleryGridAdapter != null) {
             galleryGridAdapter.onSelectionModeChanged(false);
+        } else if (snackBarBackPressed == null || !snackBarBackPressed.isShownOrQueued()) {
+            snackBarBackPressed = Snackbar.make(binding.lLButtons, getString(R.string.main_press_back_again_to_exit), 2000);
+            snackBarBackPressed.setAnchorView(binding.lLButtons);
+            snackBarBackPressed.show();
         } else {
             super.onBackPressed();
         }

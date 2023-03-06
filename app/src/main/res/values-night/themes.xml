@@ -19,5 +19,10 @@
         <item name="button_secondary">@color/secondary_night_color</item>
         <item name="button_warning">@color/button_warning_color</item>
         <item name="gallery_grid_stroke">@color/grid_stroke_color_night</item>
+        <item name="snackbarStyle">@style/MySnackBarStyle</item>
+    </style>
+
+    <style name="MySnackBarStyle" parent="Widget.MaterialComponents.Snackbar">
+        <item name="android:background">@color/button_warning_color</item>
     </style>
 </resources>
