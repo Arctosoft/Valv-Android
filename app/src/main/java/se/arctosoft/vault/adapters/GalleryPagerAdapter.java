@@ -204,6 +204,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder) {
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setOnClickListener(v -> onItemPressed(context));
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setMinimumDpi(40);
+            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setOrientation(SubsamplingScaleImageView.ORIENTATION_USE_EXIF);
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).imageView.setOnStateChangedListener(new SubsamplingScaleImageView.OnStateChangedListener() {
                 @Override
                 public void onScaleChanged(float newScale, int origin) {
