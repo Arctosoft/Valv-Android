@@ -8,11 +8,10 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher_v"
         android:label="@string/app_name"
-        android:largeHeap="true"
+        android:largeHeap="false"
         android:roundIcon="@mipmap/ic_launcher_v_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Vault"
-        tools:targetApi="31">
+        android:theme="@style/Theme.Vault">
         <activity
             android:name=".GalleryDirectoryActivity"
             android:exported="false" />
