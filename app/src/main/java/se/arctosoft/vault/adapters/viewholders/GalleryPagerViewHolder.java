@@ -8,10 +8,10 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
-import com.google.android.exoplayer2.ui.StyledPlayerView;
 
 import se.arctosoft.vault.R;
 
@@ -49,7 +49,7 @@ public class GalleryPagerViewHolder extends RecyclerView.ViewHolder {
     }
 
     public static class GalleryPagerVideoViewHolder extends GalleryPagerViewHolder {
-        public final StyledPlayerView playerView;
+        public final PlayerView playerView;
         public final RelativeLayout rLPlay;
         public final ImageView imgThumb, imgFullscreen;
 

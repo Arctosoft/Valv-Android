@@ -10,20 +10,23 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.FragmentActivity;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.PlaybackException;
+import androidx.media3.common.Player;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.datasource.DataSource;
+import androidx.media3.datasource.DefaultDataSource;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.MediaItem;
-import com.google.android.exoplayer2.PlaybackException;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.ui.StyledPlayerView;
-import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.material.color.MaterialColors;
 
 import java.io.FileNotFoundException;
@@ -35,6 +38,7 @@ import se.arctosoft.vault.adapters.viewholders.GalleryPagerViewHolder;
 import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.encryption.Encryption;
+import se.arctosoft.vault.encryption.MyDataSource;
 import se.arctosoft.vault.encryption.MyDataSourceFactory;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
@@ -53,7 +57,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private boolean isFullscreen;
     private final Settings settings;
     private ExoPlayer player;
-    private StyledPlayerView playerView;
+    private PlayerView playerView;
     private int lastPlayerPos = -1;
 
     public GalleryPagerAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted, Uri currentDirectory) {
@@ -143,6 +147,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         }
     }
 
+
     private void setupVideoView(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         holder.rLPlay.setVisibility(View.VISIBLE);
         holder.playerView.setVisibility(View.INVISIBLE);
@@ -158,6 +163,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         });
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
         lastPlayerPos = holder.getBindingAdapterPosition();
         if (player == null) {
@@ -189,7 +195,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             }
         });
         if (playerView != null) {
-            StyledPlayerView.switchTargetView(player, playerView, holder.playerView);
+            PlayerView.switchTargetView(player, playerView, holder.playerView);
             playerView.setPlayer(null);
         } else {
             holder.playerView.setPlayer(player);
