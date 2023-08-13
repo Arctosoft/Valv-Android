@@ -160,7 +160,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, RecyclerView.VERTICAL);
         recyclerView.setLayoutManager(layoutManager);
-        galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), true, false); // TODO setting to show/hide names
+        galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), settings.showFilenames(), false);
         galleryGridAdapter.setOnFileDeleted(pos -> galleryPagerAdapter.notifyItemRemoved(pos));
         recyclerView.setAdapter(galleryGridAdapter);
         galleryGridAdapter.setOnFileCLicked(pos -> showViewpager(true, pos, true));
@@ -274,7 +274,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             lock();
             return true;
         } else if (id == R.id.toggle_filename) {
-            galleryGridAdapter.toggleFilenames();
+            settings.setShowFilenames(galleryGridAdapter.toggleFilenames());
             return true;
         } else if (id == R.id.select_all) {
             galleryGridAdapter.selectAll();

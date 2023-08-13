@@ -273,9 +273,10 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         }
     }
 
-    public void toggleFilenames() {
+    public boolean toggleFilenames() {
         showFileNames = !showFileNames;
         notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_TOGGLE_FILENAME));
+        return showFileNames;
     }
 
     @NonNull
