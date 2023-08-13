@@ -66,7 +66,7 @@ public class GalleryActivity extends AppCompatActivity {
         setSupportActionBar(binding.toolbar);
         ActionBar ab = getSupportActionBar();
         if (ab != null) {
-            ab.setDisplayHomeAsUpEnabled(true);
+            ab.setDisplayHomeAsUpEnabled(false);
             ab.setTitle(R.string.gallery_title);
         }
 
@@ -324,7 +324,15 @@ public class GalleryActivity extends AppCompatActivity {
                 runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(this.galleryFiles.indexOf(galleryFile)));
             }).start();
         }
-        runOnUiThread(() -> setLoading(false));
+        runOnUiThread(() -> {
+            if (!this.galleryFiles.isEmpty()) {
+                synchronized (lock) {
+                    this.galleryFiles.add(0, GalleryFile.asAllFolder(getString(R.string.gallery_all)));
+                    galleryGridAdapter.notifyItemInserted(0);
+                }
+            }
+            setLoading(false);
+        });
     }
 
     @Override

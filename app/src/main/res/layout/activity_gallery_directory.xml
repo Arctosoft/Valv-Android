@@ -16,10 +16,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.recyclerview.widget.RecyclerView
+    <se.arctosoft.vault.fastscroll.views.FastScrollRecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        app:fastScrollAutoHide="true"
+        app:fastScrollAutoHideDelay="800"
+        app:fastScrollPopupBackgroundSize="42dp"
+        app:fastScrollPopupBgColor="?attr/colorPrimary"
+        app:fastScrollPopupTextColor="?attr/colorOnPrimary"
+        app:fastScrollPopupTextSize="14sp"
+        app:fastScrollThumbColor="?attr/colorPrimary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar" />
 

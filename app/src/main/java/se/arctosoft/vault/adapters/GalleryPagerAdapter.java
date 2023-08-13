@@ -294,7 +294,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private void showButtons(GalleryPagerViewHolder holder, boolean show) {
         if (isFullscreen) {
             show = false;
-            holder.root.setBackgroundColor(weakReference.get().getResources().getColor(R.color.black));
+            holder.root.setBackgroundColor(weakReference.get().getResources().getColor(R.color.black, weakReference.get().getTheme()));
         } else {
             holder.root.setBackgroundColor(MaterialColors.getColor(weakReference.get(), R.attr.gallery_viewpager_background, Color.WHITE));
         }
