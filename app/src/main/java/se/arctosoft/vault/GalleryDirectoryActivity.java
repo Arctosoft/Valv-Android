@@ -178,7 +178,11 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     }
 
     private void setupRecycler() {
-        binding.recyclerView.setFastScrollEnabled(false);
+        if (viewModel.isInitialised()) {
+            binding.recyclerView.setFastScrollEnabled(viewModel.getGalleryFiles().size() > MIN_FILES_FOR_FAST_SCROLL);
+        } else {
+            binding.recyclerView.setFastScrollEnabled(false);
+        }
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, RecyclerView.VERTICAL);
         binding.recyclerView.setLayoutManager(layoutManager);
@@ -247,6 +251,9 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 setLoading(false);
+                if (galleryFiles.size() > MIN_FILES_FOR_FAST_SCROLL) {
+                    binding.recyclerView.setFastScrollEnabled(true);
+                }
                 synchronized (LOCK) {
                     if (viewModel.isInitialised()) {
                         return;
@@ -254,9 +261,6 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                     viewModel.setInitialised(galleryFiles);
                     galleryGridAdapter.notifyItemRangeInserted(0, galleryFiles.size());
                     galleryPagerAdapter.notifyItemRangeInserted(0, galleryFiles.size());
-                }
-                if (galleryFiles.size() > MIN_FILES_FOR_FAST_SCROLL) {
-                    binding.recyclerView.setFastScrollEnabled(true);
                 }
             });
 
