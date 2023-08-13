@@ -4,9 +4,11 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
@@ -14,6 +16,7 @@ import android.view.animation.LinearInterpolator;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
@@ -21,6 +24,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import se.arctosoft.vault.adapters.GalleryGridAdapter;
@@ -40,6 +44,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private static final String TAG = "GalleryDirectoryActivity";
     private static final Object LOCK = new Object();
     public static final String EXTRA_DIRECTORY = "d";
+    public static final String EXTRA_IS_ALL = "a";
+    private static final int MIN_FILES_FOR_FAST_SCROLL = 60;
 
     private ActivityGalleryDirectoryBinding binding;
     private GalleryDirectoryViewModel viewModel;
@@ -51,19 +57,27 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private boolean inSelectionMode = false;
     private boolean isExporting = false;
     private boolean isCancelled = false;
+    private boolean isAllFolder = false;
+
+    private int foundFiles = 0, foundFolders = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
         binding = ActivityGalleryDirectoryBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
         Bundle extras = getIntent().getExtras();
         currentDirectory = null;
         if (extras != null) {
-            currentDirectory = Uri.parse(extras.getString(EXTRA_DIRECTORY));
+            String dir = extras.getString(EXTRA_DIRECTORY);
+            if (dir != null) {
+                currentDirectory = Uri.parse(dir);
+            }
+            isAllFolder = extras.getBoolean(EXTRA_IS_ALL, false);
         }
-        if (currentDirectory == null) {
+        if (currentDirectory == null && !isAllFolder) {
             finish();
             return;
         }
@@ -72,7 +86,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         ActionBar ab = getSupportActionBar();
         if (ab != null) {
             ab.setDisplayHomeAsUpEnabled(true);
-            ab.setTitle(FileStuff.getFilenameFromUri(currentDirectory, false));
+            ab.setTitle(isAllFolder ? getString(R.string.gallery_all) : FileStuff.getFilenameFromUri(currentDirectory, false));
         }
 
         viewModel = new ViewModelProvider(this).get(GalleryDirectoryViewModel.class);
@@ -95,6 +109,12 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         }
     }
 
+    private void setLoadingAllWithProgress() {
+        binding.cLLoading.cLLoading.setVisibility(View.VISIBLE);
+        binding.cLLoading.txtProgress.setText(getString(R.string.gallery_loading_all_progress, foundFiles, foundFolders));
+        binding.cLLoading.txtProgress.setVisibility(View.VISIBLE);
+    }
+
     private void init() {
         settings = Settings.getInstance(this);
         if (settings.isLocked()) {
@@ -106,7 +126,11 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         setClickListeners();
 
         if (!viewModel.isInitialised()) {
-            findFilesIn(currentDirectory);
+            if (isAllFolder) {
+                findAllFiles();
+            } else {
+                findFilesIn(currentDirectory);
+            }
         }
     }
 
@@ -154,13 +178,13 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     }
 
     private void setupRecycler() {
-        RecyclerView recyclerView = binding.recyclerView;
+        binding.recyclerView.setFastScrollEnabled(false);
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, RecyclerView.VERTICAL);
-        recyclerView.setLayoutManager(layoutManager);
-        galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), true, false); // TODO setting to show/hide names
+        binding.recyclerView.setLayoutManager(layoutManager);
+        galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), settings.showFilenames(), false);
         galleryGridAdapter.setOnFileDeleted(pos -> galleryPagerAdapter.notifyItemRemoved(pos));
-        recyclerView.setAdapter(galleryGridAdapter);
+        binding.recyclerView.setAdapter(galleryGridAdapter);
         galleryGridAdapter.setOnFileCLicked(pos -> showViewpager(true, pos, true));
         galleryGridAdapter.setOnSelectionModeChanged(this::onSelectionModeChanged);
     }
@@ -231,6 +255,9 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                     galleryGridAdapter.notifyItemRangeInserted(0, galleryFiles.size());
                     galleryPagerAdapter.notifyItemRangeInserted(0, galleryFiles.size());
                 }
+                if (galleryFiles.size() > MIN_FILES_FOR_FAST_SCROLL) {
+                    binding.recyclerView.setFastScrollEnabled(true);
+                }
             });
 
             for (int i = 0; i < galleryFiles.size(); i++) {
@@ -244,6 +271,128 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 }
             }
         }).start();
+    }
+
+    private synchronized void incrementFiles(int amount) {
+        foundFiles += amount;
+    }
+
+    private synchronized void incrementFolders(int amount) {
+        foundFolders += amount;
+    }
+
+    private void findAllFiles() {
+        Log.e(TAG, "findAllFiles: ");
+        foundFiles = 0;
+        foundFolders = 0;
+        setLoading(true);
+        new Thread(() -> {
+            List<Uri> directories = settings.getGalleryDirectoriesAsUri(true);
+
+            List<Uri> uriFiles = new ArrayList<>(directories.size());
+            for (Uri uri : directories) {
+                DocumentFile documentFile = DocumentFile.fromTreeUri(this, uri);
+                if (documentFile.canRead()) {
+                    uriFiles.add(documentFile.getUri());
+                }
+            }
+
+            runOnUiThread(this::setLoadingAllWithProgress);
+
+            if (isCancelled) {
+                finish();
+                return;
+            }
+
+            List<GalleryFile> folders = new ArrayList<>();
+            List<GalleryFile> files = new LinkedList<>();
+            long start = System.currentTimeMillis();
+            for (Uri uri : uriFiles) {
+                List<GalleryFile> filesInFolder = FileStuff.getFilesInFolder(this, uri);
+                for (GalleryFile galleryFile : filesInFolder) {
+                    if (galleryFile.isDirectory()) {
+                        Log.e(TAG, "findAllFiles: found " + galleryFile.getNameWithPath());
+                        folders.add(galleryFile);
+                    } else {
+                        files.add(galleryFile);
+                    }
+                }
+            }
+
+            incrementFiles(files.size());
+
+            runOnUiThread(this::setLoadingAllWithProgress);
+
+            List<Thread> threads = new ArrayList<>();
+            for (GalleryFile galleryFile : folders) {
+                if (galleryFile.isDirectory()) {
+                    Thread t = new Thread(() -> {
+                        List<GalleryFile> allFilesInFolder = findAllFilesInFolder(galleryFile.getUri());
+                        synchronized (LOCK) {
+                            files.addAll(allFilesInFolder);
+                        }
+                    });
+                    threads.add(t);
+                    t.start();
+                }
+            }
+            for (Thread t : threads) {
+                if (isCancelled) {
+                    finish();
+                    return;
+                }
+                try {
+                    t.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            Log.e(TAG, "findAllFiles: joined, found " + files.size() + ", took " + (System.currentTimeMillis() - start));
+            if (isCancelled) {
+                finish();
+                return;
+            }
+
+            files.sort(GalleryFile::compareTo);
+
+            runOnUiThread(() -> {
+                setLoading(false);
+                if (files.size() > MIN_FILES_FOR_FAST_SCROLL) {
+                    binding.recyclerView.setFastScrollEnabled(true);
+                }
+                if (viewModel.isInitialised()) {
+                    return;
+                }
+                viewModel.setInitialised(files);
+                galleryGridAdapter.notifyItemRangeInserted(0, files.size());
+                galleryPagerAdapter.notifyItemRangeInserted(0, files.size());
+            });
+        }).start();
+    }
+
+    @NonNull
+    private List<GalleryFile> findAllFilesInFolder(Uri uri) {
+        Log.e(TAG, "findAllFilesInFolder: find all files in " + uri.getLastPathSegment());
+        List<GalleryFile> files = new ArrayList<>();
+        if (isFinishing() || isDestroyed() || isCancelled) {
+            return files;
+        }
+        incrementFolders(1);
+        List<GalleryFile> filesInFolder = FileStuff.getFilesInFolder(this, uri);
+        for (GalleryFile galleryFile : filesInFolder) {
+            if (isCancelled) {
+                return files;
+            }
+            if (galleryFile.isDirectory()) {
+                runOnUiThread(this::setLoadingAllWithProgress);
+                files.addAll(findAllFilesInFolder(galleryFile.getUri()));
+            } else {
+                files.add(galleryFile);
+            }
+        }
+        incrementFiles(files.size());
+        runOnUiThread(this::setLoadingAllWithProgress);
+        return files;
     }
 
     @Override
@@ -272,7 +421,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             lock();
             return true;
         } else if (id == R.id.toggle_filename) {
-            galleryGridAdapter.toggleFilenames();
+            settings.setShowFilenames(galleryGridAdapter.toggleFilenames());
             return true;
         } else if (id == R.id.select_all) {
             galleryGridAdapter.selectAll();

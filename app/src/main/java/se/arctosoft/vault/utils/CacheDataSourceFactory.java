@@ -3,18 +3,19 @@ package se.arctosoft.vault.utils;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
-
-import com.google.android.exoplayer2.database.StandaloneDatabaseProvider;
-import com.google.android.exoplayer2.upstream.ContentDataSource;
-import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.FileDataSource;
-import com.google.android.exoplayer2.upstream.cache.CacheDataSink;
-import com.google.android.exoplayer2.upstream.cache.CacheDataSource;
-import com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor;
-import com.google.android.exoplayer2.upstream.cache.SimpleCache;
+import androidx.annotation.OptIn;
+import androidx.media3.database.StandaloneDatabaseProvider;
+import androidx.media3.datasource.ContentDataSource;
+import androidx.media3.datasource.DataSource;
+import androidx.media3.datasource.FileDataSource;
+import androidx.media3.datasource.cache.CacheDataSink;
+import androidx.media3.datasource.cache.CacheDataSource;
+import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor;
+import androidx.media3.datasource.cache.SimpleCache;
 
 import java.io.File;
 
+@OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
 public class CacheDataSourceFactory implements DataSource.Factory {
     private final Context context;
     private final ContentDataSource dataSource;

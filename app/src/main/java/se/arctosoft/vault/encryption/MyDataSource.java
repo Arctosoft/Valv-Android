@@ -6,10 +6,10 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DataSpec;
-import com.google.android.exoplayer2.upstream.TransferListener;
+import androidx.annotation.OptIn;
+import androidx.media3.datasource.DataSource;
+import androidx.media3.datasource.DataSpec;
+import androidx.media3.datasource.TransferListener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +20,7 @@ import javax.crypto.CipherInputStream;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.utils.Settings;
 
+@OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
 public class MyDataSource implements DataSource {
     private static final String TAG = "MyDataSource";
     private final Context context;
