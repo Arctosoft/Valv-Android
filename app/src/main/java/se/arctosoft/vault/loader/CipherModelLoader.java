@@ -15,7 +15,6 @@ import java.io.InputStream;
 import se.arctosoft.vault.encryption.Encryption;
 
 public class CipherModelLoader implements ModelLoader<Uri, InputStream> {
-    private static final String TAG = "CipherModelLoader";
     private final Context context;
 
     public CipherModelLoader(@NonNull Context context) {
@@ -30,9 +29,8 @@ public class CipherModelLoader implements ModelLoader<Uri, InputStream> {
 
     @Override
     public boolean handles(@NonNull Uri uri) {
-        String lastSegment = uri.getLastPathSegment().toLowerCase();
-        //Log.e(TAG, "handles: " + lastSegment + " " + handles);
-        return lastSegment.contains("/" + Encryption.ENCRYPTED_PREFIX) /*&& (lastSegment.endsWith("jpg") || lastSegment.endsWith("png") || lastSegment.endsWith("gif"))*/;
+        String lastSegment = uri.getLastPathSegment();
+        return lastSegment != null && lastSegment.toLowerCase().contains("/" + Encryption.ENCRYPTED_PREFIX);
     }
 
 }

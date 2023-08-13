@@ -26,6 +26,7 @@
     <string name="menu_select_all">Select all</string>
     <string name="menu_about">About</string>
 
+    <string name="gallery_all">All</string>
     <string name="gallery_adapter_folder_name">%1$s (%2$d)</string>
     <string name="gallery_adapter_file_name">%1$s (%2$s)</string>
     <string name="gallery_add_folder">Add a folder</string>
@@ -45,6 +46,7 @@
     <string name="gallery_selected_files_exported">Exported %1$d files</string>
     <string name="gallery_selected_files_exported_with_failed">Exported %1$d files, %2$d failed</string>
     <string name="gallery_file_not_exported">Export error: %1$s</string>
+    <string name="gallery_loading_all_progress">Loading %1$d files in %2$d directories</string>
     <string name="gallery_importing_progress">Importing %1$d out of %2$d\n%3$s/%4$s MB</string>
     <string name="gallery_exporting_progress">Exporting %1$d out of %2$d\nFailed: %3$d</string>
     <string name="gallery_deleting_progress">Deleting %1$d out of %2$d\nFailed: %3$d</string>

@@ -15,12 +15,25 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private static final String TAG = "GalleryFile";
     private final FileType fileType;
     private final String encryptedName, name;
-    private final boolean isDirectory;
+    private final boolean isDirectory, isAllFolder;
     private final Uri fileUri;
     private final long lastModified, size;
     private Uri thumbUri, decryptedCacheUri;
     private List<GalleryFile> filesInDirectory;
     private String originalName;
+
+    private GalleryFile(String name) {
+        this.fileUri = null;
+        this.encryptedName = name;
+        this.name = name;
+        this.thumbUri = null;
+        this.decryptedCacheUri = null;
+        this.lastModified = Long.MAX_VALUE;
+        this.isDirectory = true;
+        this.fileType = FileType.DIRECTORY;
+        this.size = -1;
+        this.isAllFolder = true;
+    }
 
     private GalleryFile(@NonNull CursorFile file, @Nullable CursorFile thumb) {
         this.fileUri = file.getUri();
@@ -32,6 +45,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.isDirectory = false;
         this.fileType = FileType.fromMimeType(file.getMimeType());
         this.size = file.getSize();
+        this.isAllFolder = false;
     }
 
     private GalleryFile(@NonNull Uri fileUri, List<GalleryFile> filesInDirectory) {
@@ -45,6 +59,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.fileType = FileType.fromFilename(encryptedName);
         this.filesInDirectory = filesInDirectory;
         this.size = 0;
+        this.isAllFolder = false;
     }
 
     private GalleryFile(@NonNull CursorFile file, List<GalleryFile> filesInDirectory) {
@@ -58,6 +73,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.fileType = FileType.DIRECTORY;
         this.filesInDirectory = filesInDirectory;
         this.size = 0;
+        this.isAllFolder = false;
     }
 
     public static GalleryFile asDirectory(Uri directoryUri, List<GalleryFile> filesInDirectory) {
@@ -70,6 +86,10 @@ public class GalleryFile implements Comparable<GalleryFile> {
 
     public static GalleryFile asFile(CursorFile cursorFile, @Nullable CursorFile thumbUri) {
         return new GalleryFile(cursorFile, thumbUri);
+    }
+
+    public static GalleryFile asAllFolder(String name) {
+        return new GalleryFile(name);
     }
 
     public void setOriginalName(String originalName) {
@@ -107,6 +127,9 @@ public class GalleryFile implements Comparable<GalleryFile> {
     }
 
     public String getNameWithPath() {
+        if (isAllFolder) {
+            return name;
+        }
         return FileStuff.getFilenameWithPathFromUri(fileUri);
     }
 
@@ -133,6 +156,10 @@ public class GalleryFile implements Comparable<GalleryFile> {
 
     public FileType getFileType() {
         return fileType;
+    }
+
+    public boolean isAllFolder() {
+        return isAllFolder;
     }
 
     public boolean isDirectory() {

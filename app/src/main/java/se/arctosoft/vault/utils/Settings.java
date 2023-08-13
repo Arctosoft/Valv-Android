@@ -21,6 +21,7 @@ public class Settings {
     private static final String TAG = "Settings";
     private static final String SHARED_PREFERENCES_NAME = "prefs";
     private static final String PREF_DIRECTORIES = "p.gallery.dirs";
+    private static final String PREF_SHOW_FILENAMES_IN_GRID = "p.gallery.fn";
 
     private final Context context;
     private static Settings settings;
@@ -169,5 +170,13 @@ public class Settings {
             }
         }
         return storedDirectories;
+    }
+
+    public void setShowFilenames(boolean show)  {
+        getSharedPrefsEditor().putBoolean(PREF_SHOW_FILENAMES_IN_GRID, show).apply();
+    }
+
+    public boolean showFilenames() {
+        return getSharedPrefs().getBoolean(PREF_SHOW_FILENAMES_IN_GRID, true);
     }
 }

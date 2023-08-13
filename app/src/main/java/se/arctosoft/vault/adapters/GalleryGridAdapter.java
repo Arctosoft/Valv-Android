@@ -3,9 +3,11 @@ package se.arctosoft.vault.adapters;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.icu.text.SimpleDateFormat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,32 +24,42 @@ import com.bumptech.glide.request.target.Target;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import se.arctosoft.vault.GalleryDirectoryActivity;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryGridViewHolder;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.exception.InvalidPasswordException;
+import se.arctosoft.vault.fastscroll.views.FastScrollRecyclerView;
 import se.arctosoft.vault.interfaces.IOnFileClicked;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.interfaces.IOnSelectionModeChanged;
 import se.arctosoft.vault.utils.GlideStuff;
 import se.arctosoft.vault.utils.StringStuff;
 
-public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHolder> implements IOnSelectionModeChanged {
+public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHolder> implements IOnSelectionModeChanged, FastScrollRecyclerView.SectionedAdapter {
     private static final String TAG = "GalleryFolderAdapter";
 
     private static final Object LOCK = new Object();
 
     private final WeakReference<FragmentActivity> weakReference;
     private final List<GalleryFile> galleryFiles, selectedFiles;
+    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
     private boolean showFileNames;
     private IOnFileDeleted onFileDeleted;
     private IOnFileClicked onFileCLicked;
     private IOnSelectionModeChanged onSelectionModeChanged;
     private boolean selectMode;
     private final boolean isRootDir;
+
+    @NonNull
+    @Override
+    public String getSectionName(int position) {
+        return simpleDateFormat.format(new Date(galleryFiles.get(position).getLastModified()));
+    }
 
     static class Payload {
         static final int TYPE_SELECT_ALL = 0;
@@ -108,7 +120,12 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         } else {
             holder.imgType.setVisibility(View.GONE);
         }
-        if (galleryFile.isDirectory()) {
+        holder.imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        if (galleryFile.isAllFolder()) {
+            holder.imageView.setImageDrawable(ResourcesCompat.getDrawable(context.getResources(), R.drawable.round_all_inclusive_24, context.getTheme()));
+            holder.imageView.setScaleType(ImageView.ScaleType.CENTER);
+            holder.txtName.setText(context.getString(R.string.gallery_all));
+        } else if (galleryFile.isDirectory()) {
             GalleryFile firstFile = galleryFile.getFirstFile();
             if (firstFile != null) {
                 Glide.with(context)
@@ -132,7 +149,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                                     }
                                 }
                             }
-                            return false;
+                            return true;
                         }
 
                         @Override
@@ -156,7 +173,10 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
 
     private void setClickListener(@NonNull GalleryGridViewHolder holder, Context context, GalleryFile galleryFile) {
         holder.imageView.setOnClickListener(v -> {
-            if (selectMode && (isRootDir || !galleryFile.isDirectory())) {
+            if (galleryFile.isAllFolder()) {
+                context.startActivity(new Intent(context, GalleryDirectoryActivity.class)
+                        .putExtra(GalleryDirectoryActivity.EXTRA_IS_ALL, true));
+            } else if (selectMode && (isRootDir || !galleryFile.isDirectory())) {
                 boolean selected = !selectedFiles.contains(galleryFile);
                 if (selected) {
                     selectedFiles.add(galleryFile);
@@ -273,9 +293,10 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         }
     }
 
-    public void toggleFilenames() {
+    public boolean toggleFilenames() {
         showFileNames = !showFileNames;
         notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_TOGGLE_FILENAME));
+        return showFileNames;
     }
 
     @NonNull

@@ -7,4 +7,28 @@
     <attr name="button_secondary" format="color" />
     <attr name="button_warning" format="color" />
     <attr name="gallery_grid_stroke" format="color" />
+
+    <declare-styleable name="FastScrollRecyclerView">
+        <attr name="fastScrollThumbColor" format="reference|color" />
+        <attr name="fastScrollThumbInactiveColor" format="reference|color" />
+        <attr name="fastScrollThumbWidth" format="reference|dimension" />
+        <attr name="fastScrollTrackColor" format="reference|color" />
+        <attr name="fastScrollTrackWidth" format="reference|dimension" />
+        <attr name="fastScrollPopupBgColor" format="reference|color" />
+        <attr name="fastScrollPopupTextColor" format="reference|color" />
+        <attr name="fastScrollPopupTextSize" format="reference|dimension" />
+        <attr name="fastScrollPopupTextVerticalAlignmentMode" format="enum">
+            <enum name="text_bounds" value="0" />
+            <enum name="font_metrics" value="1" />
+        </attr>
+        <attr name="fastScrollPopupBackgroundSize" format="reference|dimension" />
+        <attr name="fastScrollPopupPosition" format="enum">
+            <enum name="adjacent" value="0" />
+            <enum name="center" value="1" />
+        </attr>
+        <attr name="fastScrollAutoHide" format="reference|boolean" />
+        <attr name="fastScrollAutoHideDelay" format="reference|integer" />
+        <attr name="fastScrollEnableThumbInactiveColor" format="reference|boolean" />
+        <attr name="fastScrollThumbEnabled" format="reference|boolean" />
+    </declare-styleable>
 </resources>
