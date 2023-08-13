@@ -80,6 +80,6 @@
     <string name="dialog_delete_file_title">Delete?</string>
     <string name="dialog_delete_file_message">Delete this file permanently?</string>
     <string name="dialog_about_title">About</string>
-    <string name="dialog_about_message">Valv gallery vault\n\nVersion %1$s-%2$s (%3$d)\n\nFiles are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.\n\n\u00A9 2022 Arctosoft AB</string>
+    <string name="dialog_about_message">Valv gallery vault\n\nVersion %1$s-%2$s (%3$d)\n\nFiles are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.\n\n\u00A9 2023 Arctosoft AB</string>
 
 </resources>
