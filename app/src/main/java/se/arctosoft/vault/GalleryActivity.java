@@ -366,7 +366,7 @@ public class GalleryActivity extends AppCompatActivity {
                 findFolders();
             });
         } else if (id == R.id.about) {
-            Dialogs.showTextDialog(this, getString(R.string.dialog_about_title), getString(R.string.dialog_about_message, BuildConfig.BUILD_TYPE, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE));
+            Dialogs.showAboutDialog(this);
         } else if (id == R.id.lock) {
             lock();
             return true;

@@ -26,10 +26,12 @@ import androidx.annotation.NonNull;
 import androidx.documentfile.provider.DocumentFile;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.mikepenz.aboutlibraries.LibsBuilder;
 
 import java.util.LinkedList;
 import java.util.List;
 
+import se.arctosoft.vault.BuildConfig;
 import se.arctosoft.vault.R;
 
 public class Dialogs {
@@ -65,6 +67,19 @@ public class Dialogs {
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
+    public static void showAboutDialog(Context context) {
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(context.getString(R.string.dialog_about_title))
+                .setMessage(context.getString(R.string.dialog_about_message, BuildConfig.BUILD_TYPE, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE))
+                .setPositiveButton(android.R.string.ok, null)
+                .setNeutralButton(context.getString(R.string.licenses), (dialogInterface, i) -> {
+                    new LibsBuilder()
+                            .withActivityTitle(context.getString(R.string.licenses))
+                            .start(context);
+                })
                 .show();
     }
 

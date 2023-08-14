@@ -1,0 +1,15 @@
+{
+  "uniqueId": "com.simplecityapps:recyclerview-fastscroll",
+  "developers": [
+    {
+      "name": "Tim Malseed, The Android Open Source Project"
+    }
+  ],
+  "artifactVersion": "2.0.1",
+  "description": "A simple FastScroller for Android's RecyclerView.",
+  "name": "RecyclerView-FastScroll",
+  "website": "https://github.com/timusus/RecyclerView-FastScroll",
+  "licenses": [
+    "fsls1"
+  ]
+}
