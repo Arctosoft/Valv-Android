@@ -1,0 +1,12 @@
+En krypterad galleriapp för Android-enheter.
+
+<b>Funktioner</b>
+* Stödjer bilder, GIF och videor
+* Organisera med hjälp av mappar
+* Appen kräver inga behörigheter
+* Dina krypterade filer lagras lokalt som vanliga filer vilket möjliggör enkel säkerhetskopiering och överföringar mellan enheter
+* Stödjer flera valv genom att använda olika lösenord
+* Dag/nattlägen
+
+<b>Kryptering</b>
+Filer krypteras med ChaCha20 och nycklar härleds med PBKDF2 med HMAC-SHA512.

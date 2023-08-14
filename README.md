@@ -21,10 +21,9 @@ Files are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-S
 - Android 9 or newer
 
 ## Screenshots
-![Locked screen](https://api.arctosoft.com/screenshots/vault/5.png "Locked screen")
-![Gallery](https://api.arctosoft.com/screenshots/vault/6.png "Gallery")
-![Gallery folder](https://api.arctosoft.com/screenshots/vault/3.png "Gallery folder")
-![Fullscreen](https://api.arctosoft.com/screenshots/vault/4.png "Fullscreen")
+![Locked screen](/metadata/en-US/images/phoneScreenshots/1.jpg "Locked screen")
+![Gallery](/metadata/en-US/images/phoneScreenshots/2.jpg "Gallery")
+![Gallery folder](/metadata/en-US/images/phoneScreenshots/3.jpg "Gallery folder")
 
 ## 
 This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.

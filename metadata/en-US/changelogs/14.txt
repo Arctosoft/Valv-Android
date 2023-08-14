@@ -1,0 +1,3 @@
+* Added an All folder (all files sorted by date descending)
+* Added fast scroll to folders with many files
+* Remember the state of the show/hide filename toggle

@@ -1,0 +1,3 @@
+* Första versionen på F-Droid
+* Åtgärdade en krasch vid filimport
+* Lade till en licensskärm
