@@ -11,6 +11,7 @@
     <string name="delete">Delete</string>
     <string name="export">Export</string>
     <string name="remove">Remove</string>
+    <string name="licenses">Licenses</string>
 
     <string name="launcher_title">Vault locked</string>
     <string name="launcher_subtitle">Enter decryption password</string>

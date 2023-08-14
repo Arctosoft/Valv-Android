@@ -1,5 +1,3 @@
-package se.arctosoft.vault.fastscroll.views;
-
 /*
  * Copyright (c) 2016 Tim Malseed
  *
@@ -15,6 +13,7 @@ package se.arctosoft.vault.fastscroll.views;
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package se.arctosoft.vault.fastscroll.views;
 
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 

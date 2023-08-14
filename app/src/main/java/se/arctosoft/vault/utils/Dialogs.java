@@ -1,3 +1,21 @@
+/*
+ * Valv-Android
+ * Copyright (C) 2023 Arctosoft AB
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see https://www.gnu.org/licenses/.
+ */
+
 package se.arctosoft.vault.utils;
 
 import android.content.Context;
@@ -8,10 +26,12 @@ import androidx.annotation.NonNull;
 import androidx.documentfile.provider.DocumentFile;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.mikepenz.aboutlibraries.LibsBuilder;
 
 import java.util.LinkedList;
 import java.util.List;
 
+import se.arctosoft.vault.BuildConfig;
 import se.arctosoft.vault.R;
 
 public class Dialogs {
@@ -47,6 +67,19 @@ public class Dialogs {
                 .setTitle(title)
                 .setMessage(message)
                 .setPositiveButton(android.R.string.ok, null)
+                .show();
+    }
+
+    public static void showAboutDialog(Context context) {
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(context.getString(R.string.dialog_about_title))
+                .setMessage(context.getString(R.string.dialog_about_message, BuildConfig.BUILD_TYPE, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE))
+                .setPositiveButton(android.R.string.ok, null)
+                .setNeutralButton(context.getString(R.string.licenses), (dialogInterface, i) -> {
+                    new LibsBuilder()
+                            .withActivityTitle(context.getString(R.string.licenses))
+                            .start(context);
+                })
                 .show();
     }
 
