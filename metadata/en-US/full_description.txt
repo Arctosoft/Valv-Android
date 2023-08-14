@@ -1,0 +1,12 @@
+An encrypted gallery vault for Android devices.
+
+<b>Features</b>
+* Supports images, GIFs and videos
+* Organise using folders
+* The app requires no permissions
+* Encrypted files are stored on-disk allowing for easy backups and transfers between devices
+* Supports multiple vaults by the use of different passwords
+* Day/night modes
+
+<b>Encryption</b>
+Files are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.
