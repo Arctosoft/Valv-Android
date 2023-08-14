@@ -75,5 +75,5 @@ dependencies {
 }
 
 aboutLibraries {
-    configPath = "app/config"
+    configPath = "config"
 }
