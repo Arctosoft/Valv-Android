@@ -1,6 +1,5 @@
-package se.arctosoft.vault.fastscroll.views;
-
 /*
+ * Copyright (c) 2023 Arctosoft AB
  * Copyright (c) 2016 Tim Malseed
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,7 @@ package se.arctosoft.vault.fastscroll.views;
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+package se.arctosoft.vault.fastscroll.views;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -266,6 +266,9 @@ public class FastScrollRecyclerView extends RecyclerView implements RecyclerView
         int rowCount = itemCount;
         if (getLayoutManager() instanceof GridLayoutManager) {
             spanCount = ((GridLayoutManager) getLayoutManager()).getSpanCount();
+            rowCount = (int) Math.ceil((double) rowCount / spanCount);
+        } else if (getLayoutManager() instanceof StaggeredGridLayoutManager) {
+            spanCount = ((StaggeredGridLayoutManager) getLayoutManager()).getSpanCount();
             rowCount = (int) Math.ceil((double) rowCount / spanCount);
         }
 
