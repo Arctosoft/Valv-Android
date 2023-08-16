@@ -21,9 +21,9 @@ Files are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-S
 - Android 9 or newer
 
 ## Screenshots
-![Locked screen](/metadata/en-US/images/phoneScreenshots/1.jpg "Locked screen")
-![Gallery](/metadata/en-US/images/phoneScreenshots/2.jpg "Gallery")
-![Gallery folder](/metadata/en-US/images/phoneScreenshots/3.jpg "Gallery folder")
+![Locked screen](/fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpg "Locked screen")
+![Gallery](/fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpg "Gallery")
+![Gallery folder](/fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpg "Gallery folder")
 
 ## 
 This software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
