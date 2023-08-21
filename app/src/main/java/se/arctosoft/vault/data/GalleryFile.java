@@ -38,7 +38,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private final long lastModified, size;
     private Uri thumbUri, decryptedCacheUri;
     private List<GalleryFile> filesInDirectory;
-    private String originalName;
+    private String originalName, nameWithPath;
 
     private GalleryFile(String name) {
         this.fileUri = null;
@@ -148,7 +148,10 @@ public class GalleryFile implements Comparable<GalleryFile> {
         if (isAllFolder) {
             return name;
         }
-        return FileStuff.getFilenameWithPathFromUri(fileUri);
+        if (nameWithPath == null) {
+            nameWithPath = FileStuff.getFilenameWithPathFromUri(fileUri);
+        }
+        return nameWithPath;
     }
 
     public String getName() {

@@ -100,7 +100,8 @@ public class Encryption {
         try {
             createThumb(context, sourceFile.getUri(), thumb, tempPassword, sourceFile.getName());
             createdThumb = true;
-        } catch (GeneralSecurityException | IOException | ExecutionException | InterruptedException e) {
+        } catch (GeneralSecurityException | IOException | ExecutionException |
+                 InterruptedException e) {
             e.printStackTrace();
             thumb.delete();
         }
@@ -322,6 +323,9 @@ public class Encryption {
     }
 
     public static void decryptAndExport(FragmentActivity context, Uri encryptedInput, Uri directoryUri, char[] password, IOnUriResult onUriResult, boolean isVideo) {
+        if (directoryUri == null) { // null in All folder, use the input file's parent folder
+            directoryUri = encryptedInput;
+        }
         DocumentFile documentFile = DocumentFile.fromTreeUri(context, directoryUri);
         DocumentFile file = documentFile.createFile(isVideo ? "video/*" : "image/*", System.currentTimeMillis() + "_" + FileStuff.getFilenameFromUri(encryptedInput, true));
         try {

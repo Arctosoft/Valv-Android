@@ -329,15 +329,35 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             List<GalleryFile> folders = new ArrayList<>();
             List<GalleryFile> files = new LinkedList<>();
             long start = System.currentTimeMillis();
+            List<GalleryFile> filesToSearch = new ArrayList<>();
             for (Uri uri : uriFiles) {
                 List<GalleryFile> filesInFolder = FileStuff.getFilesInFolder(this, uri);
-                for (GalleryFile galleryFile : filesInFolder) {
-                    if (galleryFile.isDirectory()) {
-                        Log.e(TAG, "findAllFiles: found " + galleryFile.getNameWithPath());
-                        folders.add(galleryFile);
+                for (GalleryFile foundFile : filesInFolder) {
+                    if (foundFile.isDirectory()) {
+                        Log.e(TAG, "findAllFiles: found " + foundFile.getNameWithPath());
+                        boolean add = true;
+                        for (GalleryFile addedFile : filesToSearch) {
+                            if (foundFile.getNameWithPath().startsWith(addedFile.getNameWithPath() + "/")) {
+                                // Do not add e.g. folder Pictures/a/b if folder Pictures/a have already been added as it will be searched by a thread in findAllFilesInFolder().
+                                // Prevents showing duplicate files
+                                add = false;
+                                Log.e(TAG, "findAllFiles: not adding nested " + foundFile.getNameWithPath());
+                                break;
+                            }
+                        }
+                        if (add) {
+                            filesToSearch.add(foundFile);
+                        }
                     } else {
-                        files.add(galleryFile);
+                        filesToSearch.add(foundFile);
                     }
+                }
+            }
+            for (GalleryFile galleryFile : filesToSearch) {
+                if (galleryFile.isDirectory()) {
+                    folders.add(galleryFile);
+                } else {
+                    files.add(galleryFile);
                 }
             }
 
