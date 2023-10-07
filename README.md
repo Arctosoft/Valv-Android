@@ -13,9 +13,14 @@ An encrypted gallery vault for Android devices.
 Files are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.
 
 ## Get the app
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
+     alt="Download from F-Droid"
+     height="80">](https://f-droid.org/packages/se.arctosoft.vault/)
 [<img src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" 
       alt="Download from Google Play" 
       height="80">](https://play.google.com/store/apps/details?id=se.arctosoft.vault)
+
+Or download the latest APK from the [Releases Section](https://github.com/Arctosoft/Valv-Android/releases/latest).
 
 ## Requirements
 - Android 9 or newer
