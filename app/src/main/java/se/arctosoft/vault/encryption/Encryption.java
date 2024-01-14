@@ -33,6 +33,7 @@ import com.bumptech.glide.Glide;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -54,6 +55,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.security.auth.DestroyFailedException;
 
 import se.arctosoft.vault.data.FileType;
+import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
@@ -322,12 +324,22 @@ public class Encryption {
         }).start();
     }
 
-    public static void decryptAndExport(FragmentActivity context, Uri encryptedInput, Uri directoryUri, char[] password, IOnUriResult onUriResult, boolean isVideo) {
+    public static void decryptAndExport(FragmentActivity context, Uri encryptedInput, Uri directoryUri, GalleryFile galleryFile, char[] password, IOnUriResult onUriResult, boolean isVideo) {
         if (directoryUri == null) { // null in All folder, use the input file's parent folder
             directoryUri = encryptedInput;
         }
         DocumentFile documentFile = DocumentFile.fromTreeUri(context, directoryUri);
-        DocumentFile file = documentFile.createFile(isVideo ? "video/*" : "image/*", System.currentTimeMillis() + "_" + FileStuff.getFilenameFromUri(encryptedInput, true));
+        String originalFileName = galleryFile.getOriginalName();
+        if (originalFileName == null) {
+            try {
+                originalFileName = Encryption.getOriginalFilename(context.getContentResolver().openInputStream(encryptedInput), password, false);
+                galleryFile.setOriginalName(originalFileName);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                Log.e(TAG, "decryptAndExport: failed to decrypt original name");
+            }
+        }
+        DocumentFile file = documentFile.createFile(isVideo ? "video/*" : "image/*", originalFileName != null ? originalFileName : (System.currentTimeMillis() + "_" + FileStuff.getFilenameFromUri(encryptedInput, true)));
         try {
             InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
 

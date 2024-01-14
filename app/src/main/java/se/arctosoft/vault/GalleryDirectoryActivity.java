@@ -510,7 +510,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                             failed[0]++;
                         }
                     };
-                    Encryption.decryptAndExport(this, f.getUri(), currentDirectory, settings.getTempPassword(), result, f.isVideo());
+                    Encryption.decryptAndExport(this, f.getUri(), currentDirectory, f, settings.getTempPassword(), result, f.isVideo());
                     runOnUiThread(() -> setLoadingWithProgress(exported[0], failed[0], galleryFilesCopy.size(), R.string.gallery_exporting_progress));
                 }
                 runOnUiThread(() -> {
