@@ -16,18 +16,10 @@
  * along with this program.  If not, see https://www.gnu.org/licenses/.
  */
 
-package se.arctosoft.vault.adapters.viewholders;
+package se.arctosoft.vault.interfaces;
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.annotation.Nullable;
 
-import se.arctosoft.vault.databinding.AdapterGalleryGridItemBinding;
-
-public class GalleryGridViewHolder extends RecyclerView.ViewHolder {
-    public final AdapterGalleryGridItemBinding binding;
-
-    public GalleryGridViewHolder(@NonNull AdapterGalleryGridItemBinding binding) {
-        super(binding.getRoot());
-        this.binding = binding;
-    }
+public interface IOnEdited {
+    void onEdited(@Nullable String text);
 }

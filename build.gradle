@@ -5,6 +5,6 @@ plugins {
     id 'com.mikepenz.aboutlibraries.plugin' version '10.8.3' apply false
 }
 
-task clean(type: Delete) {
+tasks.register('clean', Delete) {
     delete rootProject.buildDir
 }

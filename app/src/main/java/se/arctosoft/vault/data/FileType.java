@@ -44,7 +44,7 @@ public enum FileType {
             return IMAGE;
         } else if (name.contains(Encryption.PREFIX_GIF_FILE)) {
             return GIF;
-        } else if (name.contains(Encryption.PREFIX_VIDEO_FILE)){
+        } else if (name.contains(Encryption.PREFIX_VIDEO_FILE)) {
             return VIDEO;
         } else {
             return DIRECTORY;

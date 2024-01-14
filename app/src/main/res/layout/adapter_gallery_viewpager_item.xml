@@ -19,6 +19,44 @@
         android:textSize="12sp"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <se.arctosoft.vault.views.PressableConstraintLayout
+        android:id="@+id/note_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/gallery_viewpager_buttons_background"
+        app:layout_constraintBottom_toTopOf="@id/lLButtons">
+
+        <ScrollView
+            android:id="@+id/note_scroll"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintEnd_toStartOf="@id/note_action"
+            app:layout_constraintHeight_max="200dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <TextView
+                android:id="@+id/note"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:textColor="?android:attr/textColorPrimary" />
+
+        </ScrollView>
+
+        <se.arctosoft.vault.views.PressableImageView
+            android:id="@+id/note_action"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:paddingHorizontal="5dp"
+            android:src="@drawable/round_expand_less_24"
+            app:layout_constraintBottom_toBottomOf="@id/note_scroll"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/note_scroll" />
+
+    </se.arctosoft.vault.views.PressableConstraintLayout>
+
     <LinearLayout
         android:id="@+id/lLButtons"
         android:layout_width="match_parent"
@@ -26,11 +64,11 @@
         android:background="?attr/gallery_viewpager_buttons_background"
         android:baselineAligned="false"
         android:orientation="horizontal"
-        android:weightSum="2"
+        android:weightSum="3"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
@@ -54,7 +92,7 @@
         </LinearLayout>
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
@@ -70,6 +108,31 @@
                 android:text="@string/export"
                 android:textColor="?attr/gallery_viewpager_buttons"
                 app:icon="@drawable/ic_outline_file_download_24"
+                app:iconGravity="top"
+                app:iconPadding="0dp"
+                app:iconSize="@dimen/fullscreen_icon_size"
+                app:iconTint="?attr/gallery_viewpager_buttons" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/button_note_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNote"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackground"
+                android:backgroundTint="@color/color_invisible"
+                android:padding="@dimen/fullscreen_buttons_padding"
+                android:src="@drawable/ic_outline_delete_forever_24"
+                android:text="@string/add_edit_note"
+                android:textColor="?attr/gallery_viewpager_buttons"
+                app:icon="@drawable/round_edit_note_24"
                 app:iconGravity="top"
                 app:iconPadding="0dp"
                 app:iconSize="@dimen/fullscreen_icon_size"

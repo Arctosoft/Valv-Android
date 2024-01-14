@@ -10,6 +10,7 @@
     <string name="help">Help</string>
     <string name="delete">Delete</string>
     <string name="export">Export</string>
+    <string name="add_edit_note">Add/edit note</string>
     <string name="remove">Remove</string>
     <string name="licenses">Licenses</string>
 
@@ -56,6 +57,13 @@
     <string name="gallery_importing_done">Encrypted and imported %1$d files</string>
     <string name="gallery_video_error">Playback error: %1$s</string>
     <string name="main_press_back_again_to_exit">Press the back button again to lock the vault</string>
+    <string name="gallery_loading_note">Decrypting note</string>
+    <string name="gallery_note_decrypt_failed">Failed to decrypt note: %1$s</string>
+    <string name="gallery_note_read_failed">Failed to read note: %1$s</string>
+    <string name="gallery_note_edit_hint">Note text</string>
+    <string name="gallery_note_save">Save note</string>
+    <string name="gallery_note_delete">Delete note</string>
+    <string name="gallery_note_click_to_show">Show note</string>
 
     <string name="dialog_remove_folder_title">Remove?</string>
     <plurals name="dialog_remove_folder_message">

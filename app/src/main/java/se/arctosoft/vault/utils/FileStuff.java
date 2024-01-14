@@ -30,7 +30,11 @@ import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -77,6 +81,7 @@ public class FileStuff {
     private static List<GalleryFile> getEncryptedFilesInFolder(@NonNull List<CursorFile> files) {
         List<CursorFile> documentFiles = new ArrayList<>();
         List<CursorFile> documentThumbs = new ArrayList<>();
+        List<CursorFile> documentNote = new ArrayList<>();
         List<GalleryFile> galleryFiles = new ArrayList<>();
         for (CursorFile file : files) {
             if (!file.getName().startsWith(Encryption.ENCRYPTED_PREFIX) && !file.isDirectory()) {
@@ -85,6 +90,8 @@ public class FileStuff {
 
             if (file.getName().startsWith(Encryption.PREFIX_THUMB)) {
                 documentThumbs.add(file);
+            } else if (file.getName().startsWith(Encryption.PREFIX_NOTE_FILE)) {
+                documentNote.add(file);
             } else {
                 documentFiles.add(file);
             }
@@ -96,20 +103,22 @@ public class FileStuff {
                 continue;
             }
             file.setNameWithoutPrefix(FileStuff.getNameWithoutPrefix(file.getName()));
-            boolean foundThumb = false;
-            for (CursorFile thumb : documentThumbs) {
-                thumb.setNameWithoutPrefix(FileStuff.getNameWithoutPrefix(thumb.getName()));
-                if (file.getNameWithoutPrefix().equals(thumb.getNameWithoutPrefix())) {
-                    galleryFiles.add(GalleryFile.asFile(file, thumb));
-                    foundThumb = true;
-                    break;
-                }
-            }
-            if (!foundThumb) {
-                galleryFiles.add(GalleryFile.asFile(file, null));
-            }
+            CursorFile foundThumb = findCursorFile(documentThumbs, file.getNameWithoutPrefix());
+            CursorFile foundNote = findCursorFile(documentNote, file.getNameWithoutPrefix());
+            galleryFiles.add(GalleryFile.asFile(file, foundThumb, foundNote));
         }
         return galleryFiles;
+    }
+
+    @Nullable
+    private static CursorFile findCursorFile(@NonNull List<CursorFile> list, String nameWithoutPrefix) {
+        for (CursorFile cf : list) {
+            cf.setNameWithoutPrefix(FileStuff.getNameWithoutPrefix(cf.getName()));
+            if (cf.getNameWithoutPrefix().startsWith(nameWithoutPrefix)) {
+                return cf;
+            }
+        }
+        return null;
     }
 
     public static void pickImageFiles(@NonNull FragmentActivity context, int requestCode) {
@@ -156,6 +165,18 @@ public class FileStuff {
 
     public static String getNameWithoutPrefix(@NonNull String s) {
         return s.split("-", 2)[1];
+    }
+
+    public static String readTextFromUri(@NonNull Uri uri, Context context) throws IOException {
+        InputStream in = context.getContentResolver().openInputStream(uri);
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        StringBuilder sb = new StringBuilder();
+        String s;
+        while ((s = br.readLine()) != null) {
+            sb.append(s);
+        }
+
+        return sb.toString();
     }
 
     @NonNull

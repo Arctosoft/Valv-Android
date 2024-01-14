@@ -23,7 +23,9 @@ import android.content.DialogInterface;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
+import androidx.fragment.app.FragmentActivity;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.mikepenz.aboutlibraries.LibsBuilder;
@@ -33,6 +35,8 @@ import java.util.List;
 
 import se.arctosoft.vault.BuildConfig;
 import se.arctosoft.vault.R;
+import se.arctosoft.vault.databinding.DialogEditTextBinding;
+import se.arctosoft.vault.interfaces.IOnEdited;
 
 public class Dialogs {
     private static final String TAG = "Dialogs";
@@ -89,6 +93,21 @@ public class Dialogs {
                 .setMessage(message)
                 .setPositiveButton(android.R.string.ok, onConfirm)
                 .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    public static void showEditTextDialog(FragmentActivity context, @Nullable String title, @Nullable String editTextBody, IOnEdited onEdited) {
+        DialogEditTextBinding binding = DialogEditTextBinding.inflate(context.getLayoutInflater(), null, false);
+        if (editTextBody != null) {
+            binding.text.setText(editTextBody);
+        }
+
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(title)
+                .setView(binding.getRoot())
+                .setPositiveButton(R.string.gallery_note_save, (dialog, which) -> onEdited.onEdited(binding.text.getText().toString()))
+                .setNegativeButton(android.R.string.cancel, null)
+                .setNeutralButton(R.string.gallery_note_delete, (dialog, which) -> onEdited.onEdited(null))
                 .show();
     }
 
