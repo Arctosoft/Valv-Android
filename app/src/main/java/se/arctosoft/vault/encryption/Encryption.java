@@ -37,6 +37,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -212,7 +213,7 @@ public class Encryption {
 
     private static void createFile(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
         Streams streams = getCipherOutputStream(context, input, outputFile, password, sourceFileName);
-        streams.outputStream.write(streams.inputString.getBytes());
+        streams.outputStream.write(streams.inputString.getBytes(StandardCharsets.UTF_8));
         streams.close();
     }
 
