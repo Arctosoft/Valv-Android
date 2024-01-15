@@ -133,31 +133,31 @@ public class GalleryActivity extends AppCompatActivity {
         findFolders();
         if (Intent.ACTION_SEND.equals(action)) {
             if (type.startsWith("image/") || type.startsWith("video/")) {
-                handleSendImage(intent);
+                handleSendSingle(intent);
             }
         } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
-            if (type.startsWith("image/") || type.startsWith("video/")) {
-                handleSendMultipleImages(intent);
+            if (type.startsWith("image/") || type.startsWith("video/") || type.equals("*/*")) {
+                handleSendMultiple(intent);
             }
         }
     }
 
-    private void handleSendImage(Intent intent) {
-        Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
-        if (imageUri != null) {
-            List<Uri> uri = new ArrayList<>(1);
-            uri.add(imageUri);
-            List<DocumentFile> documentFiles = FileStuff.getDocumentsFromShareIntent(this, uri);
+    private void handleSendSingle(Intent intent) {
+        Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        if (uri != null) {
+            List<Uri> list = new ArrayList<>(1);
+            list.add(uri);
+            List<DocumentFile> documentFiles = FileStuff.getDocumentsFromShareIntent(this, list);
             if (!documentFiles.isEmpty()) {
                 importFiles(documentFiles);
             }
         }
     }
 
-    private void handleSendMultipleImages(Intent intent) {
-        ArrayList<Uri> imageUris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
-        if (imageUris != null) {
-            List<DocumentFile> documentFiles = FileStuff.getDocumentsFromShareIntent(this, imageUris);
+    private void handleSendMultiple(Intent intent) {
+        ArrayList<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+        if (uris != null) {
+            List<DocumentFile> documentFiles = FileStuff.getDocumentsFromShareIntent(this, uris);
             if (!documentFiles.isEmpty()) {
                 importFiles(documentFiles);
             }
