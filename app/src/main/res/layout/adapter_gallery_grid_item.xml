@@ -52,7 +52,19 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_margin="5dp"
+            android:src="@drawable/ic_round_gif_24"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/has_description"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_margin="5dp"
+            android:src="@drawable/outline_text_snippet_24"
+            android:visibility="gone"
+            app:layout_constraintEnd_toStartOf="@id/imgType"
             app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

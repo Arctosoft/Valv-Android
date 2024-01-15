@@ -9,7 +9,10 @@
     <color name="white">#FFFFFFFF</color>
     <color name="viewpager_buttons_bg_day">#99FFFFFF</color>
     <color name="viewpager_buttons_bg_night">#99000000</color>
+    <color name="viewpager_note_bg_day">#EBFFFFFF</color>
+    <color name="viewpager_note_bg_night">#BF000000</color>
     <color name="black10">#1A000000</color>
+    <color name="black70">#B3000000</color>
     <color name="white10">#1AFFFFFF</color>
     <color name="text_color_dark">#DF454545</color>
     <color name="text_color_light">#DFE8E8E8</color>

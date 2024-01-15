@@ -36,15 +36,16 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private final boolean isDirectory, isAllFolder;
     private final Uri fileUri;
     private final long lastModified, size;
-    private Uri thumbUri, decryptedCacheUri;
+    private Uri thumbUri, noteUri, decryptedCacheUri;
     private List<GalleryFile> filesInDirectory;
-    private String originalName, nameWithPath;
+    private String originalName, nameWithPath, note;
 
     private GalleryFile(String name) {
         this.fileUri = null;
         this.encryptedName = name;
         this.name = name;
         this.thumbUri = null;
+        this.noteUri = null;
         this.decryptedCacheUri = null;
         this.lastModified = Long.MAX_VALUE;
         this.isDirectory = true;
@@ -53,11 +54,12 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.isAllFolder = true;
     }
 
-    private GalleryFile(@NonNull CursorFile file, @Nullable CursorFile thumb) {
+    private GalleryFile(@NonNull CursorFile file, @Nullable CursorFile thumb, @Nullable CursorFile note) {
         this.fileUri = file.getUri();
         this.encryptedName = file.getName();
         this.name = encryptedName.split("-", 2)[1];
         this.thumbUri = thumb == null ? null : thumb.getUri();
+        this.noteUri = note == null ? null : note.getUri();
         this.decryptedCacheUri = null;
         this.lastModified = file.getLastModified();
         this.isDirectory = false;
@@ -71,6 +73,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.encryptedName = FileStuff.getFilenameFromUri(fileUri, false);
         this.name = encryptedName;
         this.thumbUri = null;
+        this.noteUri = null;
         this.decryptedCacheUri = null;
         this.lastModified = System.currentTimeMillis();
         this.isDirectory = true;
@@ -85,6 +88,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.encryptedName = file.getName();
         this.name = encryptedName;
         this.thumbUri = null;
+        this.noteUri = null;
         this.decryptedCacheUri = null;
         this.lastModified = file.getLastModified();
         this.isDirectory = true;
@@ -102,8 +106,8 @@ public class GalleryFile implements Comparable<GalleryFile> {
         return new GalleryFile(cursorFile, filesInDirectory);
     }
 
-    public static GalleryFile asFile(CursorFile cursorFile, @Nullable CursorFile thumbUri) {
-        return new GalleryFile(cursorFile, thumbUri);
+    public static GalleryFile asFile(CursorFile cursorFile, @Nullable CursorFile thumbUri, @Nullable CursorFile noteUri) {
+        return new GalleryFile(cursorFile, thumbUri, noteUri);
     }
 
     public static GalleryFile asAllFolder(String name) {
@@ -140,9 +144,6 @@ public class GalleryFile implements Comparable<GalleryFile> {
         return decryptedCacheUri;
     }
 
-    public void setThumbUri(Uri thumbUri) {
-        this.thumbUri = thumbUri;
-    }
 
     public String getNameWithPath() {
         if (isAllFolder) {
@@ -171,8 +172,34 @@ public class GalleryFile implements Comparable<GalleryFile> {
         return thumbUri;
     }
 
+    public void setThumbUri(Uri thumbUri) {
+        this.thumbUri = thumbUri;
+    }
+
+    @Nullable
+    public Uri getNoteUri() {
+        return noteUri;
+    }
+
+    public void setNoteUri(Uri noteUri) {
+        this.noteUri = noteUri;
+    }
+
+    @Nullable
+    public String getNote() {
+        return note;
+    }
+
+    public void setNote(@Nullable String note) {
+        this.note = note;
+    }
+
     public boolean hasThumb() {
         return thumbUri != null;
+    }
+
+    public boolean hasNote() {
+        return noteUri != null || note != null;
     }
 
     public FileType getFileType() {

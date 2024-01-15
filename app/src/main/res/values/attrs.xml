@@ -2,6 +2,7 @@
 <resources>
     <attr name="gallery_viewpager_background" format="color" />
     <attr name="gallery_viewpager_buttons_background" format="color" />
+    <attr name="gallery_viewpager_note_background" format="color" />
     <attr name="gallery_viewpager_buttons" format="color" />
     <attr name="toolbar_icon_tint" format="color" />
     <attr name="button_secondary" format="color" />

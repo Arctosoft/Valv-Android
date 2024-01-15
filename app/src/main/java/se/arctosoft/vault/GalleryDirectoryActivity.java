@@ -62,6 +62,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private static final String TAG = "GalleryDirectoryActivity";
     private static final Object LOCK = new Object();
     public static final String EXTRA_DIRECTORY = "d";
+    public static final String EXTRA_NESTED_PATH = "n";
     public static final String EXTRA_IS_ALL = "a";
     private static final int MIN_FILES_FOR_FAST_SCROLL = 60;
 
@@ -72,6 +73,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     private GalleryPagerAdapter galleryPagerAdapter;
     private Settings settings;
     private Uri currentDirectory;
+    private DocumentFile currentDocumentDirectory;
+    private String nestedPath;
     private boolean inSelectionMode = false;
     private boolean isExporting = false;
     private boolean isCancelled = false;
@@ -88,12 +91,32 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
 
         Bundle extras = getIntent().getExtras();
         currentDirectory = null;
+        currentDocumentDirectory = null;
         if (extras != null) {
+            this.nestedPath = extras.getString(EXTRA_NESTED_PATH);
             String dir = extras.getString(EXTRA_DIRECTORY);
             if (dir != null) {
                 currentDirectory = Uri.parse(dir);
+                currentDocumentDirectory = DocumentFile.fromTreeUri(this, currentDirectory);
+                if (!currentDocumentDirectory.getUri().toString().equals(currentDirectory.toString())) {
+                    String[] paths = nestedPath.split("/");
+                    for (String s : paths) {
+                        if (currentDocumentDirectory != null && s != null && !s.isEmpty()) {
+                            DocumentFile found = currentDocumentDirectory.findFile(s);
+                            if (found != null) {
+                                currentDocumentDirectory = found;
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+                }
             }
+
             isAllFolder = extras.getBoolean(EXTRA_IS_ALL, false);
+        }
+        if (this.nestedPath == null) {
+            this.nestedPath = "";
         }
         if (currentDirectory == null && !isAllFolder) {
             finish();
@@ -205,6 +228,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         RecyclerView.LayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, RecyclerView.VERTICAL);
         binding.recyclerView.setLayoutManager(layoutManager);
         galleryGridAdapter = new GalleryGridAdapter(this, viewModel.getGalleryFiles(), settings.showFilenames(), false);
+        galleryGridAdapter.setNestedPath(nestedPath);
         galleryGridAdapter.setOnFileDeleted(pos -> galleryPagerAdapter.notifyItemRemoved(pos));
         binding.recyclerView.setAdapter(galleryGridAdapter);
         galleryGridAdapter.setOnFileCLicked(pos -> showViewpager(true, pos, true));
@@ -222,7 +246,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     }
 
     private void setupViewpager() {
-        galleryPagerAdapter = new GalleryPagerAdapter(this, viewModel.getGalleryFiles(), pos -> galleryGridAdapter.notifyItemRemoved(pos), currentDirectory);
+        galleryPagerAdapter = new GalleryPagerAdapter(this, viewModel.getGalleryFiles(), pos -> galleryGridAdapter.notifyItemRemoved(pos), currentDocumentDirectory, isAllFolder);
         binding.viewPager.setAdapter(galleryPagerAdapter);
         //Log.e(TAG, "setupViewpager: " + viewModel.getCurrentPosition() + " " + viewModel.isFullscreen());
         binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -510,7 +534,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                             failed[0]++;
                         }
                     };
-                    Encryption.decryptAndExport(this, f.getUri(), currentDirectory, settings.getTempPassword(), result, f.isVideo());
+                    Encryption.decryptAndExport(this, f.getUri(), currentDocumentDirectory, f, settings.getTempPassword(), result, f.isVideo());
                     runOnUiThread(() -> setLoadingWithProgress(exported[0], failed[0], galleryFilesCopy.size(), R.string.gallery_exporting_progress));
                 }
                 runOnUiThread(() -> {

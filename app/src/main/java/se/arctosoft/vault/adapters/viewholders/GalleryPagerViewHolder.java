@@ -18,65 +18,46 @@
 
 package se.arctosoft.vault.adapters.viewholders;
 
-import android.view.View;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
-import android.widget.TextView;
-
 import androidx.annotation.NonNull;
-import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
-
-import se.arctosoft.vault.R;
+import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemBinding;
+import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemGifBinding;
+import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemImageBinding;
+import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemVideoBinding;
 
 public class GalleryPagerViewHolder extends RecyclerView.ViewHolder {
-    public final TextView txtName;
-    public final Button btnDelete, btnExport;
-    public final LinearLayout lLButtons;
-    public final View root;
+    public final AdapterGalleryViewpagerItemBinding parentBinding;
 
-    private GalleryPagerViewHolder(@NonNull View itemView) {
-        super(itemView);
-        root = itemView;
-        txtName = itemView.findViewById(R.id.txtName);
-        btnDelete = itemView.findViewById(R.id.btnDelete);
-        btnExport = itemView.findViewById(R.id.btnExport);
-        lLButtons = itemView.findViewById(R.id.lLButtons);
+    private GalleryPagerViewHolder(AdapterGalleryViewpagerItemBinding parentBinding) {
+        super(parentBinding.getRoot());
+        this.parentBinding = parentBinding;
     }
 
     public static class GalleryPagerImageViewHolder extends GalleryPagerViewHolder {
-        public final SubsamplingScaleImageView imageView;
+        public final AdapterGalleryViewpagerItemImageBinding binding;
 
-        public GalleryPagerImageViewHolder(@NonNull View itemView) {
-            super(itemView);
-            imageView = itemView.findViewById(R.id.imageView);
+        public GalleryPagerImageViewHolder(AdapterGalleryViewpagerItemBinding parentBinding, AdapterGalleryViewpagerItemImageBinding binding) {
+            super(parentBinding);
+            this.binding = binding;
         }
     }
 
     public static class GalleryPagerGifViewHolder extends GalleryPagerViewHolder {
-        public final ImageView gifImageView;
+        public final AdapterGalleryViewpagerItemGifBinding binding;
 
-        public GalleryPagerGifViewHolder(@NonNull View itemView) {
-            super(itemView);
-            gifImageView = itemView.findViewById(R.id.gifImageView);
+        public GalleryPagerGifViewHolder(AdapterGalleryViewpagerItemBinding parentBinding, @NonNull AdapterGalleryViewpagerItemGifBinding binding) {
+            super(parentBinding);
+            this.binding = binding;
         }
     }
 
     public static class GalleryPagerVideoViewHolder extends GalleryPagerViewHolder {
-        public final PlayerView playerView;
-        public final RelativeLayout rLPlay;
-        public final ImageView imgThumb, imgFullscreen;
+        public final AdapterGalleryViewpagerItemVideoBinding binding;
 
-        public GalleryPagerVideoViewHolder(@NonNull View itemView) {
-            super(itemView);
-            playerView = itemView.findViewById(R.id.playerView);
-            rLPlay = itemView.findViewById(R.id.rLPlay);
-            imgThumb = itemView.findViewById(R.id.imgThumb);
-            imgFullscreen = itemView.findViewById(R.id.imgFullscreen);
+        public GalleryPagerVideoViewHolder(AdapterGalleryViewpagerItemBinding parentBinding, @NonNull AdapterGalleryViewpagerItemVideoBinding binding) {
+            super(parentBinding);
+            this.binding = binding;
         }
 
     }
