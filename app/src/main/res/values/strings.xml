@@ -39,7 +39,7 @@
     <string name="gallery_import_images">Images/GIFs</string>
     <string name="gallery_import_videos">Videos</string>
     <string name="gallery_remove_selected_folders">Remove selected folders</string>
-    <string name="gallery_delete_selected_files">Delete selected files</string>
+    <string name="gallery_delete_selected_files">Delete %1$d selected files</string>
     <string name="gallery_export_selected_files">Export selected</string>
     <string name="gallery_title">Gallery</string>
     <string name="gallery_file_deleted">File deleted</string>

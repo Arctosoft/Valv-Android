@@ -43,7 +43,6 @@ import com.bumptech.glide.request.target.Target;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -52,6 +51,7 @@ import se.arctosoft.vault.GalleryDirectoryActivity;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryGridViewHolder;
 import se.arctosoft.vault.data.GalleryFile;
+import se.arctosoft.vault.data.UniqueLinkedList;
 import se.arctosoft.vault.databinding.AdapterGalleryGridItemBinding;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.fastscroll.views.FastScrollRecyclerView;
@@ -67,7 +67,8 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     private static final Object LOCK = new Object();
 
     private final WeakReference<FragmentActivity> weakReference;
-    private final List<GalleryFile> galleryFiles, selectedFiles;
+    private final List<GalleryFile> galleryFiles;
+    private final UniqueLinkedList<GalleryFile> selectedFiles;
     private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
     private boolean showFileNames;
     private IOnFileDeleted onFileDeleted;
@@ -95,7 +96,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         this.weakReference = new WeakReference<>(context);
         this.galleryFiles = galleryFiles;
         this.showFileNames = showFileNames;
-        this.selectedFiles = new ArrayList<>();
+        this.selectedFiles = new UniqueLinkedList<>();
         this.isRootDir = isRootDir;
     }
 
@@ -193,7 +194,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         }
     }
 
-    private void setClickListener(@NonNull GalleryGridViewHolder holder, Context context, GalleryFile galleryFile) {
+    private void setClickListener(@NonNull GalleryGridViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         holder.binding.imageView.setOnClickListener(v -> {
             final int pos = holder.getBindingAdapterPosition();
             if (galleryFile.isAllFolder()) {
@@ -211,6 +212,9 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                         setSelectMode(false);
                     }
                     lastSelectedPos = -1;
+                }
+                if (context instanceof GalleryDirectoryActivity activity) {
+                    activity.onSelectionChanged(selectedFiles.size());
                 }
                 updateSelectedView(holder, galleryFile);
             } else {
@@ -250,6 +254,9 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                                 }
                             }
                             notifyItemRangeChanged(minPos, 1 + (maxPos - minPos), new Payload(Payload.TYPE_SELECT_ALL));
+                        }
+                        if (context instanceof GalleryDirectoryActivity activity) {
+                            activity.onSelectionChanged(selectedFiles.size());
                         }
                     } else {
                         holder.binding.imageView.performClick();
@@ -346,6 +353,9 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                 }
             }
             notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
+        }
+        if (weakReference.get() instanceof GalleryDirectoryActivity activity) {
+            activity.onSelectionChanged(selectedFiles.size());
         }
     }
 

@@ -181,6 +181,10 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 (dialog, which) -> deleteSelectedFiles()));
     }
 
+    public void onSelectionChanged(int selected) {
+        binding.btnDeleteFiles.setText(getString(R.string.gallery_delete_selected_files, selected));
+    }
+
     private void deleteSelectedFiles() { // TODO run in parallel to make it faster, ExecutorService
         setLoading(true);
         new Thread(() -> {
