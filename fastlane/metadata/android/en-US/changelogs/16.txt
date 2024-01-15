@@ -1,0 +1,2 @@
+* Fixed a crash when exporting a file from the All folder
+* Fix for duplicate files in the All folder

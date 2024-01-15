@@ -1,0 +1,2 @@
+* Åtgärdade en krasch vid export av fil från "All"-mappen
+* Inga fler duplicerade filer i "All"-mappen
