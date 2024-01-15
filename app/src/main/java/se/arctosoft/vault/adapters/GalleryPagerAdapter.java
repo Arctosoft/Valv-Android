@@ -431,7 +431,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             } else {
                 holder.parentBinding.noteLayout.setVisibility(View.VISIBLE);
                 holder.parentBinding.note.setText(context.getString(R.string.gallery_loading_note));
-                Encryption.decryptToCache(context, galleryFile.getNoteUri(), settings.getTempPassword(), new Encryption.IOnUriResult() {
+                new Thread(() -> Encryption.decryptToCache(context, galleryFile.getNoteUri(), settings.getTempPassword(), new Encryption.IOnUriResult() {
                     @Override
                     public void onUriResult(Uri outputUri) { // decrypted, now read it
                         try {
@@ -440,22 +440,23 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                             e.printStackTrace();
                             galleryFile.setNote(context.getString(R.string.gallery_note_read_failed, e.getMessage()));
                         }
-                        notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE));
+                        context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
                     }
 
                     @Override
                     public void onError(Exception e) {
                         e.printStackTrace();
                         galleryFile.setNote(context.getString(R.string.gallery_note_decrypt_failed, e.getMessage()));
-                        notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE));
+                        context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
+
                     }
 
                     @Override
                     public void onInvalidPassword(InvalidPasswordException e) {
                         galleryFile.setNote(context.getString(R.string.gallery_note_decrypt_failed, e.getMessage()));
-                        notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE));
+                        context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
                     }
-                });
+                })).start();
             }
         } else {
             holder.parentBinding.noteLayout.setVisibility(View.GONE);
