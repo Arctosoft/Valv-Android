@@ -76,6 +76,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     private boolean selectMode;
     private final boolean isRootDir;
     private String nestedPath;
+    private int lastSelectedPos;
 
     @NonNull
     @Override
@@ -195,22 +196,24 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     private void setClickListener(@NonNull GalleryGridViewHolder holder, Context context, GalleryFile galleryFile) {
         holder.binding.imageView.setOnClickListener(v -> {
             if (galleryFile.isAllFolder()) {
-                context.startActivity(new Intent(context, GalleryDirectoryActivity.class)
-                        .putExtra(GalleryDirectoryActivity.EXTRA_IS_ALL, true));
+                if (!selectMode) {
+                    context.startActivity(new Intent(context, GalleryDirectoryActivity.class)
+                            .putExtra(GalleryDirectoryActivity.EXTRA_IS_ALL, true));
+                }
             } else if (selectMode && (isRootDir || !galleryFile.isDirectory())) {
-                boolean selected = !selectedFiles.contains(galleryFile);
-                if (selected) {
+                if (!selectedFiles.contains(galleryFile)) {
                     selectedFiles.add(galleryFile);
+                    lastSelectedPos = holder.getBindingAdapterPosition();
                 } else {
                     selectedFiles.remove(galleryFile);
                     if (selectedFiles.isEmpty()) {
                         setSelectMode(false);
                     }
+                    lastSelectedPos = -1;
                 }
                 updateSelectedView(holder, galleryFile);
             } else {
                 if (galleryFile.isDirectory()) {
-
                     Intent intent = new Intent(context, GalleryDirectoryActivity.class);
                     if (isRootDir) {
                         intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, DocumentFile.fromTreeUri(context, galleryFile.getUri()).getUri().toString());
@@ -229,9 +232,31 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             }
         });
         holder.binding.imageView.setOnLongClickListener(v -> {
-            if (isRootDir || !galleryFile.isDirectory()) {
-                setSelectMode(true);
-                holder.binding.imageView.performClick();
+            if (!galleryFile.isAllFolder()) {
+                if ((isRootDir || !galleryFile.isDirectory())) {
+                    int pos = holder.getBindingAdapterPosition();
+                    if (!selectMode) {
+                        setSelectMode(true);
+                        holder.binding.imageView.performClick();
+                    } else {
+                        if (lastSelectedPos >= 0 && !selectedFiles.contains(galleryFile)) {
+                            int minPos = Math.min(pos, lastSelectedPos);
+                            int maxPos = Math.max(pos, lastSelectedPos);
+                            if (minPos >= 0 && maxPos < galleryFiles.size()) {
+                                for (int i = minPos; i >= 0 && i <= maxPos && i < galleryFiles.size(); i++) {
+                                    GalleryFile gf = galleryFiles.get(i);
+                                    if (gf != null && selectedFiles.add(gf)) {
+                                        selectedFiles.add(gf);
+                                    }
+                                }
+                                notifyItemRangeChanged(minPos, 1 + (maxPos - minPos), new Payload(Payload.TYPE_SELECT_ALL));
+                            }
+                        } else {
+                            holder.binding.imageView.performClick();
+                        }
+                    }
+                    lastSelectedPos = pos;
+                }
             }
             return true;
         });
@@ -262,13 +287,15 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     }
 
     private void setSelectMode(boolean selectionMode) {
+        GalleryFile first = galleryFiles.isEmpty() ? null : galleryFiles.get(0);
         if (selectionMode && !selectMode) {
             selectMode = true;
-            notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
+            notifyItemRangeChanged(first != null && first.isAllFolder() ? 1 : 0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
         } else if (!selectionMode && selectMode) {
             selectMode = false;
+            lastSelectedPos = -1;
             selectedFiles.clear();
-            notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
+            notifyItemRangeChanged(first != null && first.isAllFolder() ? 1 : 0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
         }
         if (onSelectionModeChanged != null) {
             onSelectionModeChanged.onSelectionModeChanged(selectMode);
