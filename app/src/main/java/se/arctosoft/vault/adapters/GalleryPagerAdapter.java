@@ -431,7 +431,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             } else {
                 holder.parentBinding.noteLayout.setVisibility(View.VISIBLE);
                 holder.parentBinding.note.setText(context.getString(R.string.gallery_loading_note));
-                new Thread(() -> Encryption.decryptToCache(context, galleryFile.getNoteUri(), settings.getTempPassword(), new Encryption.IOnUriResult() {
+                Encryption.decryptToCache(context, galleryFile.getNoteUri(), settings.getTempPassword(), new Encryption.IOnUriResult() {
                     @Override
                     public void onUriResult(Uri outputUri) { // decrypted, now read it
                         try {
@@ -456,7 +456,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                         galleryFile.setNote(context.getString(R.string.gallery_note_decrypt_failed, e.getMessage()));
                         context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
                     }
-                })).start();
+                });
             }
         } else {
             holder.parentBinding.noteLayout.setVisibility(View.GONE);

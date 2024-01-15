@@ -1,0 +1,3 @@
+* Lägg till anteckningar/text till filer
+* Filer exporteras nu till samma mapp där den krypterade filen ligger istället för den översta mappen (buggfix)
+* Filer exporteras nu med originalnamnet istället för det krypterade filnamnet
