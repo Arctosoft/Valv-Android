@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -169,11 +170,13 @@ public class FileStuff {
 
     public static String readTextFromUri(@NonNull Uri uri, Context context) throws IOException {
         InputStream in = context.getContentResolver().openInputStream(uri);
-        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+
         StringBuilder sb = new StringBuilder();
-        String s;
-        while ((s = br.readLine()) != null) {
-            sb.append(s);
+        int read;
+        char[] buffer = new char[8192];
+        while ((read = br.read(buffer)) != -1) {
+            sb.append(buffer, 0, read);
         }
 
         return sb.toString();
