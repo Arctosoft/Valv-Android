@@ -23,7 +23,6 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.View;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 
@@ -39,10 +38,12 @@ import se.arctosoft.vault.utils.Settings;
 public class LaunchActivity extends AppCompatActivity {
     private static final String TAG = "LaunchActivity";
     public static long GLIDE_KEY = System.currentTimeMillis();
+    public static String EXTRA_ONLY_UNLOCK = "u";
 
     private ActivityLaunchBinding binding;
     private Settings settings;
     private AtomicBoolean isStarting;
+    private boolean onlyUnlock;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,13 +52,16 @@ public class LaunchActivity extends AppCompatActivity {
         binding = ActivityLaunchBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        onlyUnlock = getIntent().getBooleanExtra(EXTRA_ONLY_UNLOCK, false);
         init();
     }
 
     private void init() {
         settings = Settings.getInstance(this);
         isStarting = new AtomicBoolean(false);
-        Password.lock(this, settings);
+        if (!onlyUnlock) {
+            Password.lock(this, settings);
+        }
 
         setListeners();
     }
@@ -91,13 +95,17 @@ public class LaunchActivity extends AppCompatActivity {
             if (isStarting.compareAndSet(false, true)) {
                 binding.btnUnlock.setEnabled(false);
                 settings.setTempPassword(binding.eTPassword.getText().toString().toCharArray());
-                startActivity(new Intent(this, GalleryActivity.class));
-                binding.eTPassword.postDelayed(() -> {
-                    binding.eTPassword.setText(null);
-                    binding.eTPassword.clearFocus();
-                    binding.getRoot().requestFocus();
-                    isStarting.set(false);
-                }, 400);
+                if (onlyUnlock) {
+                    finish();
+                } else {
+                    startActivity(new Intent(this, GalleryActivity.class));
+                    binding.eTPassword.postDelayed(() -> {
+                        binding.eTPassword.setText(null);
+                        binding.eTPassword.clearFocus();
+                        binding.getRoot().requestFocus();
+                        isStarting.set(false);
+                    }, 400);
+                }
             }
         });
         binding.btnHelp.setOnClickListener(v -> Dialogs.showTextDialog(this, null, getString(R.string.launcher_help_message)));

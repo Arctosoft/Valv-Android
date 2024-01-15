@@ -64,6 +64,7 @@
     <string name="gallery_note_save">Save note</string>
     <string name="gallery_note_delete">Delete note</string>
     <string name="gallery_note_click_to_show">Show note</string>
+    <string name="gallery_share_locked">Unlock your vault to import the shared files</string>
 
     <string name="dialog_remove_folder_title">Remove?</string>
     <plurals name="dialog_remove_folder_message">

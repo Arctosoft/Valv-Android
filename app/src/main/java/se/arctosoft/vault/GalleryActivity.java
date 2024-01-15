@@ -24,7 +24,6 @@ import android.content.res.Configuration;
 import android.icu.text.DecimalFormat;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -72,7 +71,9 @@ public class GalleryActivity extends AppCompatActivity {
     private Settings settings;
     private boolean cancelTask = false;
     private boolean inSelectionMode = false;
+    private boolean isWaitingForUnlock = false;
     private Snackbar snackBarBackPressed;
+    private Intent shareIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,17 +88,36 @@ public class GalleryActivity extends AppCompatActivity {
             ab.setDisplayHomeAsUpEnabled(false);
             ab.setTitle(R.string.gallery_title);
         }
-
         init();
+
+        Intent intent = getIntent();
+        String action = intent.getAction();
+        String type = intent.getType();
+
+        if ((Intent.ACTION_SEND.equals(action) || Intent.ACTION_SEND_MULTIPLE.equals(action)) && type != null) {
+            if (settings.isLocked()) {
+                this.shareIntent = intent;
+                this.isWaitingForUnlock = true;
+                Toaster.getInstance(this).showShort(getString(R.string.gallery_share_locked));
+                startActivity(new Intent(this, LaunchActivity.class)
+                        .putExtra(LaunchActivity.EXTRA_ONLY_UNLOCK, true));
+            } else {
+                handleShareIntent(intent, action, type);
+            }
+        } else {
+            if (settings.isLocked()) {
+                finish();
+                return;
+            }
+            setClickListeners();
+            findFolders();
+        }
     }
 
     private void init() {
         viewModel = new ViewModelProvider(this).get(GalleryViewModel.class);
         settings = Settings.getInstance(this);
-        if (settings.isLocked()) {
-            finish();
-            return;
-        }
+
         galleryFiles = new ArrayList<>();
         RecyclerView recyclerView = binding.recyclerView;
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
@@ -106,11 +126,44 @@ public class GalleryActivity extends AppCompatActivity {
         galleryGridAdapter = new GalleryGridAdapter(this, galleryFiles, true, true);
         recyclerView.setAdapter(galleryGridAdapter);
         galleryGridAdapter.setOnSelectionModeChanged(this::onSelectionModeChanged);
-
-        setClickListeners();
-
-        findFolders();
     }
+
+    private void handleShareIntent(Intent intent, String action, String type) {
+        setClickListeners();
+        findFolders();
+        if (Intent.ACTION_SEND.equals(action)) {
+            if (type.startsWith("image/") || type.startsWith("video/")) {
+                handleSendImage(intent);
+            }
+        } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
+            if (type.startsWith("image/") || type.startsWith("video/")) {
+                handleSendMultipleImages(intent);
+            }
+        }
+    }
+
+    private void handleSendImage(Intent intent) {
+        Uri imageUri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        if (imageUri != null) {
+            List<Uri> uri = new ArrayList<>(1);
+            uri.add(imageUri);
+            List<DocumentFile> documentFiles = FileStuff.getDocumentsFromShareIntent(this, uri);
+            if (!documentFiles.isEmpty()) {
+                importFiles(documentFiles);
+            }
+        }
+    }
+
+    private void handleSendMultipleImages(Intent intent) {
+        ArrayList<Uri> imageUris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+        if (imageUris != null) {
+            List<DocumentFile> documentFiles = FileStuff.getDocumentsFromShareIntent(this, imageUris);
+            if (!documentFiles.isEmpty()) {
+                importFiles(documentFiles);
+            }
+        }
+    }
+
 
     private void onSelectionModeChanged(boolean inSelectionMode) {
         this.inSelectionMode = inSelectionMode;
@@ -380,6 +433,18 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        if (isWaitingForUnlock && settings != null && !settings.isLocked() && shareIntent != null) {
+            handleShareIntent(shareIntent, shareIntent.getAction(), shareIntent.getType());
+            isWaitingForUnlock = false;
+            shareIntent = null;
+        } else if (!isWaitingForUnlock && (settings == null || settings.isLocked())) {
+            finishAffinity();
+        }
+    }
+
+    @Override
     public void onBackPressed() {
         if (binding.cLLoading.cLLoading.getVisibility() == View.VISIBLE) {
             cancelTask = true;
@@ -392,6 +457,9 @@ public class GalleryActivity extends AppCompatActivity {
             snackBarBackPressed.setAnchorView(binding.lLButtons);
             snackBarBackPressed.show();
         } else {
+            if (isTaskRoot()) {
+                Password.lock(this, settings);
+            }
             super.onBackPressed();
         }
     }
@@ -400,12 +468,5 @@ public class GalleryActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_gallery, menu);
         return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    protected void onDestroy() {
-        Log.d(TAG, "onDestroy: ");
-        //lock();
-        super.onDestroy();
     }
 }
