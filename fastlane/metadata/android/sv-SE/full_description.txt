@@ -7,6 +7,7 @@ En krypterad galleriapp för Android-enheter.
 * Dina krypterade filer lagras lokalt som vanliga filer vilket möjliggör enkel säkerhetskopiering och överföringar mellan enheter
 * Stödjer flera valv genom att använda olika lösenord
 * Dag/nattlägen
+* Lägg till anteckningar/text till filer
 
 <b>Kryptering</b>
 Filer krypteras med ChaCha20 och nycklar härleds med PBKDF2 med HMAC-SHA512.
