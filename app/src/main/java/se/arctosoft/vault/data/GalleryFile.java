@@ -259,7 +259,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GalleryFile that = (GalleryFile) o;
-        return fileUri.equals(that.fileUri);
+        return isDirectory == that.isDirectory && isAllFolder == that.isAllFolder && lastModified == that.lastModified && size == that.size && fileType == that.fileType && Objects.equals(fileUri, that.fileUri);
     }
 
     @Override
