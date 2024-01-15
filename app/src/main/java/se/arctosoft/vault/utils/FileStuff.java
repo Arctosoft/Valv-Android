@@ -204,6 +204,18 @@ public class FileStuff {
         return documentFiles;
     }
 
+    @NonNull
+    public static List<DocumentFile> getDocumentsFromShareIntent(Context context, @NonNull List<Uri> uris) {
+        List<DocumentFile> documentFiles = new ArrayList<>();
+        for (Uri uri : uris) {
+            DocumentFile pickedFile = DocumentFile.fromSingleUri(context, uri);
+            if (pickedFile != null && pickedFile.getType() != null && (pickedFile.getType().startsWith("image/") || pickedFile.getType().startsWith("video/")) && !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX)) {
+                documentFiles.add(pickedFile);
+            }
+        }
+        return documentFiles;
+    }
+
     public static boolean deleteFile(Context context, @Nullable Uri uri) {
         if (uri == null) {
             return true;

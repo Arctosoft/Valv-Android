@@ -39,7 +39,7 @@
     <string name="gallery_import_images">Images/GIFs</string>
     <string name="gallery_import_videos">Videos</string>
     <string name="gallery_remove_selected_folders">Remove selected folders</string>
-    <string name="gallery_delete_selected_files">Delete selected files</string>
+    <string name="gallery_delete_selected_files">Delete %1$d selected files</string>
     <string name="gallery_export_selected_files">Export selected</string>
     <string name="gallery_title">Gallery</string>
     <string name="gallery_file_deleted">File deleted</string>
@@ -64,6 +64,7 @@
     <string name="gallery_note_save">Save note</string>
     <string name="gallery_note_delete">Delete note</string>
     <string name="gallery_note_click_to_show">Show note</string>
+    <string name="gallery_share_locked">Unlock your vault to import the shared files</string>
 
     <string name="dialog_remove_folder_title">Remove?</string>
     <plurals name="dialog_remove_folder_message">

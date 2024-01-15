@@ -78,7 +78,7 @@ public class Settings {
     }
 
     public boolean isLocked() {
-        return password == null || password.length <= 0;
+        return password == null || password.length == 0;
     }
 
     public void setTempPassword(@NonNull char[] password) {
