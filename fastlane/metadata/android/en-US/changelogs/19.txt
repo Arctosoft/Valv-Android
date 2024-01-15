@@ -1,0 +1,5 @@
+* Import files shared from other apps
+* Long press on a file when in select mode to select it and all files in between that and the previously selected file
+* Add notes (text) to files
+* Files are exported into the directory where the encrypted file is instead of the topmost directory (bug fix)
+* Files are exported with the original name instead of the encrypted name
