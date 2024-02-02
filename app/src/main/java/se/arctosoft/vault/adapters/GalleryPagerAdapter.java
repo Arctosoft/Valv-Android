@@ -18,6 +18,7 @@
 
 package se.arctosoft.vault.adapters;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.net.Uri;
@@ -29,6 +30,7 @@ import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
+import androidx.core.content.FileProvider;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
@@ -47,6 +49,7 @@ import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.google.android.material.color.MaterialColors;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -252,7 +255,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView.setOnClickListener(v -> onItemPressed(context));
         }
         if (galleryFile.getDecryptedCacheUri() == null) {
-            new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
+            new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtension(galleryFile.getName()), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
                 @Override
                 public void onUriResult(Uri outputUri) {
                     galleryFile.setDecryptedCacheUri(outputUri);
@@ -336,10 +339,10 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private void setupButtons(GalleryPagerViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         if (isAllFolder) {
             holder.parentBinding.buttonNoteLayout.setVisibility(View.GONE);
-            holder.parentBinding.lLButtons.setWeightSum(2);
+            holder.parentBinding.lLButtons.setWeightSum(3);
         } else {
             holder.parentBinding.buttonNoteLayout.setVisibility(View.VISIBLE);
-            holder.parentBinding.lLButtons.setWeightSum(3);
+            holder.parentBinding.lLButtons.setWeightSum(4);
         }
         showButtons(holder, true);
         holder.parentBinding.btnDelete.setOnClickListener(v -> Dialogs.showConfirmationDialog(context, context.getString(R.string.dialog_delete_file_title), context.getString(R.string.dialog_delete_file_message), (dialog, which) -> {
@@ -372,6 +375,32 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                     };
                     Encryption.decryptAndExport(context, galleryFile.getUri(), currentDirectory, galleryFile, Settings.getInstance(context).getTempPassword(), result, galleryFile.isVideo());
                 }).start()));
+        holder.parentBinding.btnShare.setOnClickListener(v -> {
+            if (galleryFile.getDecryptedCacheUri() != null) {
+                shareWith(context, galleryFile.getDecryptedCacheUri());
+            } else {
+                Toaster.getInstance(context).showShort(context.getString(R.string.gallery_share_decrypting));
+                Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtension(galleryFile.getName()), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
+                    @Override
+                    public void onUriResult(Uri outputUri) {
+                        galleryFile.setDecryptedCacheUri(outputUri);
+                        shareWith(context, outputUri);
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        e.printStackTrace();
+                        Toaster.getInstance(context).showShort(context.getString(R.string.gallery_share_decrypting_error, e.getMessage()));
+                    }
+
+                    @Override
+                    public void onInvalidPassword(InvalidPasswordException e) {
+                        e.printStackTrace();
+                        Toaster.getInstance(context).showShort(context.getString(R.string.gallery_share_decrypting_error, e.getMessage()));
+                    }
+                });
+            }
+        });
         if (!isAllFolder) {
             holder.parentBinding.btnNote.setOnClickListener(v -> Dialogs.showEditTextDialog(context, null, galleryFile.getNote(), text -> {
                 if (text != null && text.isBlank()) {
@@ -393,6 +422,18 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 }
                 loadNote(holder, context, galleryFile);
             }));
+        }
+    }
+
+    private void shareWith(FragmentActivity context, Uri decryptedCacheUri) {
+        Uri uri = FileProvider.getUriForFile(weakReference.get(), "se.arctosoft.vault.fileprovider", new File(decryptedCacheUri.getPath()));
+        if (uri != null) {
+            Intent intent = new Intent()
+                    .setAction(Intent.ACTION_SEND)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    .setDataAndType(uri, context.getContentResolver().getType(uri))
+                    .putExtra(Intent.EXTRA_STREAM, uri);
+            context.startActivity(Intent.createChooser(intent, context.getString(R.string.gallery_share_with)));
         }
     }
 
@@ -431,7 +472,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             } else {
                 holder.parentBinding.noteLayout.setVisibility(View.VISIBLE);
                 holder.parentBinding.note.setText(context.getString(R.string.gallery_loading_note));
-                Encryption.decryptToCache(context, galleryFile.getNoteUri(), settings.getTempPassword(), new Encryption.IOnUriResult() {
+                Encryption.decryptToCache(context, galleryFile.getNoteUri(), FileStuff.getExtension(galleryFile.getName()), settings.getTempPassword(), new Encryption.IOnUriResult() {
                     @Override
                     public void onUriResult(Uri outputUri) { // decrypted, now read it
                         try {

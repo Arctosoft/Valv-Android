@@ -251,4 +251,12 @@ public class FileStuff {
         }
     }
 
+    @Nullable
+    public static String getExtension(String name) {
+        try {
+            return name.substring(name.lastIndexOf("."));
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
 }

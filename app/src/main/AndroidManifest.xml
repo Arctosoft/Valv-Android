@@ -16,6 +16,15 @@
         android:roundIcon="@mipmap/ic_launcher_v_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Vault">
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="se.arctosoft.vault.fileprovider"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/filepaths" />
+        </provider>
         <activity
             android:name=".GalleryDirectoryActivity"
             android:exported="false" />

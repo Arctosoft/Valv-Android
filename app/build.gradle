@@ -10,8 +10,8 @@ android {
         applicationId "se.arctosoft.vault"
         minSdk 28
         targetSdk 34
-        versionCode 19
-        versionName "1.5.2"
+        versionCode 20
+        versionName "1.6.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -53,8 +53,8 @@ dependencies {
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.security:security-crypto:1.0.0'
-    implementation 'androidx.media3:media3-exoplayer:1.2.0'
-    implementation 'androidx.media3:media3-ui:1.2.0'
+    implementation 'androidx.media3:media3-exoplayer:1.2.1'
+    implementation 'androidx.media3:media3-ui:1.2.1'
 
     implementation 'com.github.bumptech.glide:glide:4.15.1'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.15.1'
@@ -62,15 +62,6 @@ dependencies {
     implementation 'com.mikepenz:aboutlibraries-core-android:10.8.3'
     implementation('com.mikepenz:aboutlibraries:10.8.3') {
         exclude group: 'com.mikepenz', module: 'aboutlibraries-core'
-    }
-
-    constraints { // remove when androidx.lifecycle:lifecycle-X-ktx works without it
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0") {
-            because("kotlin-stdlib-jdk7 is now a part of kotlin-stdlib")
-        }
-        implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0") {
-            because("kotlin-stdlib-jdk8 is now a part of kotlin-stdlib")
-        }
     }
 }
 

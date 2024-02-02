@@ -64,7 +64,7 @@
         android:background="?attr/gallery_viewpager_buttons_background"
         android:baselineAligned="false"
         android:orientation="horizontal"
-        android:weightSum="3"
+        android:weightSum="4"
         app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
@@ -104,10 +104,35 @@
                 android:background="?attr/selectableItemBackground"
                 android:backgroundTint="@color/color_invisible"
                 android:padding="@dimen/fullscreen_buttons_padding"
-                android:src="@drawable/ic_outline_delete_forever_24"
+                android:src="@drawable/ic_outline_file_download_24"
                 android:text="@string/export"
                 android:textColor="?attr/gallery_viewpager_buttons"
                 app:icon="@drawable/ic_outline_file_download_24"
+                app:iconGravity="top"
+                app:iconPadding="0dp"
+                app:iconSize="@dimen/fullscreen_icon_size"
+                app:iconTint="?attr/gallery_viewpager_buttons" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/button_share_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnShare"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackground"
+                android:backgroundTint="@color/color_invisible"
+                android:padding="@dimen/fullscreen_buttons_padding"
+                android:src="@drawable/round_share_24"
+                android:text="@string/share"
+                android:textColor="?attr/gallery_viewpager_buttons"
+                app:icon="@drawable/round_share_24"
                 app:iconGravity="top"
                 app:iconPadding="0dp"
                 app:iconSize="@dimen/fullscreen_icon_size"
@@ -129,7 +154,7 @@
                 android:background="?attr/selectableItemBackground"
                 android:backgroundTint="@color/color_invisible"
                 android:padding="@dimen/fullscreen_buttons_padding"
-                android:src="@drawable/ic_outline_delete_forever_24"
+                android:src="@drawable/round_edit_note_24"
                 android:text="@string/add_edit_note"
                 android:textColor="?attr/gallery_viewpager_buttons"
                 app:icon="@drawable/round_edit_note_24"
