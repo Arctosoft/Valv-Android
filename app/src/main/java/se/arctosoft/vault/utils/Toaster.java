@@ -42,18 +42,18 @@ public class Toaster {
     }
 
     public void showShort(@NonNull String message) {
-        show(message, false);
+        show(message, Toast.LENGTH_SHORT);
     }
 
     public void showLong(@NonNull String message) {
-        show(message, true);
+        show(message, Toast.LENGTH_LONG);
     }
 
-    private void show(@NonNull String message, boolean _long) {
+    private void show(@NonNull String message, int duration) {
         if (toast != null) {
             toast.cancel();
         }
-        toast = Toast.makeText(weakReference.get(), message, _long ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
+        toast = Toast.makeText(weakReference.get(), message, duration);
         toast.show();
     }
 
