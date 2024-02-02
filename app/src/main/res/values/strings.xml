@@ -10,7 +10,8 @@
     <string name="help">Help</string>
     <string name="delete">Delete</string>
     <string name="export">Export</string>
-    <string name="add_edit_note">Add/edit note</string>
+    <string name="add_edit_note">Edit note</string>
+    <string name="share">Share</string>
     <string name="remove">Remove</string>
     <string name="licenses">Licenses</string>
 
@@ -65,6 +66,9 @@
     <string name="gallery_note_delete">Delete note</string>
     <string name="gallery_note_click_to_show">Show note</string>
     <string name="gallery_share_locked">Unlock your vault to import the shared files</string>
+    <string name="gallery_share_decrypting">Decrypting to cache…</string>
+    <string name="gallery_share_decrypting_error">Decrypt error: %1$s</string>
+    <string name="gallery_share_with">Share/open with</string>
 
     <string name="dialog_remove_folder_title">Remove?</string>
     <plurals name="dialog_remove_folder_message">

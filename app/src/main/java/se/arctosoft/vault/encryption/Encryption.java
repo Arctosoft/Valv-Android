@@ -360,12 +360,12 @@ public class Encryption {
         }
     }
 
-    public static void decryptToCache(FragmentActivity context, Uri encryptedInput, char[] password, IOnUriResult onUriResult) {
+    public static void decryptToCache(FragmentActivity context, Uri encryptedInput, @Nullable String extension, char[] password, IOnUriResult onUriResult) {
         new Thread(() -> {
             try {
                 InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
 
-                Path file = Files.createTempFile("temp_", ".dcrpt");
+                Path file = Files.createTempFile("temp_", extension);
                 Uri fileUri = Uri.fromFile(file.toFile());
                 OutputStream fos = context.getContentResolver().openOutputStream(fileUri);
                 Streams cis = getCipherInputStream(inputStream, password, false);
