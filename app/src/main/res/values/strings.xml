@@ -10,8 +10,10 @@
     <string name="help">Help</string>
     <string name="delete">Delete</string>
     <string name="export">Export</string>
-    <string name="add_edit_note">Edit note</string>
+    <string name="add_edit_note">Add/edit note</string>
     <string name="share">Share</string>
+    <string name="open_with">Open with</string>
+    <string name="more">More</string>
     <string name="remove">Remove</string>
     <string name="licenses">Licenses</string>
 
