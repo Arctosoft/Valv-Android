@@ -72,6 +72,7 @@ import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
+import se.arctosoft.vault.utils.StringStuff;
 import se.arctosoft.vault.utils.Toaster;
 
 public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHolder> {
@@ -120,15 +121,20 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         FragmentActivity context = weakReference.get();
         GalleryFile galleryFile = galleryFiles.get(position);
 
-        holder.parentBinding.txtName.setText(galleryFile.getName());
+        setName(holder, galleryFile);
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder) {
             setupVideoView((GalleryPagerViewHolder.GalleryPagerVideoViewHolder) holder, context, galleryFile);
         } else {
+            holder.parentBinding.imgFullscreen.setVisibility(View.GONE);
             setupImageView(holder, context, galleryFile);
         }
         setupButtons(holder, context, galleryFile);
         loadOriginalFilename(galleryFile, context, holder, position);
         loadNote(holder, context, galleryFile);
+    }
+
+    private void setName(@NonNull GalleryPagerViewHolder holder, GalleryFile galleryFile) {
+        holder.parentBinding.txtName.setText(weakReference.get().getString(R.string.gallery_adapter_file_name, galleryFile.getName(), StringStuff.bytesToReadableString(galleryFile.getSize())));
     }
 
     @Override
@@ -142,7 +148,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                     break;
                 } else if (o instanceof GalleryGridAdapter.Payload p) {
                     if (p.type() == GalleryGridAdapter.Payload.TYPE_NEW_FILENAME) {
-                        holder.parentBinding.txtName.setText(galleryFiles.get(position).getName());
+                        setName(holder, galleryFiles.get(position));
                         found = true;
                     } else if (p.type() == GalleryGridAdapter.Payload.TYPE_LOADED_NOTE) {
                         loadNote(holder, weakReference.get(), galleryFiles.get(position));
@@ -167,7 +173,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                     galleryFile.setOriginalName(originalFilename);
                     int pos = holder.getBindingAdapterPosition();
                     if (pos == position) {
-                        context.runOnUiThread(() -> holder.parentBinding.txtName.setText(galleryFile.getName()));
+                        context.runOnUiThread(() -> setName(holder, galleryFile));
                     } else if (pos >= 0 && pos < galleryFiles.size()) {
                         context.runOnUiThread(() -> notifyItemChanged(pos, new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_NEW_FILENAME)));
                     }
@@ -185,8 +191,8 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         Glide.with(context)
                 .load(galleryFile.getThumbUri())
                 .into(holder.binding.imgThumb);
-        holder.binding.imgFullscreen.setOnClickListener(v -> toggleFullscreen(weakReference.get()));
-        holder.binding.imgFullscreen.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
+        holder.parentBinding.imgFullscreen.setOnClickListener(v -> toggleFullscreen(weakReference.get()));
+        holder.parentBinding.imgFullscreen.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         holder.binding.rLPlay.setOnClickListener(v -> {
             holder.binding.rLPlay.setVisibility(View.GONE);
             holder.binding.playerView.setVisibility(View.VISIBLE);
