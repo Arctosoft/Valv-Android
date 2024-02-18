@@ -85,6 +85,10 @@
     <string name="dialog_import_to_title">Destination</string>
     <string name="dialog_import_to_button_neutral">Add new</string>
     <string name="dialog_edit_included_title">Select folders to remove</string>
+    <plurals name="dialog_import_to_delete_original">
+        <item quantity="one">Delete the original file after importing</item>
+        <item quantity="other">Delete the original files after importing</item>
+    </plurals>
     <plurals name="edit_included_removed">
         <item quantity="one">Removed %1$d folder</item>
         <item quantity="other">Removed %1$d folders</item>

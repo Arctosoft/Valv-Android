@@ -29,7 +29,6 @@ import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.cardview.widget.CardView;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
@@ -120,7 +119,6 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     @Override
     public GalleryGridViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         AdapterGalleryGridItemBinding binding = AdapterGalleryGridItemBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false);
-        CardView v = (CardView) LayoutInflater.from(parent.getContext()).inflate(R.layout.adapter_gallery_grid_item, parent, false);
         return new GalleryGridViewHolder(binding);
     }
 

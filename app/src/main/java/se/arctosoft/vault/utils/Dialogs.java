@@ -24,42 +24,61 @@ import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.mikepenz.aboutlibraries.LibsBuilder;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import se.arctosoft.vault.BuildConfig;
 import se.arctosoft.vault.R;
+import se.arctosoft.vault.adapters.ImportListAdapter;
 import se.arctosoft.vault.databinding.DialogEditTextBinding;
+import se.arctosoft.vault.databinding.DialogImportBinding;
 import se.arctosoft.vault.interfaces.IOnEdited;
 
 public class Dialogs {
     private static final String TAG = "Dialogs";
 
-    public static void showImportGalleryChooseDestinationDialog(Context context, Settings settings, IOnDirectorySelected onDirectorySelected) {
+    public static void showImportGalleryChooseDestinationDialog(FragmentActivity context, Settings settings, int fileCount, IOnDirectorySelected onDirectorySelected) {
         List<Uri> directories = settings.getGalleryDirectoriesAsUri(false);
-        String[] names = new String[directories.size()];
-        for (int i = 0; i < names.length; i++) {
-            names[i] = FileStuff.getFilenameWithPathFromUri(directories.get(i));
+        List<String> names = new ArrayList<>(directories.size());
+        for (int i = 0; i < directories.size(); i++) {
+            names.add(FileStuff.getFilenameWithPathFromUri(directories.get(i)));
         }
-        //Log.e(TAG, "showImportGalleryChooseDestinationDialog: " + Arrays.toString(names));
-        new MaterialAlertDialogBuilder(context)
+        DialogImportBinding binding = DialogImportBinding.inflate(context.getLayoutInflater());
+
+        AlertDialog alertDialog = new MaterialAlertDialogBuilder(context)
                 .setTitle(context.getString(R.string.dialog_import_to_title))
-                .setItems(names, (dialog, which) -> onDirectorySelected.onDirectorySelected(DocumentFile.fromTreeUri(context, directories.get(which))))
+                .setView(binding.getRoot())
                 .setNegativeButton(android.R.string.cancel, null)
                 .setNeutralButton(R.string.dialog_import_to_button_neutral, (dialog, which) -> onDirectorySelected.onOtherDirectory())
                 .show();
+
+        ImportListAdapter adapter = new ImportListAdapter(names, pos -> {
+            alertDialog.dismiss();
+            Uri uri = directories.get(pos);
+            onDirectorySelected.onDirectorySelected(DocumentFile.fromTreeUri(context, uri), binding.checkbox.isChecked());
+        });
+        binding.checkbox.setText(context.getResources().getQuantityString(R.plurals.dialog_import_to_delete_original, fileCount));
+        binding.recycler.setLayoutManager(new LinearLayoutManager(context));
+        binding.recycler.setAdapter(adapter);
     }
 
     public interface IOnDirectorySelected {
-        void onDirectorySelected(@NonNull DocumentFile directory);
+        void onDirectorySelected(@NonNull DocumentFile directory, boolean deleteOriginal);
 
         void onOtherDirectory();
+    }
+
+    public interface IOnPositionSelected {
+        void onSelected(int pos);
     }
 
     public interface IOnEditedIncludedFolders {
