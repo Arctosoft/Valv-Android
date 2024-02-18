@@ -86,8 +86,8 @@ public class Encryption {
         }
 
         String generatedName = StringStuff.getRandomFileName();
-        DocumentFile file = directory.createFile(sourceFile.getType(), FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + generatedName);
-        DocumentFile thumb = directory.createFile(sourceFile.getType(), PREFIX_THUMB + generatedName);
+        DocumentFile file = directory.createFile("", FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + generatedName);
+        DocumentFile thumb = directory.createFile("", PREFIX_THUMB + generatedName);
 
         if (file == null) {
             Log.e(TAG, "importFileToDirectory: could not create file from " + sourceFile.getUri());
@@ -118,7 +118,7 @@ public class Encryption {
             throw new RuntimeException("No password");
         }
 
-        DocumentFile file = directory.createFile("text/plain", Encryption.PREFIX_NOTE_FILE + fileNameWithoutPrefix);
+        DocumentFile file = directory.createFile("", Encryption.PREFIX_NOTE_FILE + fileNameWithoutPrefix);
 
         try {
             createFile(context, note, file, tempPassword, fileNameWithoutPrefix);

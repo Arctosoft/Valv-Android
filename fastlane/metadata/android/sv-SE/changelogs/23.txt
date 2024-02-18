@@ -1,0 +1,4 @@
+* Krypterade filer har inte längre sitt ursprungliga filtillägg
+* Lade till ett alternativ för att ta bort originalfilen efter import
+* Filstorleken syns nu vid filnamnet
+* Långa filnamn visas inte längre bakom helskärmsknappen för videor

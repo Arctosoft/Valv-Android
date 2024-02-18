@@ -1,0 +1,4 @@
+* Encrypted files no longer have a file extension (new files only, you can safely remove the extension for all previously encrypted files)
+* Added an option to delete the original file after importing
+* The file size is now shown when viewing a file
+* Fixed long filenames appearing behind the fullscreen button on videos

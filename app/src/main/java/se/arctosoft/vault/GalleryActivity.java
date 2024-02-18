@@ -300,10 +300,10 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     private void importFiles(List<DocumentFile> documentFiles) {
-        Dialogs.showImportGalleryChooseDestinationDialog(this, settings, new Dialogs.IOnDirectorySelected() {
+        Dialogs.showImportGalleryChooseDestinationDialog(this, settings, documentFiles.size(), new Dialogs.IOnDirectorySelected() {
             @Override
-            public void onDirectorySelected(@NonNull DocumentFile directory) {
-                importToDirectory(documentFiles, directory);
+            public void onDirectorySelected(@NonNull DocumentFile directory, boolean deleteOriginal) {
+                importToDirectory(documentFiles, directory, deleteOriginal);
             }
 
             @Override
@@ -314,7 +314,7 @@ public class GalleryActivity extends AppCompatActivity {
         });
     }
 
-    private void importToDirectory(@NonNull List<DocumentFile> documentFiles, @NonNull DocumentFile directory) {
+    private void importToDirectory(@NonNull List<DocumentFile> documentFiles, @NonNull DocumentFile directory, boolean deleteOriginal) {
         new Thread(() -> {
             double totalSize = 0;
             for (DocumentFile file : documentFiles) {
@@ -324,6 +324,7 @@ public class GalleryActivity extends AppCompatActivity {
             final String totalMB = decimalFormat.format(totalSize);
             final int[] progress = new int[]{1};
             final double[] bytesDone = new double[]{0};
+            final List<DocumentFile> filesToDelete = new ArrayList<>();
             runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), "0", totalMB));
             for (DocumentFile file : documentFiles) {
                 if (cancelTask) {
@@ -344,6 +345,12 @@ public class GalleryActivity extends AppCompatActivity {
                 } else if (!imported.second) {
                     runOnUiThread(() -> Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_error_no_thumb, file.getName())));
                 }
+                if (deleteOriginal && imported.first) {
+                    filesToDelete.add(file);
+                }
+            }
+            for (DocumentFile toDelete : filesToDelete) {
+                toDelete.delete();
             }
             runOnUiThread(() -> {
                 Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_done, progress[0] - 1));

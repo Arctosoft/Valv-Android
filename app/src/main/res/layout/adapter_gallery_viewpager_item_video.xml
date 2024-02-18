@@ -34,12 +34,4 @@
 
     </RelativeLayout>
 
-    <se.arctosoft.vault.views.PressableImageView
-        android:id="@+id/imgFullscreen"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:src="@drawable/ic_round_fullscreen_24"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>
