@@ -63,7 +63,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.decryptedCacheUri = null;
         this.lastModified = file.getLastModified();
         this.isDirectory = false;
-        this.fileType = FileType.fromMimeType(file.getMimeType());
+        this.fileType = FileType.fromFilename(encryptedName);
         this.size = file.getSize();
         this.isAllFolder = false;
     }
