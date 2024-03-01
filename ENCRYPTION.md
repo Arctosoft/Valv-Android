@@ -4,7 +4,7 @@ Files are encrypted using the `ChaCha20/NONE/NoPadding` cipher in Android. See [
 
 The key algorithm is `PBKDF2withHmacSHA512` with 20000 iterations and a 256-bit key length.
 
-The salt is 16 bytes and the IV is 12 bytes. A checksum of 12 bytes is also used in some files to check if the supplied password can decrypt the file, see details below.
+The salt is 16 bytes and the IV is 12 bytes. An additional 12 bytes is used in some files to check if the supplied password can decrypt the file, see details below.
 
 ## Encrypted file structure
 ![Encrypted file structure image](/images/encryption.jpg)
@@ -31,7 +31,7 @@ Similarly, a note has the same name as its media file.
 
 ## Encrypting
 The app creates the encrypted files in the following way:
-1. Generate a random salt and IV. If the file is a thumbnail it also generates an additional check 12 bytes.
+1. Generate a random 16 byte salt and 12 byte IV. If the file is a thumbnail it also generates an additional 12 check bytes.
 2. Create an unencrypted output stream.
 3. Write the salt.
 4. Write the IV.
@@ -44,9 +44,9 @@ The app creates the encrypted files in the following way:
 ## Decrypting
 The app reads the encrypted files in the following way:
 1. Create an unencrypted input stream.
-2. Read the salt.
-3. Read the IV.
-4. If the file is a thumbnail, read the check bytes.
+2. Read the 16 byte salt.
+3. Read the 12 byte IV.
+4. If the file is a thumbnail, read the 12 check bytes.
 5. Pass the input stream into a cipher (encrypted) input stream. Everything below is read from encrypted data.
 6. If the file is a thumbnail, read the check bytes. If the unencrypted check bytes does not equal the check bytes in the encrypted part, the given password is invalid.
 7. Read a newline character (`0x0A`) followed by the original filename and another newline character.
