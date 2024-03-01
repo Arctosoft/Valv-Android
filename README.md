@@ -10,7 +10,7 @@ An encrypted gallery vault for Android devices.
 - Day/night modes
 
 ## Encryption
-Files are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.
+Files are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512. Read the details in [ENCRYPTION.md](ENCRYPTION.md).
 
 ## Get the app
 [<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
