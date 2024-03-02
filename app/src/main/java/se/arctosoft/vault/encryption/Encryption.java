@@ -121,7 +121,7 @@ public class Encryption {
         DocumentFile file = directory.createFile("", Encryption.PREFIX_NOTE_FILE + fileNameWithoutPrefix);
 
         try {
-            createFile(context, note, file, tempPassword, fileNameWithoutPrefix);
+            createNoteFile(context, note, file, tempPassword, fileNameWithoutPrefix);
         } catch (GeneralSecurityException | IOException e) {
             Log.e(TAG, "importNoteToDirectory: failed " + e.getMessage());
             e.printStackTrace();
@@ -211,8 +211,8 @@ public class Encryption {
         streams.close();
     }
 
-    private static void createFile(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
-        Streams streams = getCipherOutputStream(context, input, outputFile, password, sourceFileName);
+    private static void createNoteFile(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
+        Streams streams = getNoteCipherOutputStream(context, input, outputFile, password, sourceFileName);
         streams.outputStream.write(streams.inputString.getBytes(StandardCharsets.UTF_8));
         streams.close();
     }
@@ -308,12 +308,11 @@ public class Encryption {
         return new Streams(inputStream, cipherOutputStream, secretKey);
     }
 
-    private static Streams getCipherOutputStream(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
+    private static Streams getNoteCipherOutputStream(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
         SecureRandom sr = SecureRandom.getInstanceStrong();
         byte[] salt = new byte[SALT_LENGTH];
         byte[] ivBytes = new byte[IV_LENGTH];
-        byte[] checkBytes = new byte[CHECK_LENGTH];
-        generateSecureRandom(sr, salt, ivBytes, checkBytes);
+        generateSecureRandom(sr, salt, ivBytes, null);
 
         SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
         KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
@@ -324,7 +323,7 @@ public class Encryption {
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
 
         OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(outputFile.getUri()), 1024 * 32);
-        writeSaltAndIV(false, salt, ivBytes, checkBytes, fos);
+        writeSaltAndIV(false, salt, ivBytes, null, fos);
         fos.flush();
         CipherOutputStream cipherOutputStream = new CipherOutputStream(fos, cipher);
         cipherOutputStream.write(("\n" + sourceFileName + "\n").getBytes());
