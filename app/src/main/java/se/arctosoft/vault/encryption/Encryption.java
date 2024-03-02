@@ -286,7 +286,7 @@ public class Encryption {
         byte[] salt = new byte[SALT_LENGTH];
         byte[] ivBytes = new byte[IV_LENGTH];
         byte[] checkBytes = new byte[CHECK_LENGTH];
-        generateSecureRandom(sr, salt, ivBytes, isThumb ? null : checkBytes);
+        generateSecureRandom(sr, salt, ivBytes, isThumb ? checkBytes : null);
 
         SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
         KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
