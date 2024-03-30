@@ -1,0 +1,4 @@
+* Förbättrade videouppspelningen
+* Förbättringar vid filimport
+* När en fil raderas så raderas nu även dess anteckning/text
+* Det går nu snabbare att radera filer

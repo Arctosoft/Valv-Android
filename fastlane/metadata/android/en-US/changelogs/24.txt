@@ -1,0 +1,7 @@
+* Improved video playback
+* Improvements to importing files
+* Fixed notes not being deleted when deleting a file
+* Deleting files is now much faster
+* Fixed a crash when on clicking on a deleted folder
+* An error is now shown when selecting a directory that does not exist when importing
+* For directories in the pager, a directory placeholder is now shown instead of a video player
