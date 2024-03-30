@@ -295,7 +295,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     }
 
     private void setupViewpager() {
-        galleryPagerAdapter = new GalleryPagerAdapter(this, viewModel.getGalleryFiles(), pos -> galleryGridAdapter.notifyItemRemoved(pos), currentDocumentDirectory, isAllFolder);
+        galleryPagerAdapter = new GalleryPagerAdapter(this, viewModel.getGalleryFiles(), pos -> galleryGridAdapter.notifyItemRemoved(pos), currentDocumentDirectory, isAllFolder, nestedPath);
         binding.viewPager.setAdapter(galleryPagerAdapter);
         //Log.e(TAG, "setupViewpager: " + viewModel.getCurrentPosition() + " " + viewModel.isFullscreen());
         binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {

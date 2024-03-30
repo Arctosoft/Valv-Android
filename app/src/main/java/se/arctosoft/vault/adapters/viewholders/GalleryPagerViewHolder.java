@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemBinding;
+import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemDirectoryBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemGifBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemImageBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemVideoBinding;
@@ -56,6 +57,16 @@ public class GalleryPagerViewHolder extends RecyclerView.ViewHolder {
         public final AdapterGalleryViewpagerItemVideoBinding binding;
 
         public GalleryPagerVideoViewHolder(AdapterGalleryViewpagerItemBinding parentBinding, @NonNull AdapterGalleryViewpagerItemVideoBinding binding) {
+            super(parentBinding);
+            this.binding = binding;
+        }
+
+    }
+
+    public static class GalleryPagerDirectoryViewHolder extends GalleryPagerViewHolder {
+        public final AdapterGalleryViewpagerItemDirectoryBinding binding;
+
+        public GalleryPagerDirectoryViewHolder(AdapterGalleryViewpagerItemBinding parentBinding, @NonNull AdapterGalleryViewpagerItemDirectoryBinding binding) {
             super(parentBinding);
             this.binding = binding;
         }

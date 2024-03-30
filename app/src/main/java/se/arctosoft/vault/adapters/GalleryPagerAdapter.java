@@ -57,11 +57,13 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.List;
 
+import se.arctosoft.vault.GalleryDirectoryActivity;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryPagerViewHolder;
 import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemBinding;
+import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemDirectoryBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemGifBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemImageBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemVideoBinding;
@@ -83,13 +85,14 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private final IOnFileDeleted onFileDeleted;
     private final DocumentFile currentDirectory;
     private final boolean isAllFolder;
-    private boolean isFullscreen;
     private final Settings settings;
+    private final String nestedPath;
     private ExoPlayer player;
     private PlayerView playerView;
+    private boolean isFullscreen;
     private int lastPlayerPos = -1;
 
-    public GalleryPagerAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted, DocumentFile currentDirectory, boolean isAllFolder) {
+    public GalleryPagerAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted, DocumentFile currentDirectory, boolean isAllFolder, String nestedPath) {
         this.weakReference = new WeakReference<>(context);
         this.galleryFiles = galleryFiles;
         this.onFileDeleted = onFileDeleted;
@@ -97,6 +100,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         this.isFullscreen = false;
         this.settings = Settings.getInstance(context);
         this.isAllFolder = isAllFolder;
+        this.nestedPath = nestedPath;
     }
 
     @NonNull
@@ -110,9 +114,12 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         } else if (viewType == FileType.GIF.i) {
             AdapterGalleryViewpagerItemGifBinding gifBinding = AdapterGalleryViewpagerItemGifBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerGifViewHolder(parentBinding, gifBinding);
-        } else {
+        } else if (viewType == FileType.VIDEO.i) {
             AdapterGalleryViewpagerItemVideoBinding videoBinding = AdapterGalleryViewpagerItemVideoBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerVideoViewHolder(parentBinding, videoBinding);
+        } else {
+            AdapterGalleryViewpagerItemDirectoryBinding videoBinding = AdapterGalleryViewpagerItemDirectoryBinding.inflate(layoutInflater, parentBinding.content, true);
+            return new GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder(parentBinding, videoBinding);
         }
     }
 
@@ -121,16 +128,47 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         FragmentActivity context = weakReference.get();
         GalleryFile galleryFile = galleryFiles.get(position);
 
-        setName(holder, galleryFile);
-        if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder) {
-            setupVideoView((GalleryPagerViewHolder.GalleryPagerVideoViewHolder) holder, context, galleryFile);
+        if (holder instanceof GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) {
+            setupDirectoryView(holder, context, galleryFile);
         } else {
-            holder.parentBinding.imgFullscreen.setVisibility(View.GONE);
-            setupImageView(holder, context, galleryFile);
+            holder.parentBinding.txtName.setVisibility(View.VISIBLE);
+            holder.parentBinding.lLButtons.setVisibility(View.VISIBLE);
+            setName(holder, galleryFile);
+            if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder) {
+                holder.parentBinding.imgFullscreen.setVisibility(View.VISIBLE);
+                setupVideoView((GalleryPagerViewHolder.GalleryPagerVideoViewHolder) holder, context, galleryFile);
+            } else {
+                holder.parentBinding.imgFullscreen.setVisibility(View.GONE);
+                setupImageView(holder, context, galleryFile);
+            }
+            setupButtons(holder, context, galleryFile);
+            loadOriginalFilename(galleryFile, context, holder, position);
+            loadNote(holder, context, galleryFile);
         }
-        setupButtons(holder, context, galleryFile);
-        loadOriginalFilename(galleryFile, context, holder, position);
-        loadNote(holder, context, galleryFile);
+    }
+
+    private void setupDirectoryView(@NonNull GalleryPagerViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
+        holder.parentBinding.lLButtons.setVisibility(View.GONE);
+        holder.parentBinding.imgFullscreen.setVisibility(View.GONE);
+        holder.parentBinding.noteLayout.setVisibility(View.GONE);
+        holder.parentBinding.txtName.setVisibility(View.GONE);
+        ((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.name.setText(context.getString(R.string.gallery_click_to_open_directory, galleryFile.getNameWithPath()));
+        ((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.getRoot().setOnClickListener(v -> {
+            Intent intent = new Intent(context, GalleryDirectoryActivity.class);
+            if (nestedPath != null) {
+                intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString())
+                        .putExtra(GalleryDirectoryActivity.EXTRA_NESTED_PATH, nestedPath + "/" + new File(galleryFile.getUri().getPath()).getName());
+            } else {
+                intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString());
+            }
+            context.startActivity(intent);
+        });
+        GalleryFile firstFile = galleryFile.getFirstFile();
+        if (firstFile != null) {
+            Glide.with(context)
+                    .load(firstFile.getThumbUri())
+                    .into(((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.thumb);
+        }
     }
 
     private void setName(@NonNull GalleryPagerViewHolder holder, GalleryFile galleryFile) {
@@ -550,7 +588,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         notifyItemRemoved(pos);
         onFileDeleted.onFileDeleted(pos);
         Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_deleted));
-        if (galleryFiles.size() == 0) {
+        if (galleryFiles.isEmpty()) {
             context.onBackPressed();
         }
     }
@@ -564,8 +602,9 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             return FileType.GIF.i;
         } else if (galleryFile.getFileType() == FileType.VIDEO) {
             return FileType.VIDEO.i;
+        } else {
+            return FileType.DIRECTORY.i;
         }
-        return super.getItemViewType(position);
     }
 
     @Override

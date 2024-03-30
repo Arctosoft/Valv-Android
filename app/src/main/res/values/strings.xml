@@ -71,6 +71,7 @@
     <string name="gallery_share_decrypting">Decrypting to cache…</string>
     <string name="gallery_share_decrypting_error">Decrypt error: %1$s</string>
     <string name="gallery_share_with">Share/open with</string>
+    <string name="gallery_click_to_open_directory">Click to open\n%1$s</string>
 
     <string name="dialog_remove_folder_title">Remove?</string>
     <plurals name="dialog_remove_folder_message">
