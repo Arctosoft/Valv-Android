@@ -324,13 +324,12 @@ public class GalleryActivity extends AppCompatActivity {
             final String totalMB = decimalFormat.format(totalSize);
             final int[] progress = new int[]{1};
             final double[] bytesDone = new double[]{0};
-            final List<DocumentFile> filesToDelete = new ArrayList<>();
-            runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), "0", totalMB));
             for (DocumentFile file : documentFiles) {
                 if (cancelTask) {
                     cancelTask = false;
                     break;
                 }
+                runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format(bytesDone[0] / 1000000.0), totalMB));
                 Pair<Boolean, Boolean> imported = new Pair<>(false, false);
                 try {
                     imported = Encryption.importFileToDirectory(GalleryActivity.this, file, directory, settings);
@@ -339,18 +338,14 @@ public class GalleryActivity extends AppCompatActivity {
                 }
                 progress[0]++;
                 bytesDone[0] += file.length();
-                runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format(bytesDone[0] / 1000000.0), totalMB));
                 if (!imported.first) {
                     runOnUiThread(() -> Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_error, file.getName())));
                 } else if (!imported.second) {
                     runOnUiThread(() -> Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_error_no_thumb, file.getName())));
                 }
                 if (deleteOriginal && imported.first) {
-                    filesToDelete.add(file);
+                    file.delete();
                 }
-            }
-            for (DocumentFile toDelete : filesToDelete) {
-                toDelete.delete();
             }
             runOnUiThread(() -> {
                 Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_done, progress[0] - 1));
