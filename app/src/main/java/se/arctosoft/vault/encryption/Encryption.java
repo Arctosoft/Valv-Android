@@ -58,6 +58,7 @@ import javax.security.auth.DestroyFailedException;
 import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.exception.InvalidPasswordException;
+import se.arctosoft.vault.interfaces.IOnProgress;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.StringStuff;
@@ -79,7 +80,7 @@ public class Encryption {
     public static final String PREFIX_NOTE_FILE = ".valv.n.1-";
     public static final String PREFIX_THUMB = ".valv.t.1-";
 
-    public static Pair<Boolean, Boolean> importFileToDirectory(FragmentActivity context, DocumentFile sourceFile, DocumentFile directory, Settings settings) {
+    public static Pair<Boolean, Boolean> importFileToDirectory(FragmentActivity context, DocumentFile sourceFile, DocumentFile directory, Settings settings, @Nullable IOnProgress onProgress) {
         char[] tempPassword = settings.getTempPassword();
         if (tempPassword == null || tempPassword.length == 0) {
             throw new RuntimeException("No password");
@@ -94,7 +95,7 @@ public class Encryption {
             return new Pair<>(false, false);
         }
         try {
-            createFile(context, sourceFile.getUri(), file, tempPassword, sourceFile.getName());
+            createFile(context, sourceFile.getUri(), file, tempPassword, sourceFile.getName(), onProgress);
         } catch (GeneralSecurityException | IOException e) {
             e.printStackTrace();
             file.delete();
@@ -199,13 +200,18 @@ public class Encryption {
         }
     }
 
-    private static void createFile(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
+    private static void createFile(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, String sourceFileName, @Nullable IOnProgress onProgress) throws GeneralSecurityException, IOException {
         Streams streams = getCipherOutputStream(context, input, outputFile, password, false, sourceFileName);
 
         int read;
         byte[] buffer = new byte[2048];
+        long progress = 0;
         while ((read = streams.inputStream.read(buffer)) != -1) {
             streams.outputStream.write(buffer, 0, read);
+            if (onProgress != null) {
+                progress += read;
+                onProgress.onProgress(progress);
+            }
         }
 
         streams.close();

@@ -50,6 +50,7 @@ import se.arctosoft.vault.databinding.ActivityGalleryBinding;
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.encryption.Password;
 import se.arctosoft.vault.interfaces.IOnDirectoryAdded;
+import se.arctosoft.vault.interfaces.IOnProgress;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
@@ -217,10 +218,10 @@ public class GalleryActivity extends AppCompatActivity {
         binding.cLLoading.txtProgress.setVisibility(View.GONE);
     }
 
-    private void setLoadingProgress(int progress, int total, String doneMB, String totalMB) {
+    private void setLoadingProgress(int progress, int total, String doneMB, String totalMB, int percentageDone) {
         binding.cLLoading.cLLoading.setVisibility(View.VISIBLE);
         if (total > 0) {
-            binding.cLLoading.txtProgress.setText(getString(R.string.gallery_importing_progress, progress, total, doneMB, totalMB));
+            binding.cLLoading.txtProgress.setText(getString(R.string.gallery_importing_progress, progress, total, doneMB, totalMB, percentageDone));
             binding.cLLoading.txtProgress.setVisibility(View.VISIBLE);
         } else {
             binding.cLLoading.txtProgress.setVisibility(View.GONE);
@@ -316,23 +317,31 @@ public class GalleryActivity extends AppCompatActivity {
 
     private void importToDirectory(@NonNull List<DocumentFile> documentFiles, @NonNull DocumentFile directory, boolean deleteOriginal) {
         new Thread(() -> {
-            double totalSize = 0;
+            double totalBytes = 0;
             for (DocumentFile file : documentFiles) {
-                totalSize += (file.length() / 1000000.0);
+                totalBytes += file.length();
             }
             final DecimalFormat decimalFormat = new DecimalFormat("0.00");
-            final String totalMB = decimalFormat.format(totalSize);
+            final String totalMB = decimalFormat.format(totalBytes / 1000000.0);
             final int[] progress = new int[]{1};
             final double[] bytesDone = new double[]{0};
+            final long[] lastPublish = {0};
+            double finalTotalSize = totalBytes;
+            final IOnProgress onProgress = progress1 -> {
+                if (System.currentTimeMillis() - lastPublish[0] > 20) {
+                    lastPublish[0] = System.currentTimeMillis();
+                    runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format((bytesDone[0] + progress1) / 1000000.0), totalMB,
+                            (int) Math.round((bytesDone[0] + progress1) / finalTotalSize * 100.0)));
+                }
+            };
             for (DocumentFile file : documentFiles) {
                 if (cancelTask) {
                     cancelTask = false;
                     break;
                 }
-                runOnUiThread(() -> setLoadingProgress(progress[0], documentFiles.size(), decimalFormat.format(bytesDone[0] / 1000000.0), totalMB));
                 Pair<Boolean, Boolean> imported = new Pair<>(false, false);
                 try {
-                    imported = Encryption.importFileToDirectory(GalleryActivity.this, file, directory, settings);
+                    imported = Encryption.importFileToDirectory(GalleryActivity.this, file, directory, settings, onProgress);
                 } catch (SecurityException e) {
                     e.printStackTrace();
                 }

@@ -52,7 +52,7 @@
     <string name="gallery_selected_files_exported_with_failed">Exported %1$d files, %2$d failed</string>
     <string name="gallery_file_not_exported">Export error: %1$s</string>
     <string name="gallery_loading_all_progress">Loading %1$d files in %2$d directories</string>
-    <string name="gallery_importing_progress">Importing %1$d out of %2$d\n%3$s/%4$s MB</string>
+    <string name="gallery_importing_progress">Importing %1$d out of %2$d\n%3$s/%4$s MB\n%5$d%%</string>
     <string name="gallery_exporting_progress">Exporting %1$d out of %2$d\nFailed: %3$d</string>
     <string name="gallery_deleting_progress">Deleting %1$d out of %2$d\nFailed: %3$d</string>
     <string name="gallery_importing_error">Failed to import %1$s</string>
