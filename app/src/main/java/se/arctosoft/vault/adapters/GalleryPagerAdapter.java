@@ -449,6 +449,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         Dialogs.showConfirmationDialog(context, context.getString(R.string.dialog_delete_file_title), context.getString(R.string.dialog_delete_file_message), (dialog, which) -> {
             boolean deletedFile = FileStuff.deleteFile(context, galleryFile.getUri());
             boolean deletedThumb = FileStuff.deleteFile(context, galleryFile.getThumbUri());
+            boolean deletedNote = FileStuff.deleteFile(context, galleryFile.getNoteUri());
             if (deletedFile) {
                 int pos = holder.getBindingAdapterPosition();
                 removeFileAt(pos, context);

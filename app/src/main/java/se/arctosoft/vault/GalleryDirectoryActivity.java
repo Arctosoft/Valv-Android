@@ -201,6 +201,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                     runOnUiThread(() -> setLoadingWithProgress(++count[0], failed, total, R.string.gallery_deleting_progress));
                     boolean deleted = FileStuff.deleteFile(this, f.getUri());
                     FileStuff.deleteFile(this, f.getThumbUri());
+                    FileStuff.deleteFile(this, f.getNoteUri());
                     if (deleted) {
                         int i = viewModel.getGalleryFiles().indexOf(f);
                         if (i >= 0) {
@@ -208,8 +209,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                         }
                     }
                 }
+                Collections.sort(positionsDeleted);
                 runOnUiThread(() -> {
-                    Collections.sort(positionsDeleted);
                     for (int i = positionsDeleted.size() - 1; i >= 0; i--) {
                         viewModel.getGalleryFiles().remove(i);
                         galleryGridAdapter.notifyItemRemoved(i);
