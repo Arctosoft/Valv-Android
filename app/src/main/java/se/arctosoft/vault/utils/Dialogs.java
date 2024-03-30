@@ -64,7 +64,15 @@ public class Dialogs {
         ImportListAdapter adapter = new ImportListAdapter(names, pos -> {
             alertDialog.dismiss();
             Uri uri = directories.get(pos);
-            onDirectorySelected.onDirectorySelected(DocumentFile.fromTreeUri(context, uri), binding.checkbox.isChecked());
+
+            DocumentFile directory = DocumentFile.fromTreeUri(context, uri);
+            if (directory == null || !directory.isDirectory() || !directory.exists()) {
+                settings.removeGalleryDirectory(uri);
+                Toaster.getInstance(context).showLong(context.getString(R.string.directory_does_not_exist));
+                showImportGalleryChooseDestinationDialog(context, settings, fileCount, onDirectorySelected);
+            } else {
+                onDirectorySelected.onDirectorySelected(directory, binding.checkbox.isChecked());
+            }
         });
         binding.checkbox.setText(context.getResources().getQuantityString(R.plurals.dialog_import_to_delete_original, fileCount));
         binding.recycler.setLayoutManager(new LinearLayoutManager(context));

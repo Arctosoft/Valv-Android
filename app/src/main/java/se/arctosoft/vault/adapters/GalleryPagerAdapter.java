@@ -43,7 +43,6 @@ import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
-import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -55,13 +54,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import se.arctosoft.vault.GalleryDirectoryActivity;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryPagerViewHolder;
 import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemBinding;
+import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemDirectoryBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemGifBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemImageBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemVideoBinding;
@@ -83,13 +86,12 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private final IOnFileDeleted onFileDeleted;
     private final DocumentFile currentDirectory;
     private final boolean isAllFolder;
-    private boolean isFullscreen;
     private final Settings settings;
-    private ExoPlayer player;
-    private PlayerView playerView;
-    private int lastPlayerPos = -1;
+    private final String nestedPath;
+    private final Map<Integer, ExoPlayer> players;
+    private boolean isFullscreen;
 
-    public GalleryPagerAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted, DocumentFile currentDirectory, boolean isAllFolder) {
+    public GalleryPagerAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted, DocumentFile currentDirectory, boolean isAllFolder, String nestedPath) {
         this.weakReference = new WeakReference<>(context);
         this.galleryFiles = galleryFiles;
         this.onFileDeleted = onFileDeleted;
@@ -97,6 +99,8 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         this.isFullscreen = false;
         this.settings = Settings.getInstance(context);
         this.isAllFolder = isAllFolder;
+        this.nestedPath = nestedPath;
+        this.players = new HashMap<>();
     }
 
     @NonNull
@@ -110,9 +114,12 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         } else if (viewType == FileType.GIF.i) {
             AdapterGalleryViewpagerItemGifBinding gifBinding = AdapterGalleryViewpagerItemGifBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerGifViewHolder(parentBinding, gifBinding);
-        } else {
+        } else if (viewType == FileType.VIDEO.i) {
             AdapterGalleryViewpagerItemVideoBinding videoBinding = AdapterGalleryViewpagerItemVideoBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerVideoViewHolder(parentBinding, videoBinding);
+        } else {
+            AdapterGalleryViewpagerItemDirectoryBinding videoBinding = AdapterGalleryViewpagerItemDirectoryBinding.inflate(layoutInflater, parentBinding.content, true);
+            return new GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder(parentBinding, videoBinding);
         }
     }
 
@@ -121,16 +128,47 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         FragmentActivity context = weakReference.get();
         GalleryFile galleryFile = galleryFiles.get(position);
 
-        setName(holder, galleryFile);
-        if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder) {
-            setupVideoView((GalleryPagerViewHolder.GalleryPagerVideoViewHolder) holder, context, galleryFile);
+        if (holder instanceof GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) {
+            setupDirectoryView(holder, context, galleryFile);
         } else {
-            holder.parentBinding.imgFullscreen.setVisibility(View.GONE);
-            setupImageView(holder, context, galleryFile);
+            holder.parentBinding.txtName.setVisibility(View.VISIBLE);
+            holder.parentBinding.lLButtons.setVisibility(View.VISIBLE);
+            setName(holder, galleryFile);
+            if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder) {
+                holder.parentBinding.imgFullscreen.setVisibility(View.VISIBLE);
+                setupVideoView((GalleryPagerViewHolder.GalleryPagerVideoViewHolder) holder, context, galleryFile);
+            } else {
+                holder.parentBinding.imgFullscreen.setVisibility(View.GONE);
+                setupImageView(holder, context, galleryFile);
+            }
+            setupButtons(holder, context, galleryFile);
+            loadOriginalFilename(galleryFile, context, holder, position);
+            loadNote(holder, context, galleryFile);
         }
-        setupButtons(holder, context, galleryFile);
-        loadOriginalFilename(galleryFile, context, holder, position);
-        loadNote(holder, context, galleryFile);
+    }
+
+    private void setupDirectoryView(@NonNull GalleryPagerViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
+        holder.parentBinding.lLButtons.setVisibility(View.GONE);
+        holder.parentBinding.imgFullscreen.setVisibility(View.GONE);
+        holder.parentBinding.noteLayout.setVisibility(View.GONE);
+        holder.parentBinding.txtName.setVisibility(View.GONE);
+        ((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.name.setText(context.getString(R.string.gallery_click_to_open_directory, galleryFile.getNameWithPath()));
+        ((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.getRoot().setOnClickListener(v -> {
+            Intent intent = new Intent(context, GalleryDirectoryActivity.class);
+            if (nestedPath != null) {
+                intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString())
+                        .putExtra(GalleryDirectoryActivity.EXTRA_NESTED_PATH, nestedPath + "/" + new File(galleryFile.getUri().getPath()).getName());
+            } else {
+                intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString());
+            }
+            context.startActivity(intent);
+        });
+        GalleryFile firstFile = galleryFile.getFirstFile();
+        if (firstFile != null) {
+            Glide.with(context)
+                    .load(firstFile.getThumbUri())
+                    .into(((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.thumb);
+        }
     }
 
     private void setName(@NonNull GalleryPagerViewHolder holder, GalleryFile galleryFile) {
@@ -202,7 +240,13 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
 
     @OptIn(markerClass = UnstableApi.class)
     private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
-        lastPlayerPos = holder.getBindingAdapterPosition();
+        final int pos = holder.getBindingAdapterPosition();
+        ExoPlayer player = players.get(pos);
+        for (ExoPlayer player1 : players.values()) {
+            if (player1 != player && player1 != null) {
+                player1.pause();
+            }
+        }
         if (player == null) {
             DataSource.Factory dataSourceFactory = new MyDataSourceFactory(context);
             ProgressiveMediaSource.Factory progressiveFactory = new ProgressiveMediaSource.Factory(dataSourceFactory);
@@ -210,6 +254,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                     .setMediaSourceFactory(progressiveFactory)
                     .build();
             player.setRepeatMode(Player.REPEAT_MODE_ONE);
+            players.put(pos, player);
         }
         MediaItem mediaItem = new MediaItem.Builder()
                 .setMimeType("video/*")
@@ -217,7 +262,6 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 .build();
         player.setMediaItem(mediaItem);
         holder.binding.playerView.setControllerShowTimeoutMs(1500);
-        //player.setMediaSource(videoSource);
         player.addListener(new Player.Listener() {
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
@@ -231,16 +275,10 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 Toaster.getInstance(context).showLong(context.getString(R.string.gallery_video_error, error.getMessage()));
             }
         });
-        if (playerView != null) {
-            PlayerView.switchTargetView(player, playerView, holder.binding.playerView);
-            playerView.setPlayer(null);
-        } else {
-            holder.binding.playerView.setPlayer(player);
-        }
-        playerView = holder.binding.playerView;
+        holder.binding.playerView.setPlayer(player);
         player.prepare();
         player.setPlayWhenReady(true);
-        playerView.hideController();
+        holder.binding.playerView.hideController();
     }
 
     private void setupImageView(GalleryPagerViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
@@ -449,6 +487,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         Dialogs.showConfirmationDialog(context, context.getString(R.string.dialog_delete_file_title), context.getString(R.string.dialog_delete_file_message), (dialog, which) -> {
             boolean deletedFile = FileStuff.deleteFile(context, galleryFile.getUri());
             boolean deletedThumb = FileStuff.deleteFile(context, galleryFile.getThumbUri());
+            boolean deletedNote = FileStuff.deleteFile(context, galleryFile.getNoteUri());
             if (deletedFile) {
                 int pos = holder.getBindingAdapterPosition();
                 removeFileAt(pos, context);
@@ -549,7 +588,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         notifyItemRemoved(pos);
         onFileDeleted.onFileDeleted(pos);
         Toaster.getInstance(context).showLong(context.getString(R.string.gallery_file_deleted));
-        if (galleryFiles.size() == 0) {
+        if (galleryFiles.isEmpty()) {
             context.onBackPressed();
         }
     }
@@ -563,16 +602,48 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             return FileType.GIF.i;
         } else if (galleryFile.getFileType() == FileType.VIDEO) {
             return FileType.VIDEO.i;
+        } else {
+            return FileType.DIRECTORY.i;
         }
-        return super.getItemViewType(position);
+    }
+
+    @Override
+    public void onViewDetachedFromWindow(@NonNull GalleryPagerViewHolder holder) {
+        if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder vh) {
+            pauseVideo(vh);
+        }
+        super.onViewDetachedFromWindow(holder);
     }
 
     @Override
     public void onViewRecycled(@NonNull GalleryPagerViewHolder holder) {
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder h) {
             h.binding.imageView.recycle();
+        } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder vh) {
+            releaseVideo(vh);
         }
         super.onViewRecycled(holder);
+    }
+
+    private void releaseVideo(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
+        final int pos = holder.getBindingAdapterPosition();
+        holder.binding.playerView.setPlayer(null);
+        if (pos >= 0) {
+            ExoPlayer player = players.remove(pos);
+            if (player != null) {
+                player.release();
+            }
+        }
+    }
+
+    private void pauseVideo(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
+        final int pos = holder.getBindingAdapterPosition();
+        if (pos >= 0) {
+            ExoPlayer player = players.get(pos);
+            if (player != null) {
+                player.pause();
+            }
+        }
     }
 
     @Override
@@ -580,25 +651,26 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         return galleryFiles.size();
     }
 
-    public void releaseVideo() {
-        if (player != null) {
-            player.release();
-            player = null;
+    public void releasePlayers() {
+        for (Player p : players.values()) {
+            if (p != null) {
+                p.release();
+            }
         }
-        if (lastPlayerPos >= 0 && playerView != null) {
-            playerView.postDelayed(() -> notifyItemChanged(lastPlayerPos), 100);
-        }
+        players.clear();
     }
 
-    public void pauseVideo() {
-        if (player != null) {
-            player.pause();
+    public void pausePlayers() {
+        for (Player p : players.values()) {
+            if (p != null && p.isPlaying()) {
+                p.pause();
+            }
         }
     }
 
     public void showPager(boolean showPager) {
         if (!showPager) {
-            releaseVideo();
+            pausePlayers();
         }
         setFullscreen(weakReference.get(), false);
     }

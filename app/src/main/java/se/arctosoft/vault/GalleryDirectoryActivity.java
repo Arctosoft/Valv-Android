@@ -44,6 +44,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import se.arctosoft.vault.adapters.GalleryGridAdapter;
 import se.arctosoft.vault.adapters.GalleryPagerAdapter;
@@ -162,6 +164,12 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             finish();
             return;
         }
+        DocumentFile documentFile = DocumentFile.fromSingleUri(this, currentDirectory);
+        if (documentFile == null || !documentFile.isDirectory() || !documentFile.exists()) {
+            Toaster.getInstance(this).showLong(getString(R.string.directory_does_not_exist));
+            finish();
+            return;
+        }
         setupViewpager();
         setupRecycler();
         setClickListeners();
@@ -185,31 +193,49 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         binding.btnDeleteFiles.setText(getString(R.string.gallery_delete_selected_files, selected));
     }
 
-    private void deleteSelectedFiles() { // TODO run in parallel to make it faster, ExecutorService
+    private void deleteSelectedFiles() {
         setLoading(true);
         new Thread(() -> {
             synchronized (LOCK) {
-                final int[] count = {0};
-                int failed = 0;
-                final int total = galleryGridAdapter.getSelectedFiles().size();
-                final List<Integer> positionsDeleted = new ArrayList<>();
-                for (GalleryFile f : galleryGridAdapter.getSelectedFiles()) {
-                    if (isCancelled) {
-                        isCancelled = false;
-                        break;
-                    }
-                    runOnUiThread(() -> setLoadingWithProgress(++count[0], failed, total, R.string.gallery_deleting_progress));
-                    boolean deleted = FileStuff.deleteFile(this, f.getUri());
-                    FileStuff.deleteFile(this, f.getThumbUri());
-                    if (deleted) {
-                        int i = viewModel.getGalleryFiles().indexOf(f);
-                        if (i >= 0) {
-                            positionsDeleted.add(i);
+                List<GalleryFile> selectedFiles = galleryGridAdapter.getSelectedFiles();
+                ConcurrentLinkedQueue<GalleryFile> queue = new ConcurrentLinkedQueue<>(selectedFiles);
+                List<Integer> positionsDeleted = Collections.synchronizedList(new ArrayList<>());
+                AtomicInteger deletedCount = new AtomicInteger(0);
+                AtomicInteger failedCount = new AtomicInteger(0);
+                final int total = selectedFiles.size();
+                final int threadCount;
+                if (total < 4) {
+                    threadCount = 1;
+                } else if (total < 20) {
+                    threadCount = 4;
+                } else {
+                    threadCount = 8;
+                }
+                runOnUiThread(() -> setLoadingWithProgress(0, 0, 0, R.string.gallery_deleting_progress));
+                List<Thread> threads = new ArrayList<>(threadCount);
+                for (int i = 0; i < threadCount; i++) {
+                    Thread t = new Thread(() -> {
+                        GalleryFile f;
+                        while (!isCancelled && (f = queue.poll()) != null) {
+                            deleteFile(total, f, positionsDeleted, deletedCount, failedCount);
                         }
+                    });
+                    threads.add(t);
+                    t.start();
+                }
+
+                for (Thread thread : threads) {
+                    try {
+                        thread.join();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
                 }
+                if (isCancelled) {
+                    isCancelled = false;
+                }
+                Collections.sort(positionsDeleted);
                 runOnUiThread(() -> {
-                    Collections.sort(positionsDeleted);
                     for (int i = positionsDeleted.size() - 1; i >= 0; i--) {
                         viewModel.getGalleryFiles().remove(i);
                         galleryGridAdapter.notifyItemRemoved(i);
@@ -220,6 +246,25 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 });
             }
         }).start();
+    }
+
+    private void deleteFile(int total, GalleryFile file, List<Integer> positionsDeleted, AtomicInteger deletedCount, AtomicInteger failedCount) {
+        if (file == null || isCancelled) {
+            return;
+        }
+        boolean deleted = FileStuff.deleteFile(this, file.getUri());
+        FileStuff.deleteFile(this, file.getThumbUri());
+        FileStuff.deleteFile(this, file.getNoteUri());
+        if (deleted) {
+            deletedCount.addAndGet(1);
+            int i = viewModel.getGalleryFiles().indexOf(file);
+            if (i >= 0) {
+                positionsDeleted.add(i);
+            }
+        } else {
+            failedCount.addAndGet(1);
+        }
+        runOnUiThread(() -> setLoadingWithProgress(deletedCount.get() + failedCount.get(), failedCount.get(), total, R.string.gallery_deleting_progress));
     }
 
     private void setupRecycler() {
@@ -250,7 +295,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     }
 
     private void setupViewpager() {
-        galleryPagerAdapter = new GalleryPagerAdapter(this, viewModel.getGalleryFiles(), pos -> galleryGridAdapter.notifyItemRemoved(pos), currentDocumentDirectory, isAllFolder);
+        galleryPagerAdapter = new GalleryPagerAdapter(this, viewModel.getGalleryFiles(), pos -> galleryGridAdapter.notifyItemRemoved(pos), currentDocumentDirectory, isAllFolder, nestedPath);
         binding.viewPager.setAdapter(galleryPagerAdapter);
         //Log.e(TAG, "setupViewpager: " + viewModel.getCurrentPosition() + " " + viewModel.isFullscreen());
         binding.viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -259,7 +304,6 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 super.onPageSelected(position);
                 binding.recyclerView.scrollToPosition(position);
                 viewModel.setCurrentPosition(position);
-                galleryPagerAdapter.releaseVideo();
             }
         });
         binding.viewPager.postDelayed(() -> {
@@ -468,7 +512,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         if (galleryPagerAdapter != null) {
-            galleryPagerAdapter.pauseVideo();
+            galleryPagerAdapter.pausePlayers();
         }
         super.onStop();
     }
@@ -476,7 +520,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (galleryPagerAdapter != null) {
-            galleryPagerAdapter.releaseVideo();
+            galleryPagerAdapter.releasePlayers();
         }
         super.onDestroy();
     }

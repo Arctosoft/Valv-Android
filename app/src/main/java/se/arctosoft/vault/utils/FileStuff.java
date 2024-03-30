@@ -221,8 +221,7 @@ public class FileStuff {
             return true;
         }
         DocumentFile documentFile = DocumentFile.fromSingleUri(context, uri);
-        assert documentFile != null;
-        if (!documentFile.exists()) {
+        if (documentFile == null || !documentFile.exists()) {
             return true;
         }
         return documentFile.delete();
