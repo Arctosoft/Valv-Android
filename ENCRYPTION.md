@@ -51,3 +51,5 @@ The app reads the encrypted files in the following way:
 6. If the file is a thumbnail, read the check bytes. If the unencrypted check bytes does not equal the check bytes in the encrypted part, the given password is invalid.
 7. Read a newline character (`0x0A`) followed by the original filename and another newline character.
 8. Read the file data.
+
+A Python script to decrypt .valv files can be found in [this issue comment](https://github.com/Arctosoft/Valv-Android/issues/33#issuecomment-1974834924).
