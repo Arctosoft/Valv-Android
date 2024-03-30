@@ -304,7 +304,6 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 super.onPageSelected(position);
                 binding.recyclerView.scrollToPosition(position);
                 viewModel.setCurrentPosition(position);
-                galleryPagerAdapter.releaseVideo();
             }
         });
         binding.viewPager.postDelayed(() -> {
@@ -513,7 +512,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         if (galleryPagerAdapter != null) {
-            galleryPagerAdapter.pauseVideo();
+            galleryPagerAdapter.pausePlayers();
         }
         super.onStop();
     }
@@ -521,7 +520,7 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (galleryPagerAdapter != null) {
-            galleryPagerAdapter.releaseVideo();
+            galleryPagerAdapter.releasePlayers();
         }
         super.onDestroy();
     }
