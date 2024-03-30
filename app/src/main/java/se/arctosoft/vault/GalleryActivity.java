@@ -63,7 +63,7 @@ public class GalleryActivity extends AppCompatActivity {
     private static final int REQUEST_IMPORT_IMAGES = 3;
     private static final int REQUEST_IMPORT_VIDEOS = 4;
 
-    private static final Object lock = new Object();
+    private static final Object LOCK = new Object();
 
     private GalleryViewModel viewModel;
     private ActivityGalleryBinding binding;
@@ -232,7 +232,7 @@ public class GalleryActivity extends AppCompatActivity {
         setLoading(true);
         new Thread(() -> {
             runOnUiThread(() -> {
-                synchronized (lock) {
+                synchronized (LOCK) {
                     int size = galleryFiles.size();
                     galleryFiles.clear();
                     galleryGridAdapter.notifyItemRangeRemoved(0, size);
@@ -348,6 +348,7 @@ public class GalleryActivity extends AppCompatActivity {
                 progress[0]++;
                 bytesDone[0] += file.length();
                 if (!imported.first) {
+                    progress[0]--;
                     runOnUiThread(() -> Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_error, file.getName())));
                 } else if (!imported.second) {
                     runOnUiThread(() -> Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_error_no_thumb, file.getName())));
@@ -361,7 +362,7 @@ public class GalleryActivity extends AppCompatActivity {
                 setLoading(false);
             });
             settings.addGalleryDirectory(directory.getUri(), null);
-            synchronized (lock) {
+            synchronized (LOCK) {
                 for (int i = 0; i < GalleryActivity.this.galleryFiles.size(); i++) {
                     GalleryFile g = GalleryActivity.this.galleryFiles.get(i);
                     if (g.getUri() != null && g.getUri().equals(directory.getUri())) {
@@ -384,9 +385,18 @@ public class GalleryActivity extends AppCompatActivity {
     private void addDirectory(Uri directoryUri) {
         List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(this, directoryUri);
 
-        synchronized (lock) {
+        synchronized (LOCK) {
             this.galleryFiles.add(0, GalleryFile.asDirectory(directoryUri, galleryFiles));
             galleryGridAdapter.notifyItemInserted(0);
+        }
+    }
+
+    private void refreshDirectory(GalleryFile dir) {
+        List<GalleryFile> found = FileStuff.getFilesInFolder(this, dir.getUri());
+        int pos = galleryFiles.indexOf(dir);
+        if (pos >= 0) {
+            dir.setFilesInDirectory(found);
+            galleryGridAdapter.notifyItemChanged(pos);
         }
     }
 
@@ -395,7 +405,7 @@ public class GalleryActivity extends AppCompatActivity {
             Uri uri = directories.get(i);
             GalleryFile galleryFile = GalleryFile.asDirectory(uri, null);
             runOnUiThread(() -> {
-                synchronized (lock) {
+                synchronized (LOCK) {
                     this.galleryFiles.add(galleryFile);
                     galleryGridAdapter.notifyItemInserted(this.galleryFiles.size() - 1);
                 }
@@ -408,7 +418,7 @@ public class GalleryActivity extends AppCompatActivity {
         }
         runOnUiThread(() -> {
             if (!this.galleryFiles.isEmpty()) {
-                synchronized (lock) {
+                synchronized (LOCK) {
                     this.galleryFiles.add(0, GalleryFile.asAllFolder(getString(R.string.gallery_all)));
                     galleryGridAdapter.notifyItemInserted(0);
                 }
@@ -452,6 +462,30 @@ public class GalleryActivity extends AppCompatActivity {
             shareIntent = null;
         } else if (!isWaitingForUnlock && (settings == null || settings.isLocked())) {
             finishAffinity();
+        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (galleryFiles != null && galleryGridAdapter != null && !galleryFiles.isEmpty()) {
+            synchronized (LOCK) {
+                GridLayoutManager lm = (GridLayoutManager) binding.recyclerView.getLayoutManager();
+                if (lm != null) {
+                    int firstVisiblePosition = lm.findFirstVisibleItemPosition();
+                    int lastVisibleItemPosition = lm.findLastVisibleItemPosition();
+                    if (firstVisiblePosition != RecyclerView.NO_POSITION && lastVisibleItemPosition != RecyclerView.NO_POSITION) {
+                        for (int i = firstVisiblePosition; i <= lastVisibleItemPosition; i++) {
+                            if (i >= 0 && i < galleryFiles.size()) {
+                                GalleryFile galleryFile = galleryFiles.get(i);
+                                if (!galleryFile.isAllFolder() && galleryFile.isDirectory()) {
+                                    refreshDirectory(galleryFile);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

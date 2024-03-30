@@ -164,6 +164,12 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             finish();
             return;
         }
+        DocumentFile documentFile = DocumentFile.fromSingleUri(this, currentDirectory);
+        if (documentFile == null || !documentFile.isDirectory() || !documentFile.exists()) {
+            Toaster.getInstance(this).showLong(getString(R.string.directory_does_not_exist));
+            finish();
+            return;
+        }
         setupViewpager();
         setupRecycler();
         setClickListeners();
