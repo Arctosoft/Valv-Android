@@ -1,0 +1,2 @@
+* Fixed can't open the All folder
+* Folders without encrypted files are now hidden

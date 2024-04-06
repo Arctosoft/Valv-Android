@@ -1,0 +1,2 @@
+* Alla-mappen kan nu öppnas igen
+* Mappar utan krypterade filer är nu dolda
