@@ -18,7 +18,7 @@
         android:theme="@style/Theme.Vault">
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="se.arctosoft.vault.fileprovider"
+            android:authorities="${applicationId}.fileprovider"
             android:grantUriPermissions="true"
             android:exported="false">
             <meta-data

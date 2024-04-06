@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import se.arctosoft.vault.BuildConfig;
 import se.arctosoft.vault.GalleryDirectoryActivity;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryPagerViewHolder;
@@ -498,7 +499,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     }
 
     private void shareOrOpenWith(FragmentActivity context, Uri decryptedCacheUri, boolean open) {
-        Uri uri = FileProvider.getUriForFile(weakReference.get(), "se.arctosoft.vault.fileprovider", new File(decryptedCacheUri.getPath()));
+        Uri uri = FileProvider.getUriForFile(weakReference.get(), BuildConfig.APPLICATION_ID + ".fileprovider", new File(decryptedCacheUri.getPath()));
         if (uri != null) {
             Intent intent;
             if (open) {

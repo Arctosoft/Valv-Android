@@ -165,21 +165,21 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
             return;
         }
         DocumentFile documentFile = DocumentFile.fromSingleUri(this, currentDirectory);
-        if (documentFile == null || !documentFile.isDirectory() || !documentFile.exists()) {
+        if (isAllFolder || (documentFile != null && documentFile.isDirectory() && documentFile.exists())) {
+            setupViewpager();
+            setupRecycler();
+            setClickListeners();
+
+            if (!viewModel.isInitialised()) {
+                if (isAllFolder) {
+                    findAllFiles();
+                } else {
+                    findFilesIn(currentDirectory);
+                }
+            }
+        } else {
             Toaster.getInstance(this).showLong(getString(R.string.directory_does_not_exist));
             finish();
-            return;
-        }
-        setupViewpager();
-        setupRecycler();
-        setClickListeners();
-
-        if (!viewModel.isInitialised()) {
-            if (isAllFolder) {
-                findAllFiles();
-            } else {
-                findFilesIn(currentDirectory);
-            }
         }
     }
 
@@ -359,8 +359,22 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 if (g.isDirectory()) {
                     int finalI = i;
                     new Thread(() -> {
-                        g.setFilesInDirectory(FileStuff.getFilesInFolder(this, g.getUri()));
-                        runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(finalI));
+                        List<GalleryFile> found = FileStuff.getFilesInFolder(this, g.getUri());
+                        if (found.isEmpty()) {
+                            runOnUiThread(() -> {
+                                synchronized (LOCK) {
+                                    int i1 = viewModel.getGalleryFiles().indexOf(g);
+                                    if (i1 >= 0) {
+                                        viewModel.getGalleryFiles().remove(i1);
+                                        galleryGridAdapter.notifyItemRemoved(i1);
+                                        galleryPagerAdapter.notifyItemRemoved(i1);
+                                    }
+                                }
+                            });
+                        } else {
+                            g.setFilesInDirectory(found);
+                            runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(finalI));
+                        }
                     }).start();
                 }
             }
