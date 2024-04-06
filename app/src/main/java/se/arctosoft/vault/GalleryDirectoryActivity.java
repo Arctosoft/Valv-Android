@@ -359,8 +359,22 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 if (g.isDirectory()) {
                     int finalI = i;
                     new Thread(() -> {
-                        g.setFilesInDirectory(FileStuff.getFilesInFolder(this, g.getUri()));
-                        runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(finalI));
+                        List<GalleryFile> found = FileStuff.getFilesInFolder(this, g.getUri());
+                        if (found.isEmpty()) {
+                            runOnUiThread(() -> {
+                                synchronized (LOCK) {
+                                    int i1 = viewModel.getGalleryFiles().indexOf(g);
+                                    if (i1 >= 0) {
+                                        viewModel.getGalleryFiles().remove(i1);
+                                        galleryGridAdapter.notifyItemRemoved(i1);
+                                        galleryPagerAdapter.notifyItemRemoved(i1);
+                                    }
+                                }
+                            });
+                        } else {
+                            g.setFilesInDirectory(found);
+                            runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(finalI));
+                        }
                     }).start();
                 }
             }
