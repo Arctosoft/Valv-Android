@@ -1,0 +1,3 @@
+* Fixade en bugg där radering av en fil i rutnätet alltid tog bort den första filen i rutnätet
+* Fix för att filer har fel filtillägg när de delas/öppnas med en annan app
+* Filnamnen är nu UTF-8 kodade. Det här åtgärdar frågetecken i vissa filnamn och exporterade filer

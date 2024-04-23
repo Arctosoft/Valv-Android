@@ -43,6 +43,7 @@ import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
@@ -268,7 +269,8 @@ public class Encryption {
                 throw new InvalidPasswordException("Invalid password");
             }
         }
-        StringBuilder sb = new StringBuilder();
+        ArrayList<Byte> bytes = new ArrayList<>();
+
         if (cipherInputStream.read() == 0x0A) {
             int count = 0;
             byte[] read = new byte[1];
@@ -276,7 +278,7 @@ public class Encryption {
                 if (read[0] == 0x0A) {
                     break;
                 }
-                sb.append(new String(read));
+                bytes.add(read[0]);
                 if (++count > 300) {
                     throw new IOException("Not valid file");
                 }
@@ -284,7 +286,11 @@ public class Encryption {
         } else {
             throw new IOException("Not valid file");
         }
-        return new Streams(cipherInputStream, secretKey, sb.toString());
+        byte[] arr = new byte[bytes.size()];
+        for (int i = 0; i < bytes.size(); i++) {
+            arr[i] = bytes.get(i);
+        }
+        return new Streams(cipherInputStream, secretKey, new String(arr, StandardCharsets.UTF_8));
     }
 
     private static Streams getCipherOutputStream(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, boolean isThumb, String sourceFileName) throws GeneralSecurityException, IOException {
@@ -310,7 +316,7 @@ public class Encryption {
         if (isThumb) {
             cipherOutputStream.write(checkBytes);
         }
-        cipherOutputStream.write(("\n" + sourceFileName + "\n").getBytes());
+        cipherOutputStream.write(("\n" + sourceFileName + "\n").getBytes(StandardCharsets.UTF_8));
         return new Streams(inputStream, cipherOutputStream, secretKey);
     }
 
@@ -332,7 +338,7 @@ public class Encryption {
         writeSaltAndIV(false, salt, ivBytes, null, fos);
         fos.flush();
         CipherOutputStream cipherOutputStream = new CipherOutputStream(fos, cipher);
-        cipherOutputStream.write(("\n" + sourceFileName + "\n").getBytes());
+        cipherOutputStream.write(("\n" + sourceFileName + "\n").getBytes(StandardCharsets.UTF_8));
         return new Streams(input, cipherOutputStream, secretKey);
     }
 

@@ -302,7 +302,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView.setOnClickListener(v -> onItemPressed(context));
         }
         if (galleryFile.getDecryptedCacheUri() == null) {
-            new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtension(galleryFile.getName()), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
+            new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
                 @Override
                 public void onUriResult(Uri outputUri) {
                     galleryFile.setDecryptedCacheUri(outputUri);
@@ -439,7 +439,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             shareOrOpenWith(context, galleryFile.getDecryptedCacheUri(), open);
         } else {
             Toaster.getInstance(context).showShort(context.getString(R.string.gallery_share_decrypting));
-            Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtension(galleryFile.getName()), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
+            Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
                 @Override
                 public void onUriResult(Uri outputUri) {
                     galleryFile.setDecryptedCacheUri(outputUri);
@@ -551,7 +551,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             } else {
                 holder.parentBinding.noteLayout.setVisibility(View.VISIBLE);
                 holder.parentBinding.note.setText(context.getString(R.string.gallery_loading_note));
-                Encryption.decryptToCache(context, galleryFile.getNoteUri(), FileStuff.getExtension(galleryFile.getName()), settings.getTempPassword(), new Encryption.IOnUriResult() {
+                Encryption.decryptToCache(context, galleryFile.getNoteUri(), FileStuff.getExtensionOrDefault(galleryFile), settings.getTempPassword(), new Encryption.IOnUriResult() {
                     @Override
                     public void onUriResult(Uri outputUri) { // decrypted, now read it
                         try {

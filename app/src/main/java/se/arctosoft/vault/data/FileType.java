@@ -26,17 +26,18 @@ import androidx.annotation.Nullable;
 import se.arctosoft.vault.encryption.Encryption;
 
 public enum FileType {
-    DIRECTORY(0, null),
-    IMAGE(1, Encryption.PREFIX_IMAGE_FILE),
-    GIF(2, Encryption.PREFIX_GIF_FILE),
-    VIDEO(3, Encryption.PREFIX_VIDEO_FILE);
+    DIRECTORY(0, null, null),
+    IMAGE(1, Encryption.PREFIX_IMAGE_FILE, ".jpg"),
+    GIF(2, Encryption.PREFIX_GIF_FILE, ".gif"),
+    VIDEO(3, Encryption.PREFIX_VIDEO_FILE, ".mp4");
 
     public final int i;
-    public final String encryptionPrefix;
+    public final String encryptionPrefix, extension;
 
-    FileType(int i, String encryptionPrefix) {
+    FileType(int i, String encryptionPrefix, String extension) {
         this.i = i;
         this.encryptionPrefix = encryptionPrefix;
+        this.extension = extension;
     }
 
     public static FileType fromFilename(@NonNull String name) {
