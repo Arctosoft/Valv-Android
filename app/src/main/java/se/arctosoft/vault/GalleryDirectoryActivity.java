@@ -236,10 +236,11 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                 }
                 Collections.sort(positionsDeleted);
                 runOnUiThread(() -> {
-                    for (int i = positionsDeleted.size() - 1; i >= 0; i--) {
-                        viewModel.getGalleryFiles().remove(i);
-                        galleryGridAdapter.notifyItemRemoved(i);
-                        galleryPagerAdapter.notifyItemRemoved(i);
+                    while (!positionsDeleted.isEmpty()) {
+                        int pos = positionsDeleted.remove(positionsDeleted.size() - 1);
+                        viewModel.getGalleryFiles().remove(pos);
+                        galleryGridAdapter.notifyItemRemoved(pos);
+                        galleryPagerAdapter.notifyItemRemoved(pos);
                     }
                     galleryGridAdapter.onSelectionModeChanged(false);
                     setLoading(false);
