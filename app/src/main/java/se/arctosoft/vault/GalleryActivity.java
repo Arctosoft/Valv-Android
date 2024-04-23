@@ -144,7 +144,7 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     private void handleSendSingle(Intent intent) {
-        Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
         if (uri != null) {
             List<Uri> list = new ArrayList<>(1);
             list.add(uri);
