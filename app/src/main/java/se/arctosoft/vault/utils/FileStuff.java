@@ -100,7 +100,7 @@ public class FileStuff {
 
         for (CursorFile file : documentFiles) {
             if (file.isDirectory()) {
-                galleryFiles.add(GalleryFile.asDirectory(file, null)); // TODO fix later
+                galleryFiles.add(GalleryFile.asDirectory(file, null));
                 continue;
             }
             file.setNameWithoutPrefix(FileStuff.getNameWithoutPrefix(file.getName()));
@@ -186,14 +186,12 @@ public class FileStuff {
     public static List<DocumentFile> getDocumentsFromDirectoryResult(Context context, @NonNull Intent data) {
         ClipData clipData = data.getClipData();
         List<Uri> uris = FileStuff.uriListFromClipData(clipData);
-        //Log.e(TAG, "getDocumentsFromDirectoryResult: got " + uris.size());
         if (uris.isEmpty()) {
             Uri dataUri = data.getData();
             if (dataUri != null) {
                 uris.add(dataUri);
             }
         }
-        //Log.e(TAG, "getDocumentsFromDirectoryResult: got " + uris.size());
         List<DocumentFile> documentFiles = new ArrayList<>();
         for (Uri uri : uris) {
             DocumentFile pickedFile = DocumentFile.fromSingleUri(context, uri);
@@ -257,5 +255,14 @@ public class FileStuff {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+    @Nullable
+    public static String getExtensionOrDefault(GalleryFile file) {
+        String extension = getExtension(file.getName());
+        if (extension != null) {
+            return extension;
+        }
+        return file.getFileType().extension;
     }
 }
