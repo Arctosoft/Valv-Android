@@ -30,10 +30,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 
+import androidx.activity.result.ActivityResult;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -57,11 +57,8 @@ import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.Toaster;
 import se.arctosoft.vault.viewmodel.GalleryViewModel;
 
-public class GalleryActivity extends AppCompatActivity {
+public class GalleryActivity extends BaseActivity {
     private static final String TAG = "GalleryActivity";
-    private static final int REQUEST_ADD_DIRECTORY = 1;
-    private static final int REQUEST_IMPORT_IMAGES = 3;
-    private static final int REQUEST_IMPORT_VIDEOS = 4;
 
     private static final Object LOCK = new Object();
 
@@ -178,7 +175,7 @@ public class GalleryActivity extends AppCompatActivity {
     }
 
     private void setClickListeners() {
-        binding.btnAddFolder.setOnClickListener(v -> startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), REQUEST_ADD_DIRECTORY));
+        binding.btnAddFolder.setOnClickListener(v -> activityLauncher.launch(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), this::addFolder));
         binding.btnImportFiles.setOnClickListener(v -> showImportOverlay(true));
         binding.btnRemoveFolder.setOnClickListener(v -> Dialogs.showConfirmationDialog(this, getString(R.string.dialog_remove_folder_title),
                 getResources().getQuantityString(R.plurals.dialog_remove_folder_message, galleryGridAdapter.getSelectedFiles().size()),
@@ -199,14 +196,59 @@ public class GalleryActivity extends AppCompatActivity {
                     galleryGridAdapter.onSelectionModeChanged(false);
                 }));
         binding.btnImportImages.setOnClickListener(v -> {
-            FileStuff.pickImageFiles(this, REQUEST_IMPORT_IMAGES);
+            FileStuff.pickImageFiles(activityLauncher, result -> onImportImagesOrVideos(result.getData()));
             showImportOverlay(false);
         });
         binding.btnImportVideos.setOnClickListener(v -> {
-            FileStuff.pickVideoFiles(this, REQUEST_IMPORT_VIDEOS);
+            FileStuff.pickVideoFiles(activityLauncher, result -> onImportImagesOrVideos(result.getData()));
             showImportOverlay(false);
         });
         binding.importChooseOverlay.setOnClickListener(v -> showImportOverlay(false));
+    }
+
+    private void onImportImagesOrVideos(@Nullable Intent data) {
+        if (data != null) {
+            List<DocumentFile> documentFiles = FileStuff.getDocumentsFromDirectoryResult(this, data);
+            if (!documentFiles.isEmpty()) {
+                importFiles(documentFiles);
+            }
+        }
+    }
+
+    private void addFolder(ActivityResult result) {
+        if (result.getResultCode() == Activity.RESULT_OK) {
+            Intent data = result.getData();
+            if (data != null) {
+                Uri uri = data.getData();
+                DocumentFile documentFile = DocumentFile.fromTreeUri(this, uri);
+                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                settings.addGalleryDirectory(documentFile.getUri(), new IOnDirectoryAdded() {
+                    @Override
+                    public void onAddedAsRoot() {
+                        Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder, FileStuff.getFilenameWithPathFromUri(uri)));
+                        addDirectory(documentFile.getUri());
+                    }
+
+                    @Override
+                    public void onAddedAsChildOf(@NonNull Uri parentUri) {
+                        Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder_child, FileStuff.getFilenameWithPathFromUri(uri), FileStuff.getFilenameWithPathFromUri(parentUri)));
+                    }
+
+                    @Override
+                    public void onAlreadyExists(boolean isRootDir) {
+                        Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder_duplicate, FileStuff.getFilenameWithPathFromUri(uri)));
+                        if (isRootDir) {
+                            findFolders();
+                        }
+                    }
+                });
+                if (viewModel.getFilesToAdd() != null) {
+                    importFiles(viewModel.getFilesToAdd());
+                }
+            }
+        } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
+            viewModel.setFilesToAdd(null);
+        }
     }
 
     private void showImportOverlay(boolean show) {
@@ -252,52 +294,6 @@ public class GalleryActivity extends AppCompatActivity {
             }
             addDirectories(uriFiles);
         }).start();
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_ADD_DIRECTORY) {
-            if (resultCode == Activity.RESULT_OK) {
-                if (data != null) {
-                    Uri uri = data.getData();
-                    DocumentFile documentFile = DocumentFile.fromTreeUri(this, uri);
-                    getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                    settings.addGalleryDirectory(documentFile.getUri(), new IOnDirectoryAdded() {
-                        @Override
-                        public void onAddedAsRoot() {
-                            Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder, FileStuff.getFilenameWithPathFromUri(uri)));
-                            addDirectory(documentFile.getUri());
-                        }
-
-                        @Override
-                        public void onAddedAsChildOf(@NonNull Uri parentUri) {
-                            Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder_child, FileStuff.getFilenameWithPathFromUri(uri), FileStuff.getFilenameWithPathFromUri(parentUri)));
-                        }
-
-                        @Override
-                        public void onAlreadyExists(boolean isRootDir) {
-                            Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_added_folder_duplicate, FileStuff.getFilenameWithPathFromUri(uri)));
-                            if (isRootDir) {
-                                findFolders();
-                            }
-                        }
-                    });
-                    if (viewModel.getFilesToAdd() != null) {
-                        importFiles(viewModel.getFilesToAdd());
-                    }
-                }
-            } else if (resultCode == Activity.RESULT_CANCELED) {
-                viewModel.setFilesToAdd(null);
-            }
-        } else if ((requestCode == REQUEST_IMPORT_IMAGES || requestCode == REQUEST_IMPORT_VIDEOS) && resultCode == Activity.RESULT_OK) {
-            if (data != null) {
-                List<DocumentFile> documentFiles = FileStuff.getDocumentsFromDirectoryResult(this, data);
-                if (!documentFiles.isEmpty()) {
-                    importFiles(documentFiles);
-                }
-            }
-        }
     }
 
     private void importFiles(List<DocumentFile> documentFiles) {

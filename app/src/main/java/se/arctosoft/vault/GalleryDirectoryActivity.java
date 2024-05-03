@@ -18,6 +18,7 @@
 
 package se.arctosoft.vault;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -33,7 +34,6 @@ import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.RecyclerView;
@@ -54,13 +54,14 @@ import se.arctosoft.vault.databinding.ActivityGalleryDirectoryBinding;
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.encryption.Password;
 import se.arctosoft.vault.exception.InvalidPasswordException;
+import se.arctosoft.vault.interfaces.IOnDirectoryAdded;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.Toaster;
 import se.arctosoft.vault.viewmodel.GalleryDirectoryViewModel;
 
-public class GalleryDirectoryActivity extends AppCompatActivity {
+public class GalleryDirectoryActivity extends BaseActivity {
     private static final String TAG = "GalleryDirectoryActivity";
     private static final Object LOCK = new Object();
     public static final String EXTRA_DIRECTORY = "d";
@@ -558,6 +559,12 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
         } else if (id == R.id.export_selected) {
             exportSelected();
             return true;
+        } else if (id == R.id.copy_selected) {
+            copySelected();
+            return true;
+        } else if (id == R.id.move_selected) {
+            moveSelected();
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -611,6 +618,153 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
                     }
                 });
             }).start();
+        });
+    }
+
+    private void copySelected() {
+        final List<GalleryFile> galleryFilesCopy = new ArrayList<>(galleryGridAdapter.getSelectedFiles());
+        isExporting = true;
+        Dialogs.showCopyMoveChooseDestinationDialog(this, settings, galleryFilesCopy.size(), new Dialogs.IOnDirectorySelected() {
+            @Override
+            public void onDirectorySelected(@NonNull DocumentFile directory, boolean deleteOriginal) {
+                setLoadingWithProgress(0, 0, galleryFilesCopy.size(), R.string.gallery_copying_progress);
+                galleryGridAdapter.onSelectionModeChanged(false);
+                new Thread(() -> {
+                    final int[] copied = {0};
+                    final int[] failed = {0};
+                    for (GalleryFile f : galleryFilesCopy) {
+                        if (isFinishing() || isDestroyed() || !isExporting) {
+                            break;
+                        }
+                        boolean success = FileStuff.copyTo(GalleryDirectoryActivity.this, f, directory);
+                        if (success) {
+                            copied[0]++;
+                        } else {
+                            failed[0]++;
+                        }
+                        runOnUiThread(() -> setLoadingWithProgress(copied[0], failed[0], galleryFilesCopy.size(), R.string.gallery_copying_progress));
+                    }
+                    runOnUiThread(() -> {
+                        isExporting = false;
+                        setLoading(false);
+                        if (failed[0] == 0) {
+                            Toaster.getInstance(GalleryDirectoryActivity.this).showLong(getString(R.string.gallery_selected_files_copied, copied[0]));
+                        } else {
+                            Toaster.getInstance(GalleryDirectoryActivity.this).showLong(getString(R.string.gallery_selected_files_copied_with_failed, copied[0], failed[0]));
+                        }
+                    });
+                }).start();
+            }
+
+            @Override
+            public void onOtherDirectory() {
+                isExporting = false;
+                onCopyMoveDirectoryAdded(new IOnDirectoryAdded() {
+                    @Override
+                    public void onAddedAsRoot() {
+                        copySelected();
+                    }
+
+                    @Override
+                    public void onAddedAsChildOf(@NonNull Uri parentUri) {
+                        copySelected();
+                    }
+
+                    @Override
+                    public void onAlreadyExists(boolean isRootDir) {
+                        copySelected();
+                    }
+                });
+            }
+        });
+    }
+
+    private void moveSelected() {
+        final List<GalleryFile> galleryFilesCopy = new ArrayList<>(galleryGridAdapter.getSelectedFiles());
+        isExporting = true;
+        Dialogs.showCopyMoveChooseDestinationDialog(this, settings, galleryFilesCopy.size(), new Dialogs.IOnDirectorySelected() {
+            @Override
+            public void onDirectorySelected(@NonNull DocumentFile directory, boolean deleteOriginal) {
+                setLoadingWithProgress(0, 0, galleryFilesCopy.size(), R.string.gallery_copying_progress);
+                galleryGridAdapter.onSelectionModeChanged(false);
+                new Thread(() -> {
+                    final int[] moved = {0};
+                    final int[] failed = {0};
+                    List<GalleryFile> removed = new ArrayList<>();
+                    for (GalleryFile f : galleryFilesCopy) {
+                        if (isFinishing() || isDestroyed() || !isExporting) {
+                            break;
+                        }
+                        boolean success = FileStuff.moveTo(GalleryDirectoryActivity.this, f, directory);
+                        if (success) {
+                            boolean deleted = FileStuff.deleteFile(GalleryDirectoryActivity.this, f.getUri());
+                            FileStuff.deleteFile(GalleryDirectoryActivity.this, f.getThumbUri());
+                            FileStuff.deleteFile(GalleryDirectoryActivity.this, f.getNoteUri());
+                            moved[0]++;
+                            removed.add(f);
+                        } else {
+                            failed[0]++;
+                        }
+                        runOnUiThread(() -> setLoadingWithProgress(moved[0], failed[0], galleryFilesCopy.size(), R.string.gallery_moving_progress));
+                    }
+                    runOnUiThread(() -> {
+                        isExporting = false;
+                        setLoading(false);
+                        if (failed[0] == 0) {
+                            Toaster.getInstance(GalleryDirectoryActivity.this).showLong(getString(R.string.gallery_selected_files_moved, moved[0]));
+                        } else {
+                            Toaster.getInstance(GalleryDirectoryActivity.this).showLong(getString(R.string.gallery_selected_files_moved_with_failed, moved[0], failed[0]));
+                        }
+                        synchronized (LOCK) {
+                            for (GalleryFile galleryFile : removed) {
+                                int index = viewModel.getGalleryFiles().indexOf(galleryFile);
+                                if (index >= 0) {
+                                    viewModel.getGalleryFiles().remove(index);
+                                    galleryGridAdapter.notifyItemRemoved(index);
+                                    galleryPagerAdapter.notifyItemRemoved(index);
+                                }
+                            }
+                        }
+                    });
+                }).start();
+            }
+
+            @Override
+            public void onOtherDirectory() {
+                isExporting = false;
+                onCopyMoveDirectoryAdded(new IOnDirectoryAdded() {
+                    @Override
+                    public void onAddedAsRoot() {
+                        moveSelected();
+                    }
+
+                    @Override
+                    public void onAddedAsChildOf(@NonNull Uri parentUri) {
+                        moveSelected();
+                    }
+
+                    @Override
+                    public void onAlreadyExists(boolean isRootDir) {
+                        moveSelected();
+                    }
+                });
+            }
+        });
+    }
+
+    private void onCopyMoveDirectoryAdded(IOnDirectoryAdded iOnDirectoryAdded) {
+        activityLauncher.launch(new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), result -> {
+            if (result.getResultCode() == Activity.RESULT_OK) {
+                Intent data = result.getData();
+                if (data != null && data.getData() != null) {
+                    Uri uri = data.getData();
+                    DocumentFile documentFile = DocumentFile.fromTreeUri(GalleryDirectoryActivity.this, uri);
+                    getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    settings.addGalleryDirectory(documentFile.getUri(), iOnDirectoryAdded);
+                }
+            } else if (result.getResultCode() == Activity.RESULT_CANCELED) {
+                galleryGridAdapter.onSelectionModeChanged(false);
+            }
         });
     }
 

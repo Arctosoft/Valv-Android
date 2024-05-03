@@ -79,6 +79,31 @@ public class Dialogs {
         binding.recycler.setAdapter(adapter);
     }
 
+    public static void showCopyMoveChooseDestinationDialog(FragmentActivity context, Settings settings, int fileCount, IOnDirectorySelected onDirectorySelected) {
+        List<Uri> directories = settings.getGalleryDirectoriesAsUri(false);
+        String[] names = new String[directories.size()];
+        for (int i = 0; i < names.length; i++) {
+            names[i] = FileStuff.getFilenameWithPathFromUri(directories.get(i));
+        }
+
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(context.getString(R.string.dialog_import_to_title))
+                .setItems(names, (dialog, which) -> {
+                    Uri uri = directories.get(which);
+                    DocumentFile directory = DocumentFile.fromTreeUri(context, uri);
+                    if (directory == null || !directory.isDirectory() || !directory.exists()) {
+                        settings.removeGalleryDirectory(uri);
+                        Toaster.getInstance(context).showLong(context.getString(R.string.directory_does_not_exist));
+                        showCopyMoveChooseDestinationDialog(context, settings, fileCount, onDirectorySelected);
+                    } else {
+                        onDirectorySelected.onDirectorySelected(directory, false);
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .setNeutralButton(R.string.dialog_import_to_button_neutral, (dialog, which) -> onDirectorySelected.onOtherDirectory())
+                .show();
+    }
+
     public interface IOnDirectorySelected {
         void onDirectorySelected(@NonNull DocumentFile directory, boolean deleteOriginal);
 

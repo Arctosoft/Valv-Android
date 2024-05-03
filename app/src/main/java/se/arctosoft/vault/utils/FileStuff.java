@@ -24,17 +24,21 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
+import android.util.Log;
 
+import androidx.activity.result.ActivityResult;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
-import androidx.fragment.app.FragmentActivity;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -122,21 +126,21 @@ public class FileStuff {
         return null;
     }
 
-    public static void pickImageFiles(@NonNull FragmentActivity context, int requestCode) {
-        pickFiles(context, requestCode, "image/*");
+    public static void pickImageFiles(@NonNull BetterActivityResult<Intent, ActivityResult> activityLauncher, BetterActivityResult.OnActivityResult<ActivityResult> onActivityResult) {
+        pickFiles(activityLauncher, "image/*", onActivityResult);
     }
 
-    private static void pickFiles(@NonNull FragmentActivity context, int requestCode, String mimeType) {
+    public static void pickVideoFiles(@NonNull BetterActivityResult<Intent, ActivityResult> activityLauncher, BetterActivityResult.OnActivityResult<ActivityResult> onActivityResult) {
+        pickFiles(activityLauncher, "video/*", onActivityResult);
+    }
+
+    private static void pickFiles(BetterActivityResult<Intent, ActivityResult> activityLauncher, String mimeType, BetterActivityResult.OnActivityResult<ActivityResult> onActivityResult) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(mimeType);
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
 
-        context.startActivityForResult(intent, requestCode);
-    }
-
-    public static void pickVideoFiles(@NonNull FragmentActivity context, int requestCode) {
-        pickFiles(context, requestCode, "video/*");
+        activityLauncher.launch(intent, onActivityResult);
     }
 
     @NonNull
@@ -264,5 +268,72 @@ public class FileStuff {
             return extension;
         }
         return file.getFileType().extension;
+    }
+
+    public static boolean copyTo(Context context, GalleryFile sourceFile, DocumentFile directory) {
+        if (sourceFile.getUri().getLastPathSegment().equals(directory.getUri().getLastPathSegment() + "/" + sourceFile.getEncryptedName())) {
+            Log.e(TAG, "moveTo: can't copy " + sourceFile.getUri().getLastPathSegment() + " to the same folder");
+            return false;
+        }
+        String generatedName = StringStuff.getRandomFileName();
+        DocumentFile file = directory.createFile("", sourceFile.getFileType().encryptionPrefix + generatedName);
+        DocumentFile thumbFile = sourceFile.getThumbUri() == null ? null : directory.createFile("", Encryption.PREFIX_THUMB + generatedName);
+        DocumentFile noteFile = sourceFile.getNoteUri() == null ? null : directory.createFile("", Encryption.PREFIX_NOTE_FILE + generatedName);
+
+        if (file == null) {
+            Log.e(TAG, "copyTo: could not create file from " + sourceFile.getUri());
+            return false;
+        }
+        if (thumbFile != null) {
+            writeTo(context, sourceFile.getThumbUri(), thumbFile.getUri());
+        }
+        if (noteFile != null) {
+            writeTo(context, sourceFile.getNoteUri(), noteFile.getUri());
+        }
+        return writeTo(context, sourceFile.getUri(), file.getUri());
+    }
+
+    public static boolean moveTo(Context context, GalleryFile sourceFile, DocumentFile directory) {
+        if (sourceFile.getUri().getLastPathSegment().equals(directory.getUri().getLastPathSegment() + "/" + sourceFile.getEncryptedName())) {
+            Log.e(TAG, "moveTo: can't move " + sourceFile.getUri().getLastPathSegment() + " to the same folder");
+            return false;
+        }
+        DocumentFile file = directory.createFile("", sourceFile.getEncryptedName());
+        DocumentFile thumbFile = sourceFile.getThumbUri() == null ? null : directory.createFile("", Encryption.PREFIX_THUMB + sourceFile.getEncryptedName().split("-", 2)[1]);
+        DocumentFile noteFile = sourceFile.getNoteUri() == null ? null : directory.createFile("", Encryption.PREFIX_NOTE_FILE + sourceFile.getEncryptedName().split("-", 2)[1]);
+
+        if (file == null) {
+            Log.e(TAG, "moveTo: could not create file from " + sourceFile.getUri());
+            return false;
+        }
+        if (thumbFile != null) {
+            writeTo(context, sourceFile.getThumbUri(), thumbFile.getUri());
+        }
+        if (noteFile != null) {
+            writeTo(context, sourceFile.getNoteUri(), noteFile.getUri());
+        }
+        return writeTo(context, sourceFile.getUri(), file.getUri());
+    }
+
+    private static boolean writeTo(Context context, Uri src, Uri dest) {
+        try {
+            InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(src), 1024 * 32);
+            OutputStream outputStream = new BufferedOutputStream(context.getContentResolver().openOutputStream(dest));
+            int read;
+            byte[] buffer = new byte[2048];
+            while ((read = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, read);
+            }
+            try {
+                outputStream.close();
+                inputStream.close();
+            } catch (IOException ignored) {
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "writeTo: failed to write: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+        return true;
     }
 }
