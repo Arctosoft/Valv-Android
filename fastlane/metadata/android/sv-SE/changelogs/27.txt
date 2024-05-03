@@ -1,0 +1,3 @@
+* Kopiera och flytta valda filer i rutnätet
+* Fixade en bugg där nya mappar inte syntes
+* Fixade en krasch vid export av valda filer i Alla-mappen

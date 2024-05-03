@@ -21,4 +21,14 @@
         android:icon="@drawable/ic_outline_file_download_24"
         android:title="@string/gallery_export_selected_files"
         app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/copy_selected"
+        android:icon="@drawable/outline_file_copy_24"
+        android:title="@string/gallery_copy_selected_files"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/move_selected"
+        android:icon="@drawable/outline_drive_file_move_24"
+        android:title="@string/gallery_move_selected_files"
+        app:showAsAction="ifRoom"/>
 </menu>

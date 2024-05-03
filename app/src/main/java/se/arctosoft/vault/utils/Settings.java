@@ -96,11 +96,12 @@ public class Settings {
         List<StoredDirectory> directories = getGalleryDirectories(false);
         boolean isRootDir = true;
         Uri parentFolder = null;
+        final String newLast = uri.getLastPathSegment() + "/";
         for (StoredDirectory storedDirectory : directories) {
             if (!storedDirectory.isRootDir()) {
                 continue;
             }
-            if (!uri.equals(storedDirectory.getUri()) && uri.getLastPathSegment().startsWith(storedDirectory.getUri().getLastPathSegment())) { // prevent adding a child of an already added folder
+            if (!uri.equals(storedDirectory.getUri()) && newLast.startsWith(storedDirectory.getUri().getLastPathSegment() + "/")) { // prevent adding a child of an already added folder
                 isRootDir = false;
                 parentFolder = storedDirectory.getUri();
                 break;
@@ -190,7 +191,7 @@ public class Settings {
         return storedDirectories;
     }
 
-    public void setShowFilenames(boolean show)  {
+    public void setShowFilenames(boolean show) {
         getSharedPrefsEditor().putBoolean(PREF_SHOW_FILENAMES_IN_GRID, show).apply();
     }
 
