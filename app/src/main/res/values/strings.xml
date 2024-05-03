@@ -99,6 +99,7 @@
     <string name="dialog_export_message">Decrypt and export this file?</string>
     <string name="dialog_export_selected_title">Export?</string>
     <string name="dialog_export_selected_message">Decrypt and export the selected files?\n\nDestination: %1$s</string>
+    <string name="dialog_export_selected_message_all_folder">Decrypt and export the selected files?</string>
     <string name="dialog_delete_file_title">Delete?</string>
     <string name="dialog_delete_file_message">Delete this file permanently?</string>
     <string name="dialog_about_title">About</string>

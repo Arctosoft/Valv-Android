@@ -569,7 +569,8 @@ public class GalleryDirectoryActivity extends AppCompatActivity {
     }
 
     private void exportSelected() {
-        Dialogs.showConfirmationDialog(this, getString(R.string.dialog_export_selected_title), getString(R.string.dialog_export_selected_message, FileStuff.getFilenameWithPathFromUri(currentDirectory)), (dialog, which) -> {
+        Dialogs.showConfirmationDialog(this, getString(R.string.dialog_export_selected_title), isAllFolder ? getString(R.string.dialog_export_selected_message_all_folder)
+                : getString(R.string.dialog_export_selected_message, FileStuff.getFilenameWithPathFromUri(currentDirectory)), (dialog, which) -> {
             isExporting = true;
             final List<GalleryFile> galleryFilesCopy = new ArrayList<>(galleryGridAdapter.getSelectedFiles());
             setLoadingWithProgress(0, 0, galleryFilesCopy.size(), R.string.gallery_exporting_progress);
