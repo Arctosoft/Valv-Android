@@ -11,6 +11,7 @@
     <string name="delete">Delete</string>
     <string name="export">Export</string>
     <string name="add_edit_note">Add/edit note</string>
+    <string name="edit_text">Edit text</string>
     <string name="share">Share</string>
     <string name="open_with">Open with</string>
     <string name="more">More</string>
@@ -27,7 +28,18 @@
     <string name="menu_gallery_edit_included_folders">Edit included folders</string>
     <string name="menu_gallery_import">Import files</string>
     <string name="menu_lock_vault">Lock vault</string>
+    <string name="menu_order_by">Order by</string>
+    <string name="menu_order_by_newest_first">Newest first</string>
+    <string name="menu_order_by_oldest_first">Oldest first</string>
+    <string name="menu_order_by_largest_first">Largest first</string>
+    <string name="menu_order_by_smallest_first">Smallest first</string>
     <string name="menu_toggle_filename">Toggle filename visibility</string>
+    <string name="menu_filter">Filter</string>
+    <string name="menu_filter_all">Show all</string>
+    <string name="menu_filter_images">Only images</string>
+    <string name="menu_filter_gifs">Only GIFs</string>
+    <string name="menu_filter_videos">Only videos</string>
+    <string name="menu_filter_text">Only text files</string>
     <string name="menu_select_all">Select all</string>
     <string name="menu_about">About</string>
 
@@ -41,6 +53,11 @@
     <string name="gallery_import_files">Import files</string>
     <string name="gallery_import_images">Images/GIFs</string>
     <string name="gallery_import_videos">Videos</string>
+    <string name="gallery_import_text_write">Text (write)</string>
+    <string name="gallery_import_text_title">Write text to import</string>
+    <string name="gallery_import_text_import">Import</string>
+    <string name="gallery_import_text_overwrite">Overwrite</string>
+    <string name="gallery_import_text_hint">Text…</string>
     <string name="gallery_remove_selected_folders">Remove selected folders</string>
     <string name="gallery_delete_selected_files">Delete %1$d selected files</string>
     <string name="gallery_export_selected_files">Export selected</string>
@@ -71,6 +88,8 @@
     <string name="gallery_loading_note">Decrypting note</string>
     <string name="gallery_note_decrypt_failed">Failed to decrypt note: %1$s</string>
     <string name="gallery_note_read_failed">Failed to read note: %1$s</string>
+    <string name="gallery_file_decrypt_failed">Failed to decrypt file: %1$s</string>
+    <string name="gallery_file_read_failed">Failed to read file: %1$s</string>
     <string name="gallery_note_edit_hint">Note text</string>
     <string name="gallery_note_save">Save note</string>
     <string name="gallery_note_delete">Delete note</string>

@@ -34,11 +34,11 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private final FileType fileType;
     private final String encryptedName, name;
     private final boolean isDirectory, isAllFolder;
-    private final Uri fileUri;
+    private Uri fileUri;
     private final long lastModified, size;
     private Uri thumbUri, noteUri, decryptedCacheUri;
     private List<GalleryFile> filesInDirectory;
-    private String originalName, nameWithPath, note;
+    private String originalName, nameWithPath, note, text;
 
     private GalleryFile(String name) {
         this.fileUri = null;
@@ -135,6 +135,10 @@ public class GalleryFile implements Comparable<GalleryFile> {
         return FileType.GIF == fileType;
     }
 
+    public boolean isText() {
+        return FileType.TEXT == fileType;
+    }
+
     public long getSize() {
         return size;
     }
@@ -185,6 +189,10 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.noteUri = noteUri;
     }
 
+    public void setFileUri(@NonNull Uri fileUri) {
+        this.fileUri = fileUri;
+    }
+
     @Nullable
     public String getNote() {
         return note;
@@ -192,6 +200,15 @@ public class GalleryFile implements Comparable<GalleryFile> {
 
     public void setNote(@Nullable String note) {
         this.note = note;
+    }
+
+    @Nullable
+    public String getText() {
+        return text;
+    }
+
+    public void setText(@Nullable String text) {
+        this.text = text;
     }
 
     public boolean hasThumb() {

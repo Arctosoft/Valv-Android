@@ -26,6 +26,7 @@ import java.util.List;
 
 public class GalleryViewModel extends ViewModel {
     private List<DocumentFile> filesToAdd;
+    private String textToImport;
 
     public void setFilesToAdd(@Nullable List<DocumentFile> filesToAdd) {
         this.filesToAdd = filesToAdd;
@@ -34,5 +35,14 @@ public class GalleryViewModel extends ViewModel {
     @Nullable
     public List<DocumentFile> getFilesToAdd() {
         return filesToAdd;
+    }
+
+    public void setTextToImport(String textToImport) {
+        this.textToImport = textToImport;
+    }
+
+    @Nullable
+    public String getTextToImport() {
+        return textToImport;
     }
 }

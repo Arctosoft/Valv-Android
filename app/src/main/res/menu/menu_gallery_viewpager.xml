@@ -9,4 +9,7 @@
     <item
         android:id="@+id/edit_note"
         android:title="@string/add_edit_note" />
+    <item
+        android:id="@+id/edit_text"
+        android:title="@string/edit_text" />
 </menu>

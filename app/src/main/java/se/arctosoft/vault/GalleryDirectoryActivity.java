@@ -18,6 +18,7 @@
 
 package se.arctosoft.vault;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -42,6 +43,7 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -49,6 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import se.arctosoft.vault.adapters.GalleryGridAdapter;
 import se.arctosoft.vault.adapters.GalleryPagerAdapter;
+import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.databinding.ActivityGalleryDirectoryBinding;
 import se.arctosoft.vault.encryption.Encryption;
@@ -68,6 +71,15 @@ public class GalleryDirectoryActivity extends BaseActivity {
     public static final String EXTRA_NESTED_PATH = "n";
     public static final String EXTRA_IS_ALL = "a";
     private static final int MIN_FILES_FOR_FAST_SCROLL = 60;
+    private static final int ORDER_BY_NEWEST = 0;
+    private static final int ORDER_BY_OLDEST = 1;
+    private static final int ORDER_BY_LARGEST = 2;
+    private static final int ORDER_BY_SMALLEST = 3;
+    private static final int FILTER_ALL = 0;
+    private static final int FILTER_IMAGES = FileType.IMAGE.i;
+    private static final int FILTER_GIFS = FileType.GIF.i;
+    private static final int FILTER_VIDEOS = FileType.VIDEO.i;
+    private static final int FILTER_TEXTS = FileType.TEXT.i;
 
     private ActivityGalleryDirectoryBinding binding;
     private GalleryDirectoryViewModel viewModel;
@@ -84,6 +96,7 @@ public class GalleryDirectoryActivity extends BaseActivity {
     private boolean isAllFolder = false;
 
     private int foundFiles = 0, foundFolders = 0;
+    private int orderBy = ORDER_BY_NEWEST;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -192,6 +205,11 @@ public class GalleryDirectoryActivity extends BaseActivity {
 
     public void onSelectionChanged(int selected) {
         binding.btnDeleteFiles.setText(getString(R.string.gallery_delete_selected_files, selected));
+    }
+
+    public void onItemChanged(int position) {
+        galleryGridAdapter.notifyItemChanged(position);
+        galleryPagerAdapter.notifyItemChanged(position);
     }
 
     private void deleteSelectedFiles() {
@@ -565,6 +583,33 @@ public class GalleryDirectoryActivity extends BaseActivity {
         } else if (id == R.id.move_selected) {
             moveSelected();
             return true;
+        } else if (id == R.id.order_by_newest_first) {
+            orderBy(ORDER_BY_NEWEST);
+            return true;
+        } else if (id == R.id.order_by_oldest_first) {
+            orderBy(ORDER_BY_OLDEST);
+            return true;
+        } else if (id == R.id.order_by_largest_first) {
+            orderBy(ORDER_BY_LARGEST);
+            return true;
+        } else if (id == R.id.order_by_smallest_first) {
+            orderBy(ORDER_BY_SMALLEST);
+            return true;
+        } else if (id == R.id.filter_all) {
+            filterBy(FILTER_ALL);
+            return true;
+        } else if (id == R.id.filter_images) {
+            filterBy(FILTER_IMAGES);
+            return true;
+        } else if (id == R.id.filter_gifs) {
+            filterBy(FILTER_GIFS);
+            return true;
+        } else if (id == R.id.filter_videos) {
+            filterBy(FILTER_VIDEOS);
+            return true;
+        } else if (id == R.id.filter_text) {
+            filterBy(FILTER_TEXTS);
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -573,6 +618,86 @@ public class GalleryDirectoryActivity extends BaseActivity {
         Password.lock(this, settings);
         finishAffinity();
         startActivity(new Intent(this, LaunchActivity.class));
+    }
+
+    private void orderBy(int order) {
+        this.orderBy = order;
+        new Thread(() -> {
+            synchronized (LOCK) {
+                List<GalleryFile> galleryFiles = viewModel.getGalleryFiles();
+                if (order == ORDER_BY_NEWEST) {
+                    galleryFiles.sort((o1, o2) -> {
+                        if (o1.getLastModified() > o2.getLastModified()) {
+                            return -1;
+                        } else if (o1.getLastModified() < o2.getLastModified()) {
+                            return 1;
+                        }
+                        return 0;
+                    });
+                } else if (order == ORDER_BY_OLDEST) {
+                    galleryFiles.sort((o1, o2) -> {
+                        if (o1.getLastModified() > o2.getLastModified()) {
+                            return 1;
+                        } else if (o1.getLastModified() < o2.getLastModified()) {
+                            return -1;
+                        }
+                        return 0;
+                    });
+                } else if (order == ORDER_BY_LARGEST) {
+                    galleryFiles.sort((o1, o2) -> {
+                        if (o1.getSize() > o2.getSize()) {
+                            return -1;
+                        } else if (o1.getSize() < o2.getSize()) {
+                            return 1;
+                        }
+                        return 0;
+                    });
+                } else {
+                    galleryFiles.sort((o1, o2) -> {
+                        if (o1.getSize() > o2.getSize()) {
+                            return 1;
+                        } else if (o1.getSize() < o2.getSize()) {
+                            return -1;
+                        }
+                        return 0;
+                    });
+                }
+                runOnUiThread(() -> {
+                    int size = viewModel.getGalleryFiles().size();
+                    galleryGridAdapter.notifyItemRangeChanged(0, size);
+                    galleryPagerAdapter.notifyItemRangeChanged(0, size);
+                });
+            }
+        }).start();
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private void filterBy(int filter) {
+        new Thread(() -> {
+            synchronized (LOCK) {
+                List<GalleryFile> hiddenFiles = viewModel.getHiddenFiles();
+                List<GalleryFile> galleryFiles = viewModel.getGalleryFiles();
+                if (!hiddenFiles.isEmpty()) {
+                    viewModel.getGalleryFiles().addAll(hiddenFiles);
+                    hiddenFiles.clear();
+                }
+                if (filter != FILTER_ALL) {
+                    Iterator<GalleryFile> it = galleryFiles.iterator();
+                    while (it.hasNext()) {
+                        GalleryFile f = it.next();
+                        if (!f.isDirectory() && f.getFileType().i != filter) {
+                            it.remove();
+                            hiddenFiles.add(f);
+                        }
+                    }
+                    runOnUiThread(() -> {
+                        galleryGridAdapter.notifyDataSetChanged();
+                        galleryPagerAdapter.notifyDataSetChanged();
+                    });
+                }
+                orderBy(this.orderBy);
+            }
+        }).start();
     }
 
     private void exportSelected() {
@@ -771,9 +896,13 @@ public class GalleryDirectoryActivity extends BaseActivity {
     @Override
     public boolean onCreateOptionsMenu(@NonNull Menu menu) {
         getMenuInflater().inflate(R.menu.menu_gallery_directory, menu);
+        menu.findItem(R.id.order_by).setVisible(!inSelectionMode);
+        menu.findItem(R.id.filter).setVisible(!inSelectionMode);
         menu.findItem(R.id.toggle_filename).setVisible(!inSelectionMode);
         menu.findItem(R.id.select_all).setVisible(inSelectionMode);
         menu.findItem(R.id.export_selected).setVisible(inSelectionMode);
+        menu.findItem(R.id.copy_selected).setVisible(inSelectionMode);
+        menu.findItem(R.id.move_selected).setVisible(inSelectionMode);
         return super.onCreateOptionsMenu(menu);
     }
 

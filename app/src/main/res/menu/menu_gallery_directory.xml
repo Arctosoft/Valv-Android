@@ -5,7 +5,50 @@
         android:id="@+id/lock"
         android:icon="@drawable/ic_outline_lock_24"
         android:title="@string/menu_lock_vault"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/order_by"
+        android:icon="@drawable/round_sort_24"
+        android:title="@string/menu_order_by"
+        app:showAsAction="ifRoom">
+        <menu>
+            <item
+                android:id="@+id/order_by_newest_first"
+                android:title="@string/menu_order_by_newest_first" />
+            <item
+                android:id="@+id/order_by_oldest_first"
+                android:title="@string/menu_order_by_oldest_first" />
+            <item
+                android:id="@+id/order_by_largest_first"
+                android:title="@string/menu_order_by_largest_first" />
+            <item
+                android:id="@+id/order_by_smallest_first"
+                android:title="@string/menu_order_by_smallest_first" />
+        </menu>
+    </item>
+    <item
+        android:id="@+id/filter"
+        android:icon="@drawable/round_filter_list_24"
+        android:title="@string/menu_filter"
+        app:showAsAction="ifRoom">
+        <menu>
+            <item
+                android:id="@+id/filter_all"
+                android:title="@string/menu_filter_all" />
+            <item
+                android:id="@+id/filter_images"
+                android:title="@string/menu_filter_images" />
+            <item
+                android:id="@+id/filter_gifs"
+                android:title="@string/menu_filter_gifs" />
+            <item
+                android:id="@+id/filter_videos"
+                android:title="@string/menu_filter_videos" />
+            <item
+                android:id="@+id/filter_text"
+                android:title="@string/menu_filter_text" />
+        </menu>
+    </item>
     <item
         android:id="@+id/toggle_filename"
         android:icon="@drawable/ic_round_view_compact_24"
@@ -20,15 +63,15 @@
         android:id="@+id/export_selected"
         android:icon="@drawable/ic_outline_file_download_24"
         android:title="@string/gallery_export_selected_files"
-        app:showAsAction="ifRoom"/>
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/copy_selected"
         android:icon="@drawable/outline_file_copy_24"
         android:title="@string/gallery_copy_selected_files"
-        app:showAsAction="ifRoom"/>
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/move_selected"
         android:icon="@drawable/outline_drive_file_move_24"
         android:title="@string/gallery_move_selected_files"
-        app:showAsAction="ifRoom"/>
+        app:showAsAction="ifRoom" />
 </menu>

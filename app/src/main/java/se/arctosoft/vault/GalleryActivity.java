@@ -203,7 +203,36 @@ public class GalleryActivity extends BaseActivity {
             FileStuff.pickVideoFiles(activityLauncher, result -> onImportImagesOrVideos(result.getData()));
             showImportOverlay(false);
         });
+        binding.btnImportTextWrite.setOnClickListener(v -> {
+            Dialogs.showImportTextDialog(this, null, false, text -> {
+                if (text != null && !text.isBlank()) {
+                    importText(text);
+                }
+            });
+            showImportOverlay(false);
+        });
         binding.importChooseOverlay.setOnClickListener(v -> showImportOverlay(false));
+    }
+
+    private void importText(@NonNull String text) {
+        Dialogs.showImportTextChooseDestinationDialog(this, settings, new Dialogs.IOnDirectorySelected() {
+            @Override
+            public void onDirectorySelected(@NonNull DocumentFile directory, boolean deleteOriginal) {
+                DocumentFile createdFile = Encryption.importTextToDirectory(GalleryActivity.this, text, null, directory, settings);
+                if (createdFile != null) {
+                    Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_done, 1));
+                } else {
+                    Toaster.getInstance(GalleryActivity.this).showLong(getString(R.string.gallery_importing_error));
+                }
+            }
+
+            @Override
+            public void onOtherDirectory() {
+                viewModel.setTextToImport(text);
+                binding.btnAddFolder.performClick();
+            }
+        });
+
     }
 
     private void onImportImagesOrVideos(@Nullable Intent data) {
@@ -244,6 +273,9 @@ public class GalleryActivity extends BaseActivity {
                 });
                 if (viewModel.getFilesToAdd() != null) {
                     importFiles(viewModel.getFilesToAdd());
+                }
+                if (viewModel.getTextToImport() != null) {
+                    importText(viewModel.getTextToImport());
                 }
             }
         } else if (result.getResultCode() == Activity.RESULT_CANCELED) {

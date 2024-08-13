@@ -68,6 +68,7 @@ import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemDirectoryBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemGifBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemImageBinding;
+import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemTextBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemVideoBinding;
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.encryption.MyDataSourceFactory;
@@ -118,6 +119,9 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         } else if (viewType == FileType.VIDEO.i) {
             AdapterGalleryViewpagerItemVideoBinding videoBinding = AdapterGalleryViewpagerItemVideoBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerVideoViewHolder(parentBinding, videoBinding);
+        } else if (viewType == FileType.TEXT.i) {
+            AdapterGalleryViewpagerItemTextBinding textBinding = AdapterGalleryViewpagerItemTextBinding.inflate(layoutInflater, parentBinding.content, true);
+            return new GalleryPagerViewHolder.GalleryPagerTextViewHolder(parentBinding, textBinding);
         } else {
             AdapterGalleryViewpagerItemDirectoryBinding videoBinding = AdapterGalleryViewpagerItemDirectoryBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder(parentBinding, videoBinding);
@@ -138,6 +142,9 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder) {
                 holder.parentBinding.imgFullscreen.setVisibility(View.VISIBLE);
                 setupVideoView((GalleryPagerViewHolder.GalleryPagerVideoViewHolder) holder, context, galleryFile);
+            } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerTextViewHolder) {
+                holder.parentBinding.imgFullscreen.setVisibility(View.VISIBLE);
+                setupTextView((GalleryPagerViewHolder.GalleryPagerTextViewHolder) holder, context, galleryFile);
             } else {
                 holder.parentBinding.imgFullscreen.setVisibility(View.GONE);
                 setupImageView(holder, context, galleryFile);
@@ -224,13 +231,17 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         }
     }
 
+    private void setupTextView(GalleryPagerViewHolder.GalleryPagerTextViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
+        holder.binding.text.setText(galleryFile.getText());
+        holder.binding.text.setTextColor(context.getResources().getColor(this.isFullscreen ? R.color.text_color_light : R.color.text_color_dark, context.getTheme()));
+    }
+
     private void setupVideoView(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         holder.binding.rLPlay.setVisibility(View.VISIBLE);
         holder.binding.playerView.setVisibility(View.INVISIBLE);
         Glide.with(context)
                 .load(galleryFile.getThumbUri())
                 .into(holder.binding.imgThumb);
-        holder.parentBinding.imgFullscreen.setOnClickListener(v -> toggleFullscreen(weakReference.get()));
         holder.parentBinding.imgFullscreen.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         holder.binding.rLPlay.setOnClickListener(v -> {
             holder.binding.rLPlay.setVisibility(View.GONE);
@@ -388,6 +399,12 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         holder.parentBinding.btnDelete.setOnClickListener(v -> showDelete(context, galleryFile, holder));
         holder.parentBinding.btnExport.setOnClickListener(v -> showExport(context, galleryFile));
         holder.parentBinding.btnMenu.setOnClickListener(v -> showMenu(context, galleryFile, holder));
+        holder.parentBinding.imgFullscreen.setOnClickListener(v -> {
+            toggleFullscreen(weakReference.get());
+            if (holder instanceof GalleryPagerViewHolder.GalleryPagerTextViewHolder) {
+                setupTextView((GalleryPagerViewHolder.GalleryPagerTextViewHolder) holder, context, galleryFile);
+            }
+        });
     }
 
     private void showMenu(FragmentActivity context, GalleryFile galleryFile, GalleryPagerViewHolder holder) {
@@ -402,17 +419,21 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 loadShareOrOpen(context, galleryFile, false);
             } else if (id == R.id.open_with) {
                 loadShareOrOpen(context, galleryFile, true);
+            } else if (id == R.id.edit_text) {
+                showEditFile(context, galleryFile, holder);
             }
             return true;
         });
         menu.getItem(2).setVisible(!isAllFolder); // hide edit note in All folder
         menu.getItem(2).setEnabled(!isAllFolder);
+        menu.getItem(3).setVisible(!isAllFolder); // hide edit file in All folder
+        menu.getItem(3).setEnabled(!isAllFolder);
 
         popup.show();
     }
 
     private void showEditNote(FragmentActivity context, GalleryFile galleryFile, GalleryPagerViewHolder holder) {
-        Dialogs.showEditTextDialog(context, null, galleryFile.getNote(), text -> {
+        Dialogs.showEditNoteDialog(context, galleryFile.getNote(), text -> {
             if (text != null && text.isBlank()) {
                 text = null;
             }
@@ -431,6 +452,32 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 saveNote(context, galleryFile, text);
             }
             loadNote(holder, context, galleryFile);
+        });
+    }
+
+    private void showEditFile(FragmentActivity context, GalleryFile galleryFile, GalleryPagerViewHolder holder) {
+        Dialogs.showImportTextDialog(context, galleryFile.getText(), true, text -> {
+            if (text == null || text.isBlank()) {
+                return;
+            }
+            galleryFile.setText(text);
+            String name = FileStuff.getNameWithoutPrefix(galleryFile.getEncryptedName());
+            int lio = name.lastIndexOf(".txt");
+            if (lio > 0) {
+                name = name.substring(0, lio);
+            }
+            DocumentFile.fromSingleUri(context, galleryFile.getUri()).delete();
+            if (galleryFile.getNoteUri() != null) {
+                DocumentFile.fromSingleUri(context, galleryFile.getNoteUri()).delete();
+            }
+
+            DocumentFile createdFile = Encryption.importTextToDirectory(context, text, name, currentDirectory, settings);
+            if (createdFile != null) {
+                galleryFile.setFileUri(createdFile.getUri());
+            }
+            if (context instanceof GalleryDirectoryActivity) {
+                ((GalleryDirectoryActivity) context).onItemChanged(holder.getBindingAdapterPosition());
+            }
         });
     }
 
@@ -603,6 +650,8 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             return FileType.GIF.i;
         } else if (galleryFile.getFileType() == FileType.VIDEO) {
             return FileType.VIDEO.i;
+        } else if (galleryFile.getFileType() == FileType.TEXT) {
+            return FileType.TEXT.i;
         } else {
             return FileType.DIRECTORY.i;
         }

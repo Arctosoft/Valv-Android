@@ -1,0 +1,3 @@
+* Encrypt text files
+* Order files by date and size
+* Filter files by file type
