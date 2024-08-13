@@ -157,6 +157,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             holder.binding.imageView.setScaleType(ImageView.ScaleType.CENTER);
             holder.binding.txtName.setText(context.getString(R.string.gallery_all));
         } else if (galleryFile.isDirectory()) {
+            holder.binding.imageView.setVisibility(View.VISIBLE);
             GalleryFile firstFile = galleryFile.getFirstFile();
             if (firstFile != null) {
                 Glide.with(context)

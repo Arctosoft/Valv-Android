@@ -147,9 +147,9 @@ public class Encryption {
         DocumentFile file = directory.createFile("", Encryption.PREFIX_TEXT_FILE + fileNameWithoutPrefix);
 
         try {
-            createTextFile(context, text, file, tempPassword, fileNameWithoutPrefix + ".txt");
+            createTextFile(context, text, file, tempPassword, fileNameWithoutPrefix + FileType.TEXT.extension);
         } catch (GeneralSecurityException | IOException e) {
-            Log.e(TAG, "importNoteToDirectory: failed " + e.getMessage());
+            Log.e(TAG, "importTextToDirectory: failed " + e.getMessage());
             e.printStackTrace();
             file.delete();
             return null;

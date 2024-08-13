@@ -44,6 +44,9 @@
             <item
                 android:id="@+id/filter_videos"
                 android:title="@string/menu_filter_videos" />
+            <item
+                android:id="@+id/filter_text"
+                android:title="@string/menu_filter_text" />
         </menu>
     </item>
     <item

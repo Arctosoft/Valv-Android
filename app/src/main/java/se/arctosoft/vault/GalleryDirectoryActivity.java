@@ -79,6 +79,7 @@ public class GalleryDirectoryActivity extends BaseActivity {
     private static final int FILTER_IMAGES = FileType.IMAGE.i;
     private static final int FILTER_GIFS = FileType.GIF.i;
     private static final int FILTER_VIDEOS = FileType.VIDEO.i;
+    private static final int FILTER_TEXTS = FileType.TEXT.i;
 
     private ActivityGalleryDirectoryBinding binding;
     private GalleryDirectoryViewModel viewModel;
@@ -605,6 +606,9 @@ public class GalleryDirectoryActivity extends BaseActivity {
             return true;
         } else if (id == R.id.filter_videos) {
             filterBy(FILTER_VIDEOS);
+            return true;
+        } else if (id == R.id.filter_text) {
+            filterBy(FILTER_TEXTS);
             return true;
         }
         return super.onOptionsItemSelected(item);

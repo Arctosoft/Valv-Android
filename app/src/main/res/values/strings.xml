@@ -39,6 +39,7 @@
     <string name="menu_filter_images">Only images</string>
     <string name="menu_filter_gifs">Only GIFs</string>
     <string name="menu_filter_videos">Only videos</string>
+    <string name="menu_filter_text">Only text files</string>
     <string name="menu_select_all">Select all</string>
     <string name="menu_about">About</string>
 
