@@ -29,7 +29,8 @@ public enum FileType {
     DIRECTORY(0, null, null),
     IMAGE(1, Encryption.PREFIX_IMAGE_FILE, ".jpg"),
     GIF(2, Encryption.PREFIX_GIF_FILE, ".gif"),
-    VIDEO(3, Encryption.PREFIX_VIDEO_FILE, ".mp4");
+    VIDEO(3, Encryption.PREFIX_VIDEO_FILE, ".mp4"),
+    TEXT(4, Encryption.PREFIX_TEXT_FILE, ".txt");
 
     public final int i;
     public final String encryptionPrefix, extension;
@@ -47,6 +48,8 @@ public enum FileType {
             return GIF;
         } else if (name.contains(Encryption.PREFIX_VIDEO_FILE)) {
             return VIDEO;
+        } else if (name.contains(Encryption.PREFIX_TEXT_FILE)) {
+            return TEXT;
         } else {
             return DIRECTORY;
         }
@@ -61,6 +64,8 @@ public enum FileType {
             return FileType.DIRECTORY;
         } else if (mimeType.startsWith("image/")) {
             return FileType.IMAGE;
+        } else if (mimeType.startsWith("text/")) {
+            return FileType.TEXT;
         } else {
             return FileType.VIDEO;
         }

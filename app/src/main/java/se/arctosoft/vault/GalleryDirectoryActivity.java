@@ -206,6 +206,11 @@ public class GalleryDirectoryActivity extends BaseActivity {
         binding.btnDeleteFiles.setText(getString(R.string.gallery_delete_selected_files, selected));
     }
 
+    public void onItemChanged(int position) {
+        galleryGridAdapter.notifyItemChanged(position);
+        galleryPagerAdapter.notifyItemChanged(position);
+    }
+
     private void deleteSelectedFiles() {
         setLoading(true);
         new Thread(() -> {

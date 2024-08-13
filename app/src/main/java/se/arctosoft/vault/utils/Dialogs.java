@@ -21,6 +21,7 @@ package se.arctosoft.vault.utils;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,8 +40,9 @@ import java.util.List;
 import se.arctosoft.vault.BuildConfig;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.ImportListAdapter;
-import se.arctosoft.vault.databinding.DialogEditTextBinding;
+import se.arctosoft.vault.databinding.DialogEditNoteBinding;
 import se.arctosoft.vault.databinding.DialogImportBinding;
+import se.arctosoft.vault.databinding.DialogImportTextBinding;
 import se.arctosoft.vault.interfaces.IOnEdited;
 
 public class Dialogs {
@@ -75,6 +77,39 @@ public class Dialogs {
             }
         });
         binding.checkbox.setText(context.getResources().getQuantityString(R.plurals.dialog_import_to_delete_original, fileCount));
+        binding.recycler.setLayoutManager(new LinearLayoutManager(context));
+        binding.recycler.setAdapter(adapter);
+    }
+
+    public static void showImportTextChooseDestinationDialog(FragmentActivity context, Settings settings, IOnDirectorySelected onDirectorySelected) {
+        List<Uri> directories = settings.getGalleryDirectoriesAsUri(false);
+        List<String> names = new ArrayList<>(directories.size());
+        for (int i = 0; i < directories.size(); i++) {
+            names.add(FileStuff.getFilenameWithPathFromUri(directories.get(i)));
+        }
+        DialogImportBinding binding = DialogImportBinding.inflate(context.getLayoutInflater());
+
+        AlertDialog alertDialog = new MaterialAlertDialogBuilder(context)
+                .setTitle(context.getString(R.string.dialog_import_to_title))
+                .setView(binding.getRoot())
+                .setNegativeButton(android.R.string.cancel, null)
+                .setNeutralButton(R.string.dialog_import_to_button_neutral, (dialog, which) -> onDirectorySelected.onOtherDirectory())
+                .show();
+
+        ImportListAdapter adapter = new ImportListAdapter(names, pos -> {
+            alertDialog.dismiss();
+            Uri uri = directories.get(pos);
+
+            DocumentFile directory = DocumentFile.fromTreeUri(context, uri);
+            if (directory == null || !directory.isDirectory() || !directory.exists()) {
+                settings.removeGalleryDirectory(uri);
+                Toaster.getInstance(context).showLong(context.getString(R.string.directory_does_not_exist));
+                showImportTextChooseDestinationDialog(context, settings, onDirectorySelected);
+            } else {
+                onDirectorySelected.onDirectorySelected(directory, false);
+            }
+        });
+        binding.checkbox.setVisibility(View.GONE);
         binding.recycler.setLayoutManager(new LinearLayoutManager(context));
         binding.recycler.setAdapter(adapter);
     }
@@ -148,18 +183,31 @@ public class Dialogs {
                 .show();
     }
 
-    public static void showEditTextDialog(FragmentActivity context, @Nullable String title, @Nullable String editTextBody, IOnEdited onEdited) {
-        DialogEditTextBinding binding = DialogEditTextBinding.inflate(context.getLayoutInflater(), null, false);
+    public static void showEditNoteDialog(FragmentActivity context, @Nullable String editTextBody, IOnEdited onEdited) {
+        DialogEditNoteBinding binding = DialogEditNoteBinding.inflate(context.getLayoutInflater(), null, false);
         if (editTextBody != null) {
             binding.text.setText(editTextBody);
         }
 
         new MaterialAlertDialogBuilder(context)
-                .setTitle(title)
                 .setView(binding.getRoot())
                 .setPositiveButton(R.string.gallery_note_save, (dialog, which) -> onEdited.onEdited(binding.text.getText().toString()))
                 .setNegativeButton(android.R.string.cancel, null)
                 .setNeutralButton(R.string.gallery_note_delete, (dialog, which) -> onEdited.onEdited(null))
+                .show();
+    }
+
+    public static void showImportTextDialog(FragmentActivity context, @Nullable String editTextBody, IOnEdited onEdited) {
+        DialogImportTextBinding binding = DialogImportTextBinding.inflate(context.getLayoutInflater(), null, false);
+        if (editTextBody != null) {
+            binding.text.setText(editTextBody);
+        }
+
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(context.getString(R.string.gallery_import_text_title))
+                .setView(binding.getRoot())
+                .setPositiveButton(R.string.gallery_import_text_import, (dialog, which) -> onEdited.onEdited(binding.text.getText().toString()))
+                .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
 

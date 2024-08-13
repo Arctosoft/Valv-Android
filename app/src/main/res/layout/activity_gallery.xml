@@ -106,7 +106,7 @@
                 android:layout_height="wrap_content"
                 android:elevation="10dp"
                 android:orientation="vertical"
-                android:weightSum="2">
+                android:weightSum="3">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnImportImages"
@@ -128,6 +128,16 @@
                     android:stateListAnimator="@null"
                     android:text="@string/gallery_import_videos"
                     app:icon="@drawable/ic_outline_video_file_24" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnImportTextWrite"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:elevation="1dp"
+                    android:stateListAnimator="@null"
+                    android:text="@string/gallery_import_text_write"
+                    app:icon="@drawable/round_edit_24" />
 
             </LinearLayout>
 

@@ -78,6 +78,7 @@ public class Encryption {
     public static final String PREFIX_IMAGE_FILE = ".valv.i.1-";
     public static final String PREFIX_GIF_FILE = ".valv.g.1-";
     public static final String PREFIX_VIDEO_FILE = ".valv.v.1-";
+    public static final String PREFIX_TEXT_FILE = ".valv.x.1-";
     public static final String PREFIX_NOTE_FILE = ".valv.n.1-";
     public static final String PREFIX_THUMB = ".valv.t.1-";
 
@@ -123,7 +124,30 @@ public class Encryption {
         DocumentFile file = directory.createFile("", Encryption.PREFIX_NOTE_FILE + fileNameWithoutPrefix);
 
         try {
-            createNoteFile(context, note, file, tempPassword, fileNameWithoutPrefix);
+            createTextFile(context, note, file, tempPassword, fileNameWithoutPrefix);
+        } catch (GeneralSecurityException | IOException e) {
+            Log.e(TAG, "importNoteToDirectory: failed " + e.getMessage());
+            e.printStackTrace();
+            file.delete();
+            return null;
+        }
+
+        return file;
+    }
+
+    public static DocumentFile importTextToDirectory(FragmentActivity context, String text, @Nullable String fileNameWithoutPrefix, DocumentFile directory, Settings settings) {
+        char[] tempPassword = settings.getTempPassword();
+        if (tempPassword == null || tempPassword.length == 0) {
+            throw new RuntimeException("No password");
+        }
+
+        if (fileNameWithoutPrefix == null) {
+            fileNameWithoutPrefix = StringStuff.getRandomFileName();
+        }
+        DocumentFile file = directory.createFile("", Encryption.PREFIX_TEXT_FILE + fileNameWithoutPrefix);
+
+        try {
+            createTextFile(context, text, file, tempPassword, fileNameWithoutPrefix + ".txt");
         } catch (GeneralSecurityException | IOException e) {
             Log.e(TAG, "importNoteToDirectory: failed " + e.getMessage());
             e.printStackTrace();
@@ -218,8 +242,8 @@ public class Encryption {
         streams.close();
     }
 
-    private static void createNoteFile(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
-        Streams streams = getNoteCipherOutputStream(context, input, outputFile, password, sourceFileName);
+    private static void createTextFile(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
+        Streams streams = getTextCipherOutputStream(context, input, outputFile, password, sourceFileName);
         streams.outputStream.write(streams.inputString.getBytes(StandardCharsets.UTF_8));
         streams.close();
     }
@@ -320,7 +344,7 @@ public class Encryption {
         return new Streams(inputStream, cipherOutputStream, secretKey);
     }
 
-    private static Streams getNoteCipherOutputStream(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
+    private static Streams getTextCipherOutputStream(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
         SecureRandom sr = SecureRandom.getInstanceStrong();
         byte[] salt = new byte[SALT_LENGTH];
         byte[] ivBytes = new byte[IV_LENGTH];

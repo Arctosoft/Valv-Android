@@ -23,19 +23,17 @@ import android.util.AttributeSet;
 
 import androidx.appcompat.widget.AppCompatImageView;
 
-import se.arctosoft.vault.utils.Constants;
+public class GridImageView extends AppCompatImageView {
 
-public class PressableGridImageView extends PressableImageView {
-
-    public PressableGridImageView(Context context) {
+    public GridImageView(Context context) {
         super(context);
     }
 
-    public PressableGridImageView(Context context, AttributeSet attrs) {
+    public GridImageView(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public PressableGridImageView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public GridImageView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
