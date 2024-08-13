@@ -33,6 +33,11 @@
     <string name="menu_order_by_largest_first">Largest first</string>
     <string name="menu_order_by_smallest_first">Smallest first</string>
     <string name="menu_toggle_filename">Toggle filename visibility</string>
+    <string name="menu_filter">Filter</string>
+    <string name="menu_filter_all">Show all</string>
+    <string name="menu_filter_images">Only images</string>
+    <string name="menu_filter_gifs">Only GIFs</string>
+    <string name="menu_filter_videos">Only videos</string>
     <string name="menu_select_all">Select all</string>
     <string name="menu_about">About</string>
 

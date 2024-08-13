@@ -27,6 +27,26 @@
         </menu>
     </item>
     <item
+        android:id="@+id/filter"
+        android:icon="@drawable/round_filter_list_24"
+        android:title="@string/menu_filter"
+        app:showAsAction="ifRoom">
+        <menu>
+            <item
+                android:id="@+id/filter_all"
+                android:title="@string/menu_filter_all" />
+            <item
+                android:id="@+id/filter_images"
+                android:title="@string/menu_filter_images" />
+            <item
+                android:id="@+id/filter_gifs"
+                android:title="@string/menu_filter_gifs" />
+            <item
+                android:id="@+id/filter_videos"
+                android:title="@string/menu_filter_videos" />
+        </menu>
+    </item>
+    <item
         android:id="@+id/toggle_filename"
         android:icon="@drawable/ic_round_view_compact_24"
         android:title="@string/menu_toggle_filename"

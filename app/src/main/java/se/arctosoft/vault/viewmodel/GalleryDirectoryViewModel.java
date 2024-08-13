@@ -30,6 +30,7 @@ public class GalleryDirectoryViewModel extends ViewModel {
     private static final String TAG = "GalleryDirectoryViewMod";
 
     private final List<GalleryFile> galleryFiles = new LinkedList<>();
+    private final List<GalleryFile> hiddenFiles = new LinkedList<>();
     private int currentPosition = 0;
     private boolean viewPagerVisible = false;
     private boolean initialised = false;
@@ -43,6 +44,11 @@ public class GalleryDirectoryViewModel extends ViewModel {
         return galleryFiles;
     }
 
+    @NonNull
+    public List<GalleryFile> getHiddenFiles() {
+        return hiddenFiles;
+    }
+
     public void setInitialised(List<GalleryFile> galleryFiles) {
         //Log.e(TAG, "setInitialised: " + galleryFiles.size());
         if (initialised) {
@@ -50,6 +56,7 @@ public class GalleryDirectoryViewModel extends ViewModel {
         }
         this.initialised = true;
         this.galleryFiles.addAll(galleryFiles);
+        this.hiddenFiles.clear();
     }
 
     public int getCurrentPosition() {
