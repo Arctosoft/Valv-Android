@@ -204,7 +204,7 @@ public class GalleryActivity extends BaseActivity {
             showImportOverlay(false);
         });
         binding.btnImportTextWrite.setOnClickListener(v -> {
-            Dialogs.showImportTextDialog(this, null, text -> {
+            Dialogs.showImportTextDialog(this, null, false, text -> {
                 if (text != null && !text.isBlank()) {
                     importText(text);
                 }

@@ -34,7 +34,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private final FileType fileType;
     private final String encryptedName, name;
     private final boolean isDirectory, isAllFolder;
-    private final Uri fileUri;
+    private Uri fileUri;
     private final long lastModified, size;
     private Uri thumbUri, noteUri, decryptedCacheUri;
     private List<GalleryFile> filesInDirectory;
@@ -187,6 +187,10 @@ public class GalleryFile implements Comparable<GalleryFile> {
 
     public void setNoteUri(Uri noteUri) {
         this.noteUri = noteUri;
+    }
+
+    public void setFileUri(@NonNull Uri fileUri) {
+        this.fileUri = fileUri;
     }
 
     @Nullable

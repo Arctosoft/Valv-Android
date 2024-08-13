@@ -197,7 +197,7 @@ public class Dialogs {
                 .show();
     }
 
-    public static void showImportTextDialog(FragmentActivity context, @Nullable String editTextBody, IOnEdited onEdited) {
+    public static void showImportTextDialog(FragmentActivity context, @Nullable String editTextBody, boolean isEdit, IOnEdited onEdited) {
         DialogImportTextBinding binding = DialogImportTextBinding.inflate(context.getLayoutInflater(), null, false);
         if (editTextBody != null) {
             binding.text.setText(editTextBody);
@@ -206,7 +206,7 @@ public class Dialogs {
         new MaterialAlertDialogBuilder(context)
                 .setTitle(context.getString(R.string.gallery_import_text_title))
                 .setView(binding.getRoot())
-                .setPositiveButton(R.string.gallery_import_text_import, (dialog, which) -> onEdited.onEdited(binding.text.getText().toString()))
+                .setPositiveButton(isEdit ? R.string.gallery_import_text_overwrite : R.string.gallery_import_text_import, (dialog, which) -> onEdited.onEdited(binding.text.getText().toString()))
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }

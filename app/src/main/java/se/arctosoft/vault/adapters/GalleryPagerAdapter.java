@@ -419,11 +419,15 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 loadShareOrOpen(context, galleryFile, false);
             } else if (id == R.id.open_with) {
                 loadShareOrOpen(context, galleryFile, true);
+            } else if (id == R.id.edit_text) {
+                showEditFile(context, galleryFile, holder);
             }
             return true;
         });
         menu.getItem(2).setVisible(!isAllFolder); // hide edit note in All folder
         menu.getItem(2).setEnabled(!isAllFolder);
+        menu.getItem(3).setVisible(!isAllFolder); // hide edit file in All folder
+        menu.getItem(3).setEnabled(!isAllFolder);
 
         popup.show();
     }
@@ -448,6 +452,32 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 saveNote(context, galleryFile, text);
             }
             loadNote(holder, context, galleryFile);
+        });
+    }
+
+    private void showEditFile(FragmentActivity context, GalleryFile galleryFile, GalleryPagerViewHolder holder) {
+        Dialogs.showImportTextDialog(context, galleryFile.getText(), true, text -> {
+            if (text == null || text.isBlank()) {
+                return;
+            }
+            galleryFile.setText(text);
+            String name = FileStuff.getNameWithoutPrefix(galleryFile.getEncryptedName());
+            int lio = name.lastIndexOf(".txt");
+            if (lio > 0) {
+                name = name.substring(0, lio);
+            }
+            DocumentFile.fromSingleUri(context, galleryFile.getUri()).delete();
+            if (galleryFile.getNoteUri() != null) {
+                DocumentFile.fromSingleUri(context, galleryFile.getNoteUri()).delete();
+            }
+
+            DocumentFile createdFile = Encryption.importTextToDirectory(context, text, name, currentDirectory, settings);
+            if (createdFile != null) {
+                galleryFile.setFileUri(createdFile.getUri());
+            }
+            if (context instanceof GalleryDirectoryActivity) {
+                ((GalleryDirectoryActivity) context).onItemChanged(holder.getBindingAdapterPosition());
+            }
         });
     }
 

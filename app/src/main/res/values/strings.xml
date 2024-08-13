@@ -11,6 +11,7 @@
     <string name="delete">Delete</string>
     <string name="export">Export</string>
     <string name="add_edit_note">Add/edit note</string>
+    <string name="edit_text">Edit text</string>
     <string name="share">Share</string>
     <string name="open_with">Open with</string>
     <string name="more">More</string>
@@ -54,6 +55,7 @@
     <string name="gallery_import_text_write">Text (write)</string>
     <string name="gallery_import_text_title">Write text to import</string>
     <string name="gallery_import_text_import">Import</string>
+    <string name="gallery_import_text_overwrite">Overwrite</string>
     <string name="gallery_import_text_hint">Text…</string>
     <string name="gallery_remove_selected_folders">Remove selected folders</string>
     <string name="gallery_delete_selected_files">Delete %1$d selected files</string>
