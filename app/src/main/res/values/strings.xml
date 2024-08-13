@@ -27,6 +27,11 @@
     <string name="menu_gallery_edit_included_folders">Edit included folders</string>
     <string name="menu_gallery_import">Import files</string>
     <string name="menu_lock_vault">Lock vault</string>
+    <string name="menu_order_by">Order by</string>
+    <string name="menu_order_by_newest_first">Newest first</string>
+    <string name="menu_order_by_oldest_first">Oldest first</string>
+    <string name="menu_order_by_largest_first">Largest first</string>
+    <string name="menu_order_by_smallest_first">Smallest first</string>
     <string name="menu_toggle_filename">Toggle filename visibility</string>
     <string name="menu_select_all">Select all</string>
     <string name="menu_about">About</string>
