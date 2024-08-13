@@ -1,7 +1,7 @@
 En krypterad galleriapp för Android-enheter.
 
 <b>Funktioner</b>
-* Stödjer bilder, GIF och videor
+* Stödjer bilder, GIF, videor och textfiler
 * Organisera med hjälp av mappar
 * Appen kräver inga behörigheter
 * Dina krypterade filer lagras lokalt som vanliga filer vilket möjliggör enkel säkerhetskopiering och överföringar mellan enheter

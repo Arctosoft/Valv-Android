@@ -1,7 +1,7 @@
 An encrypted gallery vault for Android devices.
 
 <b>Features</b>
-* Supports images, GIFs and videos
+* Supports images, GIFs, videos and text files
 * Organise using folders
 * The app requires no permissions
 * Encrypted files are stored on-disk allowing for easy backups and transfers between devices
