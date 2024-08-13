@@ -774,6 +774,8 @@ public class GalleryDirectoryActivity extends BaseActivity {
         menu.findItem(R.id.toggle_filename).setVisible(!inSelectionMode);
         menu.findItem(R.id.select_all).setVisible(inSelectionMode);
         menu.findItem(R.id.export_selected).setVisible(inSelectionMode);
+        menu.findItem(R.id.copy_selected).setVisible(inSelectionMode);
+        menu.findItem(R.id.move_selected).setVisible(inSelectionMode);
         return super.onCreateOptionsMenu(menu);
     }
 
