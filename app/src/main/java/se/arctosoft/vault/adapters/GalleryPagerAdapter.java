@@ -426,8 +426,8 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         });
         menu.getItem(2).setVisible(!isAllFolder); // hide edit note in All folder
         menu.getItem(2).setEnabled(!isAllFolder);
-        menu.getItem(3).setVisible(!isAllFolder); // hide edit file in All folder
-        menu.getItem(3).setEnabled(!isAllFolder);
+        menu.getItem(3).setVisible(!isAllFolder && galleryFile.isText()); // hide edit text in All folder and for non-text files
+        menu.getItem(3).setEnabled(!isAllFolder && galleryFile.isText());
 
         popup.show();
     }
