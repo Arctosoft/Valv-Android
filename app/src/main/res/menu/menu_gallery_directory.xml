@@ -24,6 +24,9 @@
             <item
                 android:id="@+id/order_by_smallest_first"
                 android:title="@string/menu_order_by_smallest_first" />
+            <item
+                android:id="@+id/order_by_random"
+                android:title="@string/menu_order_by_random" />
         </menu>
     </item>
     <item

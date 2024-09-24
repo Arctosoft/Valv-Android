@@ -33,6 +33,7 @@
     <string name="menu_order_by_oldest_first">Oldest first</string>
     <string name="menu_order_by_largest_first">Largest first</string>
     <string name="menu_order_by_smallest_first">Smallest first</string>
+    <string name="menu_order_by_random">Random</string>
     <string name="menu_toggle_filename">Toggle filename visibility</string>
     <string name="menu_filter">Filter</string>
     <string name="menu_filter_all">Show all</string>

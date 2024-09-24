@@ -1,0 +1,2 @@
+* Ordna filer slumpmässigt
+* Text i textfiler är nu vit i dark mode
