@@ -75,6 +75,7 @@ public class GalleryDirectoryActivity extends BaseActivity {
     private static final int ORDER_BY_OLDEST = 1;
     private static final int ORDER_BY_LARGEST = 2;
     private static final int ORDER_BY_SMALLEST = 3;
+    private static final int ORDER_BY_RANDOM = 4;
     private static final int FILTER_ALL = 0;
     private static final int FILTER_IMAGES = FileType.IMAGE.i;
     private static final int FILTER_GIFS = FileType.GIF.i;
@@ -595,6 +596,9 @@ public class GalleryDirectoryActivity extends BaseActivity {
         } else if (id == R.id.order_by_smallest_first) {
             orderBy(ORDER_BY_SMALLEST);
             return true;
+        } else if (id == R.id.order_by_random) {
+            orderBy(ORDER_BY_RANDOM);
+            return true;
         } else if (id == R.id.filter_all) {
             filterBy(FILTER_ALL);
             return true;
@@ -652,7 +656,7 @@ public class GalleryDirectoryActivity extends BaseActivity {
                         }
                         return 0;
                     });
-                } else {
+                } else if (order == ORDER_BY_SMALLEST) {
                     galleryFiles.sort((o1, o2) -> {
                         if (o1.getSize() > o2.getSize()) {
                             return 1;
@@ -661,11 +665,15 @@ public class GalleryDirectoryActivity extends BaseActivity {
                         }
                         return 0;
                     });
+                } else {
+                    Collections.shuffle(galleryFiles);
                 }
                 runOnUiThread(() -> {
-                    int size = viewModel.getGalleryFiles().size();
-                    galleryGridAdapter.notifyItemRangeChanged(0, size);
-                    galleryPagerAdapter.notifyItemRangeChanged(0, size);
+                    synchronized (LOCK) {
+                        int size = viewModel.getGalleryFiles().size();
+                        galleryGridAdapter.notifyItemRangeChanged(0, size);
+                        galleryPagerAdapter.notifyItemRangeChanged(0, size);
+                    }
                 });
             }
         }).start();

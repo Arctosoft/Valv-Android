@@ -1,0 +1,2 @@
+* Added Random order option
+* The text in text files is now white in dark mode

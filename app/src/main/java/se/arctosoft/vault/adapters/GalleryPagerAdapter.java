@@ -233,7 +233,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
 
     private void setupTextView(GalleryPagerViewHolder.GalleryPagerTextViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         holder.binding.text.setText(galleryFile.getText());
-        holder.binding.text.setTextColor(context.getResources().getColor(this.isFullscreen ? R.color.text_color_light : R.color.text_color_dark, context.getTheme()));
+        holder.binding.text.setTextColor(context.getResources().getColor(this.isFullscreen || context.getResources().getBoolean(R.bool.night) ? R.color.text_color_light : R.color.text_color_dark, context.getTheme()));
     }
 
     private void setupVideoView(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
