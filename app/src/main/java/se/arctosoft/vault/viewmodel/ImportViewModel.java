@@ -141,16 +141,17 @@ public class ImportViewModel extends ViewModel {
     }
 
     public void cancelImport() {
+        Log.e(TAG, "cancelImport: ");
         interrupted.set(true);
         setImporting(false);
         setImportToUri(null);
         if (importThread != null) {
             importThread.interrupt();
-            Log.e(TAG, "cancelImport: " + importThread.isInterrupted());
         }
     }
 
     public void startImport(FragmentActivity activity) {
+        Log.e(TAG, "startImport: ");
         if (importThread != null) {
             importThread.interrupt();
         }
@@ -172,7 +173,7 @@ public class ImportViewModel extends ViewModel {
                 }
             };
             for (DocumentFile file : filesToImport) {
-                if (Thread.currentThread().isInterrupted() || interrupted.get() || activity.isDestroyed() || activity.isFinishing()) {
+                if (Thread.currentThread().isInterrupted() || interrupted.get()) {
                     if (onImportDoneFragment != null) {
                         onImportDoneFragment.onDone(importToUri, sameDirectory, progress[0] - 1, errors, thumbErrors);
                     }

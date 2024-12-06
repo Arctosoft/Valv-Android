@@ -152,6 +152,7 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         binding.body.setText(getString(R.string.bottom_modal_body_importing, importViewModel.getDestinationFolderName()));
         binding.buttonCancel.setOnClickListener(v -> {
             importViewModel.cancelImport();
+            dismiss();
         });
     }
 
