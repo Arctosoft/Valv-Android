@@ -52,6 +52,7 @@ import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.Toaster;
+import se.arctosoft.vault.viewmodel.DeleteViewModel;
 import se.arctosoft.vault.viewmodel.GalleryViewModel;
 import se.arctosoft.vault.viewmodel.ImportViewModel;
 import se.arctosoft.vault.viewmodel.PasswordViewModel;
@@ -70,6 +71,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
     private PasswordViewModel passwordViewModel;
     private GalleryViewModel galleryViewModel;
     private ImportViewModel importViewModel;
+    private DeleteViewModel deleteViewModel;
 
     private GalleryGridAdapter galleryGridAdapter;
     private GalleryPagerAdapter galleryPagerAdapter;
@@ -141,6 +143,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         passwordViewModel = new ViewModelProvider(requireActivity()).get(PasswordViewModel.class);
         galleryViewModel = new ViewModelProvider(this).get(GalleryViewModel.class);
         importViewModel = new ViewModelProvider(this).get(ImportViewModel.class);
+        deleteViewModel = new ViewModelProvider(this).get(DeleteViewModel.class);
         //binding.buttonFirst.setOnClickListener(v -> NavHostFragment.findNavController(DirectoryFragment.this).navigate(R.id.action_FirstFragment_to_SecondFragment));
         navController = NavHostFragment.findNavController(this);
         Log.e(TAG, "onViewCreated: locked? " + passwordViewModel.isLocked());
@@ -267,6 +270,30 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
                 }
             }
         });
+
+        deleteViewModel.setOnDeleteDoneFragment(deletedFiles -> {
+            Log.e(TAG, "setOnDeleteDoneFragment:  deleted " + deletedFiles.size());
+            FragmentActivity activity = getActivity();
+            if (activity == null || activity.isDestroyed()) {
+                return;
+            }
+            activity.runOnUiThread(() -> {
+                synchronized (LOCK) {
+                    List<GalleryFile> galleryFiles = galleryViewModel.getGalleryFiles();
+                    for (int i = galleryFiles.size() - 1; i >= 0; i--) {
+                        GalleryFile f = galleryFiles.get(i);
+                        for (GalleryFile deleted : deletedFiles) {
+                            if (f.equals(deleted)) {
+                                galleryFiles.remove(i);
+                                galleryGridAdapter.notifyItemRemoved(i);
+                                galleryPagerAdapter.notifyItemRemoved(i);
+                            }
+                        }
+                    }
+                    galleryGridAdapter.onSelectionModeChanged(false);
+                }
+            });
+        });
     }
 
     private void setupGrid() {
@@ -372,9 +399,11 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         FragmentActivity context = requireActivity();
         binding.fabRemoveFolders.setOnClickListener(v -> {
             if (galleryViewModel.isRootDir()) {
-                onAddFolderClicked(context);
+                onRemoveFolderClicked(context);
             } else {
-                onDeleteSelected(context);
+                deleteViewModel.getFilesToDelete().clear();
+                deleteViewModel.getFilesToDelete().addAll(galleryGridAdapter.getSelectedFiles());
+                showDeleteModal();
             }
         });
         binding.fabImportMedia.setOnClickListener(v -> {
@@ -387,14 +416,6 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
                 binding.fab.performClick();
             }
         });
-    }
-
-    private void onDeleteSelected(FragmentActivity activity) {
-        Dialogs.showConfirmationDialog(activity, getString(R.string.dialog_delete_files_title),
-                getResources().getQuantityString(R.plurals.dialog_delete_files_message, galleryGridAdapter.getSelectedFiles().size()),
-                (dialog, which) -> {
-                    //deleteSelectedFiles(activity);
-                });
     }
 
     /*private void deleteSelectedFiles(FragmentActivity activity) {
@@ -473,7 +494,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         //context.runOnUiThread(() -> setLoadingWithProgress(deletedCount.get() + failedCount.get(), failedCount.get(), total, R.string.gallery_deleting_progress));
     }*/
 
-    private void onAddFolderClicked(Context context) {
+    private void onRemoveFolderClicked(Context context) {
         Dialogs.showConfirmationDialog(context, getString(R.string.dialog_remove_folder_title),
                 getResources().getQuantityString(R.plurals.dialog_remove_folder_message, galleryGridAdapter.getSelectedFiles().size()),
                 (dialog, which) -> {
@@ -532,9 +553,15 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
     }
 
     private void showImportModal() {
-        BottomSheetFragment bottomSheetFragment = new BottomSheetFragment();
+        BottomSheetImportFragment bottomSheetImportFragment = new BottomSheetImportFragment();
         FragmentManager childFragmentManager = getChildFragmentManager();
-        bottomSheetFragment.show(childFragmentManager, null);
+        bottomSheetImportFragment.show(childFragmentManager, null);
+    }
+
+    private void showDeleteModal() {
+        BottomSheetDeleteFragment bottomSheetDeleteFragment = new BottomSheetDeleteFragment();
+        FragmentManager childFragmentManager = getChildFragmentManager();
+        bottomSheetDeleteFragment.show(childFragmentManager, null);
     }
 
     private void addFolder(Uri uri, boolean asRootDir) {

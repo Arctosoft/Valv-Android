@@ -16,7 +16,7 @@
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@plurals/import_modal_title"
+            android:text="@plurals/delete_modal_title"
             android:textSize="@dimen/bottom_modal_title_size"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -25,52 +25,21 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/bottom_modal_item_margin"
-            android:text="@string/import_modal_body"
+            android:minLines="2"
+            android:text="@string/delete_modal_body"
             app:layout_constraintTop_toBottomOf="@id/title" />
 
-        <androidx.appcompat.widget.LinearLayoutCompat
-            android:id="@+id/layout_content_main"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_delete"
+            style="@style/Widget.Material3.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/checkbox_delete_after"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/bottom_modal_item_margin"
-                android:text="@string/import_modal_checkbox_delete"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/bottom_modal_item_margin"
-                android:text="@string/import_modal_destination"
-                app:layout_constraintTop_toBottomOf="@id/title" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_new_folder"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:text="@string/import_modal_directory_other"
-                android:textColor="?android:attr/textColorSecondary"
-                app:icon="@drawable/ic_outline_create_new_folder_24"
-                app:iconTint="?android:attr/textColorSecondary"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-        </androidx.appcompat.widget.LinearLayoutCompat>
+            android:layout_marginTop="@dimen/bottom_modal_item_margin"
+            android:text="@string/delete"
+            android:textColor="?android:attr/textColorSecondary" />
 
         <androidx.appcompat.widget.LinearLayoutCompat
-            android:id="@+id/layout_content_importing"
+            android:id="@+id/layout_content_deleting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/bottom_modal_item_margin"
@@ -91,7 +60,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/bottom_modal_item_margin"
-                android:text="@string/import_modal_importing"
+                android:text="@string/delete_modal_deleting"
                 android:textAlignment="center"
                 app:layout_constraintTop_toBottomOf="@id/title" />
 
@@ -102,7 +71,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/bottom_modal_item_margin"
                 android:text="@string/import_modal_cancel"
-                android:textColor="?android:attr/textColorSecondary" />
+                android:textColor="?android:attr/textColorSecondary"
+                android:visibility="gone" />
 
         </androidx.appcompat.widget.LinearLayoutCompat>
 

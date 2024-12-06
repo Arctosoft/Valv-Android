@@ -115,23 +115,35 @@
     <string name="gallery_click_to_open_directory">Click to open\n%1$s</string>
     <string name="gallery_find_files_no_permission">No permission to read %1$s, please add it again</string>
 
-    <plurals name="bottom_modal_title">
+    <plurals name="import_modal_title">
         <item quantity="one">Import %1$d file (%2$s)</item>
         <item quantity="other">Import %1$d files (%2$s)</item>
     </plurals>
-    <plurals name="bottom_modal_title_importing">
+    <plurals name="import_modal_title_importing">
         <item quantity="one">Importing %1$d file (%2$s)</item>
         <item quantity="other">Importing %1$d files (%2$s)</item>
     </plurals>
-    <string name="bottom_modal_body">Your files will be encrypted and imported into the folder you select below.</string>
-    <string name="bottom_modal_body_importing">Your files are being encrypted and imported into %1$s.</string>
-    <string name="bottom_modal_importing">Importing %1$d out of %2$d\n%3$s/%4$s MB</string>
-    <string name="bottom_modal_directory_other">Use other folder</string>
-    <string name="bottom_modal_directory_current">- Current folder \"%1$s\"</string>
-    <string name="bottom_modal_directory_item">- %1$s</string>
-    <string name="bottom_modal_checkbox_delete">Delete the original files after importing</string>
-    <string name="bottom_modal_destination">Select destination:</string>
-    <string name="bottom_modal_cancel">Cancel</string>
+    <string name="import_modal_body">Your files will be encrypted and imported into the folder you select below.</string>
+    <string name="import_modal_body_importing">Your files are being encrypted and imported into %1$s.</string>
+    <string name="import_modal_importing">Importing %1$d out of %2$d\n%3$s/%4$s MB</string>
+    <string name="import_modal_directory_other">Use other folder</string>
+    <string name="import_modal_directory_current">- Current folder \"%1$s\"</string>
+    <string name="import_modal_directory_item">- %1$s</string>
+    <string name="import_modal_checkbox_delete">Delete the original files after importing</string>
+    <string name="import_modal_destination">Select destination:</string>
+    <string name="import_modal_cancel">Cancel</string>
+
+    <plurals name="delete_modal_title">
+        <item quantity="one">Delete %1$d file (%2$s)?</item>
+        <item quantity="other">Delete %1$d files (%2$s)?</item>
+    </plurals>
+    <plurals name="delete_modal_title_deleting">
+        <item quantity="one">Deleting %1$d file (%2$s)</item>
+        <item quantity="other">Deleting %1$d files (%2$s)</item>
+    </plurals>
+    <string name="delete_modal_body">Delete the selected file(s) permanently? This action is irreversible.</string>
+    <string name="delete_modal_body_deleting">Deleting…</string>
+    <string name="delete_modal_deleting">Deleting %1$d out of %2$d</string>
 
     <string name="dialog_remove_folder_title">Remove?</string>
     <plurals name="dialog_remove_folder_message">

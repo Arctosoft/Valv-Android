@@ -18,11 +18,9 @@
 package se.arctosoft.vault;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,7 +49,7 @@ import se.arctosoft.vault.utils.StringStuff;
 import se.arctosoft.vault.utils.Toaster;
 import se.arctosoft.vault.viewmodel.ImportViewModel;
 
-public class BottomSheetFragment extends BottomSheetDialogFragment {
+public class BottomSheetImportFragment extends BottomSheetDialogFragment {
     private static final String TAG = "BottomSheetFragment";
 
     private BottomSheetImportBinding binding;
@@ -103,7 +101,7 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         List<String> names = new ArrayList<>(directories.size() + 1);
 
         final boolean hasUri = importViewModel.getCurrentDirectoryUri() != null;
-        binding.title.setText(getResources().getQuantityString(R.plurals.bottom_modal_title, filesToImport.size(), filesToImport.size(), StringStuff.bytesToReadableString(bytes)));
+        binding.title.setText(getResources().getQuantityString(R.plurals.import_modal_title, filesToImport.size(), filesToImport.size(), StringStuff.bytesToReadableString(bytes)));
         String currentName = hasUri ? FileStuff.getFilenameWithPathFromUri(importViewModel.getCurrentDirectoryUri()) : null;
         if (hasUri) {
             names.add(currentName);
@@ -123,7 +121,7 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         importViewModel.getProgressData().observe(this, progressData -> {
             if (progressData != null) {
                 binding.progress.setProgressCompat(progressData.getProgressPercentage(), true);
-                binding.progressText.setText(getString(R.string.bottom_modal_importing, progressData.getProgress(), progressData.getTotal(), progressData.getDoneMB(), progressData.getTotalMB()));
+                binding.progressText.setText(getString(R.string.import_modal_importing, progressData.getProgress(), progressData.getTotal(), progressData.getDoneMB(), progressData.getTotalMB()));
             } else {
                 binding.progress.setProgressCompat(0, false);
             }
@@ -170,8 +168,8 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         binding.progress.setProgressCompat(0, false);
         binding.layoutContentMain.setVisibility(View.GONE);
         binding.layoutContentImporting.setVisibility(View.VISIBLE);
-        binding.title.setText(getResources().getQuantityString(R.plurals.bottom_modal_title_importing, importViewModel.getFilesToImport().size(), importViewModel.getFilesToImport().size(), StringStuff.bytesToReadableString(importViewModel.getTotalBytes())));
-        binding.body.setText(getString(R.string.bottom_modal_body_importing, importViewModel.getDestinationFolderName()));
+        binding.title.setText(getResources().getQuantityString(R.plurals.import_modal_title_importing, importViewModel.getFilesToImport().size(), importViewModel.getFilesToImport().size(), StringStuff.bytesToReadableString(importViewModel.getTotalBytes())));
+        binding.body.setText(getString(R.string.import_modal_body_importing, importViewModel.getDestinationFolderName()));
         binding.buttonCancel.setOnClickListener(v -> {
             importViewModel.cancelImport();
             dismiss();
@@ -202,15 +200,4 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         importViewModel.setTotalBytes(0);
     }
 
-    @Override
-    public void onDismiss(@NonNull DialogInterface dialog) { // TODO triggered on rotation, save working thread/progress in view model
-        Log.e(TAG, "onDismiss: ");
-        super.onDismiss(dialog);
-    }
-
-    @Override
-    public void onCancel(@NonNull DialogInterface dialog) {
-        Log.e(TAG, "onCancel: ");
-        super.onCancel(dialog);
-    }
 }

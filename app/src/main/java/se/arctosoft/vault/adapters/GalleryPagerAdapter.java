@@ -331,37 +331,11 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
             ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView.setOnClickListener(v -> onItemPressed(context));
         }
-        //if (galleryFile.getDecryptedCacheUri() == null) {
-            /*new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
-                @Override
-                public void onUriResult(Uri outputUri) {
-                    galleryFile.setDecryptedCacheUri(outputUri);
-                    loadImage(outputUri, holder, context);
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    e.printStackTrace();
-                    //Toaster.getInstance(context).showLong("Failed to decrypt " + galleryFile.getName() + ": " + e.getMessage());
-                }
-
-                @Override
-                public void onInvalidPassword(InvalidPasswordException e) {
-                    e.printStackTrace();
-                    //Log.e(TAG, "onInvalidPassword: " + e.getMessage());
-                    //removeFileAt(holder.getAdapterPosition(), context);
-                }
-            })).start();*/
-        //} else {
         loadImage(galleryFile.getUri(), holder, context, galleryFile.getVersion());
-        //}
     }
 
     private void onItemPressed(FragmentActivity context) {
-        //context.onBackPressed();
-        //toggleFullscreen(context);
         setFullscreen(context, !this.isFullscreen);
-        //showButtons(holder, !this.isFullscreen);
     }
 
     private void toggleFullscreen(@NonNull FragmentActivity context) {
@@ -622,31 +596,6 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                     galleryFile.setNote(text);
                     context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
                 }).start();
-                /*Encryption.decryptToCache(context, galleryFile.getNoteUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
-                    @Override
-                    public void onUriResult(Uri outputUri) { // decrypted, now read it
-                        try {
-                            galleryFile.setNote(FileStuff.readTextFromUri(outputUri, context));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            galleryFile.setNote(context.getString(R.string.gallery_note_read_failed, e.getMessage()));
-                        }
-                        context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        e.printStackTrace();
-                        galleryFile.setNote(context.getString(R.string.gallery_note_decrypt_failed, e.getMessage()));
-                        context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
-                    }
-
-                    @Override
-                    public void onInvalidPassword(InvalidPasswordException e) {
-                        galleryFile.setNote(context.getString(R.string.gallery_note_decrypt_failed, e.getMessage()));
-                        context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
-                    }
-                });*/
             }
         } else {
             holder.parentBinding.noteLayout.setVisibility(View.GONE);

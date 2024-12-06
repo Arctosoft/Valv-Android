@@ -235,31 +235,6 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             galleryFile.setText(text);
             context.runOnUiThread(() -> galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition()));
         }).start();
-        /*Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
-            @Override
-            public void onUriResult(Uri outputUri) { // decrypted, now read it
-                try {
-                    galleryFile.setText(FileStuff.readTextFromUri(outputUri, context));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    galleryFile.setText(context.getString(R.string.gallery_file_read_failed, e.getMessage()));
-                }
-                galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition());
-            }
-
-            @Override
-            public void onError(Exception e) {
-                e.printStackTrace();
-                galleryFile.setText(context.getString(R.string.gallery_file_decrypt_failed, e.getMessage()));
-                galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition());
-            }
-
-            @Override
-            public void onInvalidPassword(InvalidPasswordException e) {
-                galleryFile.setText(context.getString(R.string.gallery_file_decrypt_failed, e.getMessage()));
-                galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition());
-            }
-        });*/
     }
 
     private void setItemFilename(@NonNull GalleryGridViewHolder holder, Context context, @NonNull GalleryFile galleryFile) {

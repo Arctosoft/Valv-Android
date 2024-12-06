@@ -58,9 +58,9 @@ public class ImportListAdapter extends RecyclerView.Adapter<ImportListViewHolder
     @Override
     public void onBindViewHolder(@NonNull ImportListViewHolder holder, int position) {
         if (position == 0 && firstPosName != null) {
-            holder.binding.text.setText(context.getString(R.string.bottom_modal_directory_current, firstPosName));
+            holder.binding.text.setText(context.getString(R.string.import_modal_directory_current, firstPosName));
         } else {
-            holder.binding.text.setText(context.getString(R.string.bottom_modal_directory_item, names.get(position)));
+            holder.binding.text.setText(context.getString(R.string.import_modal_directory_item, names.get(position)));
         }
         holder.binding.text.setOnClickListener(v -> onPositionSelected.onSelected(position));
     }
