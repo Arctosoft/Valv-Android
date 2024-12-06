@@ -49,13 +49,11 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.davemorrissey.labs.subscaleview.ImageSource;
 import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.google.android.material.color.MaterialColors;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.List;
@@ -78,6 +76,8 @@ import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.encryption.MyDataSourceFactory;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
+import se.arctosoft.vault.subsampling.ImageSource;
+import se.arctosoft.vault.subsampling.MySubsamplingScaleImageView;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.GlideStuff;
@@ -317,7 +317,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOnClickListener(v -> onItemPressed(context));
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setMinimumDpi(40);
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOrientation(SubsamplingScaleImageView.ORIENTATION_USE_EXIF);
-            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOnStateChangedListener(new SubsamplingScaleImageView.OnStateChangedListener() {
+            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOnStateChangedListener(new MySubsamplingScaleImageView.OnStateChangedListener() {
                 @Override
                 public void onScaleChanged(float newScale, int origin) {
                     showButtons(holder, newScale <= ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.getMinScale());
@@ -331,8 +331,8 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
             ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView.setOnClickListener(v -> onItemPressed(context));
         }
-        if (galleryFile.getDecryptedCacheUri() == null) {
-            new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
+        //if (galleryFile.getDecryptedCacheUri() == null) {
+            /*new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
                 @Override
                 public void onUriResult(Uri outputUri) {
                     galleryFile.setDecryptedCacheUri(outputUri);
@@ -351,10 +351,10 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                     //Log.e(TAG, "onInvalidPassword: " + e.getMessage());
                     //removeFileAt(holder.getAdapterPosition(), context);
                 }
-            })).start();
-        } else {
-            loadImage(galleryFile.getDecryptedCacheUri(), holder, context);
-        }
+            })).start();*/
+        //} else {
+        loadImage(galleryFile.getUri(), holder, context, galleryFile.getVersion());
+        //}
     }
 
     private void onItemPressed(FragmentActivity context) {
@@ -386,13 +386,13 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         notifyItemRangeChanged(0, galleryFiles.size(), isFullscreen);
     }
 
-    private void loadImage(Uri outputUri, GalleryPagerViewHolder holder, FragmentActivity context) {
+    private void loadImage(Uri uri, GalleryPagerViewHolder holder, FragmentActivity context, int version) {
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder) {
-            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setImage(ImageSource.uri(outputUri));
+            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setImage(ImageSource.uri(uri, password.getPassword(), version));
         } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
             Glide.with(context)
                     .asGif()
-                    .load(outputUri)
+                    .load(uri)
                     .apply(GlideStuff.getRequestOptions(useDiskCache))
                     .into(((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView);
         }
@@ -617,7 +617,12 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             } else {
                 holder.parentBinding.noteLayout.setVisibility(View.VISIBLE);
                 holder.parentBinding.note.setText(context.getString(R.string.gallery_loading_note));
-                Encryption.decryptToCache(context, galleryFile.getNoteUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
+                new Thread(() -> {
+                    String text = Encryption.readEncryptedTextFromUri(galleryFile.getNoteUri(), context, galleryFile.getVersion(), password.getPassword());
+                    galleryFile.setNote(text);
+                    context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
+                }).start();
+                /*Encryption.decryptToCache(context, galleryFile.getNoteUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
                     @Override
                     public void onUriResult(Uri outputUri) { // decrypted, now read it
                         try {
@@ -641,7 +646,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                         galleryFile.setNote(context.getString(R.string.gallery_note_decrypt_failed, e.getMessage()));
                         context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
                     }
-                });
+                });*/
             }
         } else {
             holder.parentBinding.noteLayout.setVisibility(View.GONE);

@@ -21,7 +21,6 @@ package se.arctosoft.vault.adapters;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.icu.text.SimpleDateFormat;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -44,7 +43,6 @@ import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.Date;
 import java.util.List;
@@ -63,7 +61,6 @@ import se.arctosoft.vault.fastscroll.views.FastScrollRecyclerView;
 import se.arctosoft.vault.interfaces.IOnFileClicked;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.interfaces.IOnSelectionModeChanged;
-import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.GlideStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.StringStuff;
@@ -233,7 +230,12 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     }
 
     private void readText(FragmentActivity context, GalleryFile galleryFile, GalleryGridViewHolder holder) {
-        Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
+        new Thread(() -> {
+            String text = Encryption.readEncryptedTextFromUri(galleryFile.getUri(), context, galleryFile.getVersion(), password.getPassword());
+            galleryFile.setText(text);
+            context.runOnUiThread(() -> galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition()));
+        }).start();
+        /*Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
             @Override
             public void onUriResult(Uri outputUri) { // decrypted, now read it
                 try {
@@ -257,7 +259,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                 galleryFile.setText(context.getString(R.string.gallery_file_decrypt_failed, e.getMessage()));
                 galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition());
             }
-        });
+        });*/
     }
 
     private void setItemFilename(@NonNull GalleryGridViewHolder holder, Context context, @NonNull GalleryFile galleryFile) {

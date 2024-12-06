@@ -32,13 +32,10 @@ import androidx.documentfile.provider.DocumentFile;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -174,20 +171,6 @@ public class FileStuff {
         } else {
             return encryptedName.substring(0, encryptedName.lastIndexOf("-"));
         }
-    }
-
-    public static String readTextFromUri(@NonNull Uri uri, Context context) throws IOException {
-        InputStream in = context.getContentResolver().openInputStream(uri);
-        BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-
-        StringBuilder sb = new StringBuilder();
-        int read;
-        char[] buffer = new char[8192];
-        while ((read = br.read(buffer)) != -1) {
-            sb.append(buffer, 0, read);
-        }
-
-        return sb.toString();
     }
 
     @NonNull

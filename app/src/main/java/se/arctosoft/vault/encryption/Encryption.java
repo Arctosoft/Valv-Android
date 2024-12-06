@@ -18,6 +18,7 @@
 
 package se.arctosoft.vault.encryption;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.util.Log;
@@ -35,10 +36,12 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -555,6 +558,28 @@ public class Encryption {
         }
         if (checkBytes != null) {
             fos.write(checkBytes);
+        }
+    }
+
+    public static String readEncryptedTextFromUri(@NonNull Uri encryptedInput, Context context, int version, char[] password) {
+        try {
+            InputStream inputStream = context.getContentResolver().openInputStream(encryptedInput);
+            Streams cis = getCipherInputStream(inputStream, password, false, version);
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(cis.inputStream, StandardCharsets.UTF_8));
+
+            StringBuilder sb = new StringBuilder();
+            int read;
+            char[] buffer = new char[8192];
+            while ((read = br.read(buffer)) != -1) {
+                sb.append(buffer, 0, read);
+            }
+
+            return sb.toString();
+        } catch (GeneralSecurityException | InvalidPasswordException | JSONException |
+                 IOException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 

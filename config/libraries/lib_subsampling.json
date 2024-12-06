@@ -1,0 +1,15 @@
+{
+  "uniqueId": "com.davemorrissey.labs:subsampling-scale-image-view",
+  "developers": [
+    {
+      "name": "David Morrissey"
+    }
+  ],
+  "artifactVersion": "2.0.1",
+  "description": "A custom image view for Android, designed for photo galleries and displaying huge images (e.g. maps and building plans) without OutOfMemoryErrors. ",
+  "name": "subsampling-scale-image-view",
+  "website": "https://github.com/davemorrissey/subsampling-scale-image-view",
+  "licenses": [
+    "fsls1"
+  ]
+}
