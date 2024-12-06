@@ -193,29 +193,36 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         } else {
             //Log.e(TAG, "onBindViewHolder: load image, version " + galleryFile.getVersion() + ", " + galleryFile.getFileType().suffixPrefix);
             holder.binding.imageView.setVisibility(View.VISIBLE);
-            Glide.with(context)
-                    .load(galleryFile.getThumbUri())
-                    .apply(GlideStuff.getRequestOptions())
-                    .listener(new RequestListener<>() {
-                        @Override
-                        public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                            if (e != null) {
-                                for (Throwable t : e.getRootCauses()) {
-                                    if (t instanceof InvalidPasswordException) {
-                                        removeItem(holder.getBindingAdapterPosition());
-                                        break;
+            if (galleryFile.getThumbUri() != null) {
+                Glide.with(context)
+                        .load(galleryFile.getThumbUri())
+                        .apply(GlideStuff.getRequestOptions())
+                        .listener(new RequestListener<>() {
+                            @Override
+                            public boolean onLoadFailed(@Nullable GlideException e, Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {
+                                if (e != null) {
+                                    for (Throwable t : e.getRootCauses()) {
+                                        if (t instanceof InvalidPasswordException) {
+                                            removeItem(holder.getBindingAdapterPosition());
+                                            break;
+                                        }
                                     }
                                 }
+                                return true;
                             }
-                            return true;
-                        }
 
-                        @Override
-                        public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
-                            return false;
-                        }
-                    })
-                    .into(holder.binding.imageView);
+                            @Override
+                            public boolean onResourceReady(@NonNull Drawable resource, @NonNull Object model, Target<Drawable> target, @NonNull DataSource dataSource, boolean isFirstResource) {
+                                return false;
+                            }
+                        })
+                        .into(holder.binding.imageView);
+            } else {
+                Glide.with(context)
+                        .load(R.drawable.outline_broken_image_24)
+                        .centerInside()
+                        .into(holder.binding.imageView);
+            }
             setItemFilename(holder, context, galleryFile);
         }
         setClickListener(holder, context, galleryFile);
