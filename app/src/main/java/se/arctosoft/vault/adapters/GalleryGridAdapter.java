@@ -23,6 +23,7 @@ import android.graphics.drawable.Drawable;
 import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -64,6 +65,7 @@ import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.interfaces.IOnSelectionModeChanged;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.GlideStuff;
+import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.StringStuff;
 import se.arctosoft.vault.viewmodel.GalleryViewModel;
 
@@ -71,21 +73,21 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     private static final String TAG = "GalleryFolderAdapter";
 
     private static final Object LOCK = new Object();
+    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
+
+    private final boolean isRootDir, useDiskCache;
+    private boolean showFileNames, selectMode;
+    private int lastSelectedPos;
+    private String nestedPath;
 
     private final WeakReference<FragmentActivity> weakReference;
     private final List<GalleryFile> galleryFiles;
     private final UniqueLinkedList<GalleryFile> selectedFiles;
     private final Password password;
-    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
-    private boolean showFileNames;
     private final GalleryViewModel galleryViewModel;
     private IOnFileDeleted onFileDeleted;
     private IOnFileClicked onFileCLicked;
     private IOnSelectionModeChanged onSelectionModeChanged;
-    private boolean selectMode;
-    private final boolean isRootDir;
-    private String nestedPath;
-    private int lastSelectedPos;
 
     @NonNull
     @Override
@@ -108,6 +110,8 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         this.selectedFiles = new UniqueLinkedList<>();
         this.isRootDir = isRootDir;
         password = Password.getInstance();
+        useDiskCache = Settings.getInstance(context).useDiskCache();
+        Log.e(TAG, "GalleryGridAdapter: useDiskCache " + useDiskCache);
     }
 
     public void setNestedPath(String nestedPath) {
@@ -178,7 +182,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             } else {
                 Glide.with(context)
                         .load(firstFile.getThumbUri())
-                        .apply(GlideStuff.getRequestOptions())
+                        .apply(GlideStuff.getRequestOptions(useDiskCache))
                         .into(holder.binding.imageView);
             }
             holder.binding.txtName.setText(context.getString(R.string.gallery_adapter_folder_name, galleryFile.getNameWithPath(), galleryFile.getFileCount()));
@@ -196,7 +200,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             if (galleryFile.getThumbUri() != null) {
                 Glide.with(context)
                         .load(galleryFile.getThumbUri())
-                        .apply(GlideStuff.getRequestOptions())
+                        .apply(GlideStuff.getRequestOptions(useDiskCache))
                         .listener(new RequestListener<>() {
                             @Override
                             public boolean onLoadFailed(@Nullable GlideException e, Object model, @NonNull Target<Drawable> target, boolean isFirstResource) {

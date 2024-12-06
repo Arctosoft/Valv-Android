@@ -31,6 +31,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
         setPreferencesFromResource(R.xml.root_preferences, rootKey);
 
         Preference iterationCount = findPreference(Settings.PREF_ENCRYPTION_ITERATION_COUNT);
+        SwitchPreferenceCompat useDiskCache = findPreference(Settings.PREF_ENCRYPTION_USE_DISK_CACHE);
         SwitchPreferenceCompat secure = findPreference(Settings.PREF_APP_SECURE);
 
         FragmentActivity activity = requireActivity();
@@ -42,7 +43,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
                 try {
                     int ic = Integer.parseInt(text);
                     if (ic < 20000 || ic > 500000) {
-                        Toaster.getInstance(activity).showLong(getString(R.string.gallery_iteration_count_hint));
+                        Toaster.getInstance(activity).showLong(getString(R.string.settings_iteration_count_hint));
                         return;
                     }
                     settings.setIterationCount(ic);
@@ -61,6 +62,12 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
             } else {
                 requireActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
             }
+            return true;
+        });
+
+        useDiskCache.setOnPreferenceChangeListener((preference, newValue) -> {
+            boolean enabled = (boolean) newValue;
+            settings.setUseDiskCache(enabled);
             return true;
         });
     }

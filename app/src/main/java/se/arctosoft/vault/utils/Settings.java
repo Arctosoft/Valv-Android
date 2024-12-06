@@ -39,6 +39,7 @@ public class Settings {
     private static final String PREF_DIRECTORIES = "p.gallery.dirs";
     private static final String PREF_SHOW_FILENAMES_IN_GRID = "p.gallery.fn";
     public static final String PREF_ENCRYPTION_ITERATION_COUNT = "encryption_iteration_count";
+    public static final String PREF_ENCRYPTION_USE_DISK_CACHE = "encryption_use_disk_cache";
     public static final String PREF_APP_SECURE = "app_secure";
 
     private final Context context;
@@ -69,6 +70,14 @@ public class Settings {
 
     public void setIterationCount(int iterationCount) {
         getSharedPrefsEditor().putInt(PREF_ENCRYPTION_ITERATION_COUNT, iterationCount).apply();
+    }
+
+    public boolean useDiskCache() {
+        return getSharedPrefs().getBoolean(PREF_ENCRYPTION_USE_DISK_CACHE, true);
+    }
+
+    public void setUseDiskCache(boolean useDiskCache) {
+        getSharedPrefsEditor().putBoolean(PREF_ENCRYPTION_USE_DISK_CACHE, useDiskCache).apply();
     }
 
     public boolean isSecureFlag() {

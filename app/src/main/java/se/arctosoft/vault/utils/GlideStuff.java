@@ -20,6 +20,7 @@ package se.arctosoft.vault.utils;
 
 import androidx.annotation.NonNull;
 
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.signature.ObjectKey;
 
@@ -28,8 +29,9 @@ import se.arctosoft.vault.MainActivity;
 public class GlideStuff {
 
     @NonNull
-    public static RequestOptions getRequestOptions() {
+    public static RequestOptions getRequestOptions(boolean useDiskCache) {
         return new RequestOptions()
+                .diskCacheStrategy(useDiskCache ? DiskCacheStrategy.AUTOMATIC : DiskCacheStrategy.NONE)
                 .signature(new ObjectKey(MainActivity.GLIDE_KEY));
     }
 

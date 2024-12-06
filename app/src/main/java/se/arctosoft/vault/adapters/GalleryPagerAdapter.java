@@ -80,6 +80,8 @@ import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
+import se.arctosoft.vault.utils.GlideStuff;
+import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.StringStuff;
 import se.arctosoft.vault.utils.Toaster;
 import se.arctosoft.vault.viewmodel.GalleryViewModel;
@@ -92,7 +94,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private final IOnFileDeleted onFileDeleted;
     private final DocumentFile currentDirectory;
     private final GalleryViewModel galleryViewModel;
-    private final boolean isAllFolder;
+    private final boolean isAllFolder, useDiskCache;
     private final String nestedPath;
     private final Map<Integer, ExoPlayer> players;
     private final Password password;
@@ -109,6 +111,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         this.nestedPath = nestedPath;
         this.players = new HashMap<>();
         this.password = Password.getInstance();
+        this.useDiskCache = Settings.getInstance(context).useDiskCache();
     }
 
     @NonNull
@@ -189,6 +192,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         if (firstFile != null) {
             Glide.with(context)
                     .load(firstFile.getThumbUri())
+                    .apply(GlideStuff.getRequestOptions(useDiskCache))
                     .into(((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.thumb);
         }
     }
@@ -255,6 +259,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         holder.binding.playerView.setVisibility(View.INVISIBLE);
         Glide.with(context)
                 .load(galleryFile.getThumbUri())
+                .apply(GlideStuff.getRequestOptions(useDiskCache))
                 .into(holder.binding.imgThumb);
         holder.parentBinding.imgFullscreen.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         holder.binding.rLPlay.setOnClickListener(v -> {
@@ -388,6 +393,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             Glide.with(context)
                     .asGif()
                     .load(outputUri)
+                    .apply(GlideStuff.getRequestOptions(useDiskCache))
                     .into(((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView);
         }
     }
@@ -628,7 +634,6 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                         e.printStackTrace();
                         galleryFile.setNote(context.getString(R.string.gallery_note_decrypt_failed, e.getMessage()));
                         context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
-
                     }
 
                     @Override
