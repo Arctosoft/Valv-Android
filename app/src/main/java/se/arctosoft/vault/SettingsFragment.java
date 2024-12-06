@@ -5,6 +5,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -13,11 +14,14 @@ import androidx.core.view.MenuProvider;
 import androidx.fragment.app.FragmentActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
-import androidx.preference.SeekBarPreference;
+import androidx.preference.SwitchPreferenceCompat;
 
 import se.arctosoft.vault.data.Password;
+import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.Settings;
+import se.arctosoft.vault.utils.Toaster;
 
 public class SettingsFragment extends PreferenceFragmentCompat implements MenuProvider {
     private static final String TAG = "SettingsFragment";
@@ -26,18 +30,38 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey);
 
-        SeekBarPreference iterationCount = findPreference(Settings.PREF_ENCRYPTION_ITERATION_COUNT);
-        iterationCount.setOnPreferenceChangeListener((preference, newValue) -> {
-            final int increment = iterationCount.getSeekBarIncrement();
-            float value = (int) newValue;
-            final int rounded = Math.round(value / increment);
-            final int finalValue = rounded * increment;
-            if (finalValue == value) {
-                return true;
+        Preference iterationCount = findPreference(Settings.PREF_ENCRYPTION_ITERATION_COUNT);
+        SwitchPreferenceCompat secure = findPreference(Settings.PREF_APP_SECURE);
+
+        FragmentActivity activity = requireActivity();
+        Settings settings = Settings.getInstance(activity);
+
+        iterationCount.setSummary(getString(R.string.settings_iteration_count_summary, settings.getIterationCount()));
+        iterationCount.setOnPreferenceClickListener(preference -> {
+            Dialogs.showSetIterationCountDialog(activity, settings.getIterationCount() + "", text -> {
+                try {
+                    int ic = Integer.parseInt(text);
+                    if (ic < 20000 || ic > 500000) {
+                        Toaster.getInstance(activity).showLong(getString(R.string.gallery_iteration_count_hint));
+                        return;
+                    }
+                    settings.setIterationCount(ic);
+                    iterationCount.setSummary(getString(R.string.settings_iteration_count_summary, ic));
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            });
+            return true;
+        });
+
+        secure.setOnPreferenceChangeListener((preference, newValue) -> {
+            boolean enabled = (boolean) newValue;
+            if (enabled) {
+                requireActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
             } else {
-                iterationCount.setValue(finalValue);
+                requireActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
             }
-            return false;
+            return true;
         });
     }
 

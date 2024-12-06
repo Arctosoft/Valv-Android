@@ -39,6 +39,7 @@ public class Settings {
     private static final String PREF_DIRECTORIES = "p.gallery.dirs";
     private static final String PREF_SHOW_FILENAMES_IN_GRID = "p.gallery.fn";
     public static final String PREF_ENCRYPTION_ITERATION_COUNT = "encryption_iteration_count";
+    public static final String PREF_APP_SECURE = "app_secure";
 
     private final Context context;
     private static Settings settings;
@@ -64,6 +65,14 @@ public class Settings {
 
     public int getIterationCount() {
         return getSharedPrefs().getInt(PREF_ENCRYPTION_ITERATION_COUNT, 50000);
+    }
+
+    public void setIterationCount(int iterationCount) {
+        getSharedPrefsEditor().putInt(PREF_ENCRYPTION_ITERATION_COUNT, iterationCount).apply();
+    }
+
+    public boolean isSecureFlag() {
+        return getSharedPrefs().getBoolean(PREF_APP_SECURE, true);
     }
 
     public void addGalleryDirectory(@NonNull Uri uri, boolean asRootDir, @Nullable IOnDirectoryAdded onDirectoryAdded) {

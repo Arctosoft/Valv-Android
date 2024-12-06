@@ -27,6 +27,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.content.res.AppCompatResources;
@@ -54,6 +56,25 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
 
     private BottomSheetImportBinding binding;
     private ImportViewModel importViewModel;
+
+    private final ActivityResultLauncher<Uri> resultLauncherAddFolder = registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(), uri -> {
+        if (uri != null) {
+            Context context = getContext();
+            if (context == null) {
+                return;
+            }
+            Settings.getInstance(context).addGalleryDirectory(uri, false, null);
+            DocumentFile pickedDirectory = DocumentFile.fromTreeUri(context, uri);
+            if (pickedDirectory != null) {
+                long bytes = 0;
+                for (DocumentFile documentFile : importViewModel.getFilesToImport()) {
+                    bytes += documentFile.length();
+                }
+                doImport(bytes, uri, FileStuff.getFilenameWithPathFromUri(uri), binding.checkboxDeleteAfter.isChecked(), pickedDirectory,
+                        importViewModel.getCurrentDirectoryUri() != null && uri.toString().equals(importViewModel.getCurrentDirectoryUri().toString()));
+            }
+        }
+    });
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -93,6 +114,7 @@ public class BottomSheetFragment extends BottomSheetDialogFragment {
         }
 
         setupRecyclerView(names, context, currentName, bytes, hasUri, directories, settings);
+        binding.buttonNewFolder.setOnClickListener(v -> resultLauncherAddFolder.launch(importViewModel.getCurrentDirectoryUri()));
 
         importViewModel.setOnImportDoneBottomSheet((destinationUri, sameDirectory, importedCount, failedCount, thumbErrorCount) -> {
             clearViewModel();

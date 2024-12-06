@@ -5,7 +5,6 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
@@ -15,6 +14,7 @@ import androidx.navigation.ui.NavigationUI;
 
 import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.databinding.ActivityMainBinding;
+import se.arctosoft.vault.utils.Settings;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -28,7 +28,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE); // TODO settings
+        Settings settings = Settings.getInstance(this);
+        if (settings.isSecureFlag()) {
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
+        }
 
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());

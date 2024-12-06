@@ -237,7 +237,8 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             if (activity == null || activity.isDestroyed()) {
                 return;
             }
-            if (sameDirectory || (destinationUri != null && destinationUri.toString().equals(galleryViewModel.getCurrentDirectoryUri().toString()))) { // files added to current directory
+            if (sameDirectory || (destinationUri != null && galleryViewModel.getCurrentDirectoryUri() != null
+                    && destinationUri.toString().equals(galleryViewModel.getCurrentDirectoryUri().toString()))) { // files added to current directory
                 activity.runOnUiThread(() -> {
                     synchronized (LOCK) {
                         int size = galleryViewModel.getGalleryFiles().size();

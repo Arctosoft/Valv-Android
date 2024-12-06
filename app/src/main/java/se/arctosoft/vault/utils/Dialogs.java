@@ -21,28 +21,25 @@ package se.arctosoft.vault.utils;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
-import android.view.View;
+import android.text.Editable;
+import android.text.TextWatcher;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.mikepenz.aboutlibraries.LibsBuilder;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
 import se.arctosoft.vault.BuildConfig;
 import se.arctosoft.vault.R;
-import se.arctosoft.vault.adapters.ImportListAdapter;
 import se.arctosoft.vault.databinding.DialogEditNoteBinding;
-import se.arctosoft.vault.databinding.DialogImportBinding;
 import se.arctosoft.vault.databinding.DialogImportTextBinding;
+import se.arctosoft.vault.databinding.DialogSetIterationCountBinding;
 import se.arctosoft.vault.interfaces.IOnEdited;
 
 public class Dialogs {
@@ -207,6 +204,42 @@ public class Dialogs {
                 .setTitle(context.getString(R.string.gallery_import_text_title))
                 .setView(binding.getRoot())
                 .setPositiveButton(isEdit ? R.string.gallery_import_text_overwrite : R.string.gallery_import_text_import, (dialog, which) -> onEdited.onEdited(binding.text.getText().toString()))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    public static void showSetIterationCountDialog(FragmentActivity context, @Nullable String editTextBody, IOnEdited onEdited) {
+        DialogSetIterationCountBinding binding = DialogSetIterationCountBinding.inflate(context.getLayoutInflater(), null, false);
+        if (editTextBody != null) {
+            binding.text.setText(editTextBody);
+        }
+        binding.text.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                try {
+                    int ic = Integer.parseInt(s.toString());
+                    if (ic > 500000) {
+                        binding.text.setText(String.valueOf(500000));
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        });
+
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(context.getString(R.string.settings_iteration_count_title))
+                .setView(binding.getRoot())
+                .setPositiveButton(R.string.save, (dialog, which) -> onEdited.onEdited(binding.text.getText().toString()))
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }

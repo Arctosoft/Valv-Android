@@ -18,6 +18,7 @@
     <string name="remove">Remove</string>
     <string name="licenses">Licenses</string>
     <string name="settings">Settings</string>
+    <string name="save">Save</string>
 
     <string name="launcher_title">Vault locked</string>
     <string name="launcher_subtitle">Enter decryption password</string>
@@ -28,7 +29,11 @@
 
     <string name="settings_encryption">Encryption</string>
     <string name="settings_iteration_count_title">Iteration count</string>
-    <string name="settings_iteration_count_summary">Set the iteration count used when encrypting new files. A higher value creates a stronger encryption key but is also slower. Default is 50000.</string>
+    <string name="settings_iteration_count_summary">Set the iteration count used when encrypting new files. A higher value creates a stronger encryption key but is also slower. Default is 50000.\nCurrent: %1$d</string>
+    <string name="gallery_iteration_count_hint">Min 20000, max 500000</string>
+    <string name="settings_app">App behaviour</string>
+    <string name="settings_secure_title">Use FLAG_SECURE</string>
+    <string name="settings_secure_summary">Tells Android to not allow screenshots or display the window view on a non-secure display.</string>
 
     <string name="menu_gallery_edit_included_folders">Edit included folders</string>
     <string name="menu_gallery_import">Import files</string>
