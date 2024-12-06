@@ -38,6 +38,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -76,6 +78,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
     private GalleryGridAdapter galleryGridAdapter;
     private GalleryPagerAdapter galleryPagerAdapter;
     private Settings settings;
+    private Snackbar snackBarBackPressed;
 
     private int foundFiles = 0, foundFolders = 0;
     private boolean isCancelled = false;
@@ -166,6 +169,10 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
                     showViewpager(false, galleryViewModel.getCurrentPosition(), false);
                 } else if (galleryViewModel.isInSelectionMode()) {
                     galleryGridAdapter.onSelectionModeChanged(false);
+                } else if (snackBarBackPressed == null || !snackBarBackPressed.isShownOrQueued()) {
+                    snackBarBackPressed = Snackbar.make(binding.fab, getString(R.string.main_press_back_again_to_exit), 2000);
+                    snackBarBackPressed.setAnchorView(binding.fab);
+                    snackBarBackPressed.show();
                 } else if (!navController.popBackStack()) {
                     FragmentActivity activity = requireActivity();
                     Password.lock(activity);
