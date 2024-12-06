@@ -145,6 +145,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         navController = NavHostFragment.findNavController(this);
         Log.e(TAG, "onViewCreated: locked? " + passwordViewModel.isLocked());
         if (passwordViewModel.isLocked()) {
+            Password.lock(requireActivity());
             navController.navigate(R.id.password);
         } else {
             init();
