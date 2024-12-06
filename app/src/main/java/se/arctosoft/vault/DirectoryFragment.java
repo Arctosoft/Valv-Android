@@ -1,6 +1,7 @@
 package se.arctosoft.vault;
 
 import android.animation.Animator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -41,11 +42,14 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import se.arctosoft.vault.adapters.GalleryGridAdapter;
 import se.arctosoft.vault.adapters.GalleryPagerAdapter;
+import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.databinding.FragmentDirectoryBinding;
@@ -64,6 +68,17 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
 
     private static final Object LOCK = new Object();
     private static final int MIN_FILES_FOR_FAST_SCROLL = 60;
+    private static final int ORDER_BY_NEWEST = 0;
+    private static final int ORDER_BY_OLDEST = 1;
+    private static final int ORDER_BY_LARGEST = 2;
+    private static final int ORDER_BY_SMALLEST = 3;
+    private static final int ORDER_BY_RANDOM = 4;
+    private static final int FILTER_ALL = 0;
+    private static final int FILTER_IMAGES = FileType.IMAGE_V2.type;
+    private static final int FILTER_GIFS = FileType.GIF_V2.type;
+    private static final int FILTER_VIDEOS = FileType.VIDEO_V2.type;
+    private static final int FILTER_TEXTS = FileType.TEXT_V2.type;
+
     public static final String ARGUMENT_DIRECTORY = "directory";
     public static final String ARGUMENT_NESTED_PATH = "nestedPath";
     public static final String ARGUMENT_IS_ALL = "all";
@@ -80,7 +95,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
     private Settings settings;
     private Snackbar snackBarBackPressed;
 
-    private int foundFiles = 0, foundFolders = 0;
+    private int foundFiles = 0, foundFolders = 0, orderBy = ORDER_BY_NEWEST;
     private boolean isCancelled = false;
 
     private final ActivityResultLauncher<Uri> resultLauncherAddFolder = registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(), uri -> {
@@ -169,7 +184,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
                     showViewpager(false, galleryViewModel.getCurrentPosition(), false);
                 } else if (galleryViewModel.isInSelectionMode()) {
                     galleryGridAdapter.onSelectionModeChanged(false);
-                } else if (snackBarBackPressed == null || !snackBarBackPressed.isShownOrQueued()) {
+                } else if (galleryViewModel.isRootDir() && (snackBarBackPressed == null || !snackBarBackPressed.isShownOrQueued())) {
                     snackBarBackPressed = Snackbar.make(binding.fab, getString(R.string.main_press_back_again_to_exit), 2000);
                     snackBarBackPressed.setAnchorView(binding.fab);
                     snackBarBackPressed.show();
@@ -877,6 +892,90 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         return files;
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    private void orderBy(int order) {
+        this.orderBy = order;
+        new Thread(() -> {
+            synchronized (LOCK) {
+                List<GalleryFile> galleryFiles = galleryViewModel.getGalleryFiles();
+                if (order == ORDER_BY_NEWEST) {
+                    galleryFiles.sort((o1, o2) -> {
+                        if (o1.getLastModified() > o2.getLastModified()) {
+                            return -1;
+                        } else if (o1.getLastModified() < o2.getLastModified()) {
+                            return 1;
+                        }
+                        return 0;
+                    });
+                } else if (order == ORDER_BY_OLDEST) {
+                    galleryFiles.sort((o1, o2) -> {
+                        if (o1.getLastModified() > o2.getLastModified()) {
+                            return 1;
+                        } else if (o1.getLastModified() < o2.getLastModified()) {
+                            return -1;
+                        }
+                        return 0;
+                    });
+                } else if (order == ORDER_BY_LARGEST) {
+                    galleryFiles.sort((o1, o2) -> {
+                        if (o1.getSize() > o2.getSize()) {
+                            return -1;
+                        } else if (o1.getSize() < o2.getSize()) {
+                            return 1;
+                        }
+                        return 0;
+                    });
+                } else if (order == ORDER_BY_SMALLEST) {
+                    galleryFiles.sort((o1, o2) -> {
+                        if (o1.getSize() > o2.getSize()) {
+                            return 1;
+                        } else if (o1.getSize() < o2.getSize()) {
+                            return -1;
+                        }
+                        return 0;
+                    });
+                } else {
+                    Collections.shuffle(galleryFiles);
+                }
+                requireActivity().runOnUiThread(() -> {
+                    synchronized (LOCK) {
+                        galleryGridAdapter.notifyDataSetChanged();
+                        galleryPagerAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private void filterBy(int filter) {
+        new Thread(() -> {
+            synchronized (LOCK) {
+                List<GalleryFile> hiddenFiles = galleryViewModel.getHiddenFiles();
+                List<GalleryFile> galleryFiles = galleryViewModel.getGalleryFiles();
+                if (!hiddenFiles.isEmpty()) {
+                    galleryViewModel.getGalleryFiles().addAll(hiddenFiles);
+                    hiddenFiles.clear();
+                }
+                if (filter != FILTER_ALL) {
+                    Iterator<GalleryFile> it = galleryFiles.iterator();
+                    while (it.hasNext()) {
+                        GalleryFile f = it.next();
+                        if (!f.isDirectory() && f.getFileType().type != filter) {
+                            it.remove();
+                            hiddenFiles.add(f);
+                        }
+                    }
+                    requireActivity().runOnUiThread(() -> {
+                        galleryGridAdapter.notifyDataSetChanged();
+                        galleryPagerAdapter.notifyDataSetChanged();
+                    });
+                }
+                orderBy(this.orderBy);
+            }
+        }).start();
+    }
+
     @Override
     public void onStop() {
         if (galleryPagerAdapter != null) {
@@ -918,7 +1017,11 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
                 menuInflater.inflate(R.menu.menu_main_selection_dir, menu);
             }
         } else {
-            menuInflater.inflate(R.menu.menu_main, menu);
+            if (galleryViewModel.isRootDir()) {
+                menuInflater.inflate(R.menu.menu_root, menu);
+            } else {
+                menuInflater.inflate(R.menu.menu_dir, menu);
+            }
         }
     }
 
@@ -935,6 +1038,36 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             if (activity != null) {
                 activity.finish();
             }
+            return true;
+        } else if (id == R.id.order_by_newest_first) {
+            orderBy(ORDER_BY_NEWEST);
+            return true;
+        } else if (id == R.id.order_by_oldest_first) {
+            orderBy(ORDER_BY_OLDEST);
+            return true;
+        } else if (id == R.id.order_by_largest_first) {
+            orderBy(ORDER_BY_LARGEST);
+            return true;
+        } else if (id == R.id.order_by_smallest_first) {
+            orderBy(ORDER_BY_SMALLEST);
+            return true;
+        } else if (id == R.id.order_by_random) {
+            orderBy(ORDER_BY_RANDOM);
+            return true;
+        } else if (id == R.id.filter_all) {
+            filterBy(FILTER_ALL);
+            return true;
+        } else if (id == R.id.filter_images) {
+            filterBy(FILTER_IMAGES);
+            return true;
+        } else if (id == R.id.filter_gifs) {
+            filterBy(FILTER_GIFS);
+            return true;
+        } else if (id == R.id.filter_videos) {
+            filterBy(FILTER_VIDEOS);
+            return true;
+        } else if (id == R.id.filter_text) {
+            filterBy(FILTER_TEXTS);
             return true;
         }
 
