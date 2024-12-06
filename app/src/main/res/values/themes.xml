@@ -1,6 +1,7 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.Vault" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.Valv" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/primary_color</item>
         <item name="colorPrimaryVariant">@color/primary_dark_color</item>
@@ -27,12 +28,5 @@
         <item name="android:backgroundTint">@color/button_warning_color</item>
     </style>
 
-    <!--<style name="Theme.Vault.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-    </style>
-
-    <style name="Theme.Vault.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-    <style name="Theme.Vault.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />-->
+    <style name="Theme.Valv" parent="Base.Theme.Valv" />
 </resources>

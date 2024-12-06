@@ -1,0 +1,20 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory app:title="@string/settings_encryption">
+
+        <SeekBarPreference
+            android:defaultValue="110"
+            android:icon="@drawable/round_key_24"
+            android:key="encryption_iteration_count"
+            android:max="500000"
+            android:summary="@string/settings_iteration_count_summary"
+            android:title="@string/settings_iteration_count_title"
+            app:min="20000"
+            app:defaultValue="50000"
+            app:seekBarIncrement="10000"
+            app:showSeekBarValue="true" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,14 +23,14 @@ import androidx.annotation.NonNull;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.signature.ObjectKey;
 
-import se.arctosoft.vault.LaunchActivity;
+import se.arctosoft.vault.MainActivity;
 
 public class GlideStuff {
 
     @NonNull
     public static RequestOptions getRequestOptions() {
         return new RequestOptions()
-                .signature(new ObjectKey(LaunchActivity.GLIDE_KEY));
+                .signature(new ObjectKey(MainActivity.GLIDE_KEY));
     }
 
 }

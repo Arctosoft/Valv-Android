@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,34 +27,39 @@ import com.bumptech.glide.Priority;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.data.DataFetcher;
 
+import org.json.JSONException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 
+import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.exception.InvalidPasswordException;
-import se.arctosoft.vault.utils.Settings;
 
 public class CipherDataFetcher implements DataFetcher<InputStream> {
     private static final String TAG = "CipherDataFetcher";
     private Encryption.Streams streams;
     private final Context context;
     private final Uri uri;
-    private final Settings settings;
+    private final int version;
+    private final Password password;
 
-    public CipherDataFetcher(@NonNull Context context, Uri uri) {
+    public CipherDataFetcher(@NonNull Context context, Uri uri, int version) {
         this.context = context.getApplicationContext();
         this.uri = uri;
-        this.settings = Settings.getInstance(context);
+        this.version = version;
+        this.password = Password.getInstance();
     }
 
     @Override
     public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super InputStream> callback) {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            streams = Encryption.getCipherInputStream(inputStream, settings.getTempPassword(), true);
+            streams = Encryption.getCipherInputStream(inputStream, password.getPassword(), true, version);
             callback.onDataReady(streams.getInputStream());
-        } catch (GeneralSecurityException | IOException | InvalidPasswordException e) {
+        } catch (GeneralSecurityException | IOException | InvalidPasswordException |
+                 JSONException e) {
             //e.printStackTrace();
             callback.onLoadFailed(e);
         }

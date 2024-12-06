@@ -1,11 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="se.arctosoft.vault.MainActivity">
+
     <item
         android:id="@+id/lock"
         android:icon="@drawable/ic_outline_lock_24"
         android:title="@string/menu_lock_vault"
-        app:showAsAction="always" />
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/order_by"
         android:icon="@drawable/round_sort_24"
@@ -58,23 +60,12 @@
         android:title="@string/menu_toggle_filename"
         app:showAsAction="ifRoom" />
     <item
-        android:id="@+id/select_all"
-        android:icon="@drawable/ic_baseline_select_all_24"
-        android:title="@string/menu_select_all"
-        app:showAsAction="ifRoom" />
+        android:id="@+id/action_settings"
+        android:orderInCategory="100"
+        android:title="@string/settings"
+        app:showAsAction="never" />
     <item
-        android:id="@+id/export_selected"
-        android:icon="@drawable/ic_outline_file_download_24"
-        android:title="@string/gallery_export_selected_files"
-        app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/copy_selected"
-        android:icon="@drawable/outline_file_copy_24"
-        android:title="@string/gallery_copy_selected_files"
-        app:showAsAction="ifRoom" />
-    <item
-        android:id="@+id/move_selected"
-        android:icon="@drawable/outline_drive_file_move_24"
-        android:title="@string/gallery_move_selected_files"
-        app:showAsAction="ifRoom" />
+        android:id="@+id/about"
+        android:title="@string/menu_about"
+        app:showAsAction="never" />
 </menu>

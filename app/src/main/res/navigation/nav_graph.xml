@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/directory">
+
+    <fragment
+        android:id="@+id/directory"
+        android:name="se.arctosoft.vault.DirectoryFragment"
+        android:label="@string/gallery_title"
+        tools:layout="@layout/fragment_directory">
+        <action
+            android:id="@+id/action_directory_to_settings"
+            app:destination="@id/settings" />
+        <action
+            android:id="@+id/action_directory_self"
+            app:destination="@id/directory">
+            <argument
+                android:name="directory"
+                app:argType="string"
+                app:nullable="false" />
+            <argument
+                android:name="nestedPath"
+                app:argType="string"
+                app:nullable="true" />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/password"
+        android:name="se.arctosoft.vault.PasswordFragment"
+        android:label="@string/launcher_title"
+        tools:layout="@layout/fragment_password" />
+
+    <fragment
+        android:id="@+id/settings"
+        android:name="se.arctosoft.vault.SettingsFragment"
+        android:label="@string/settings" />
+
+</navigation>

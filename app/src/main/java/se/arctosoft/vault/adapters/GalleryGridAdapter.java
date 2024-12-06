@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,10 +19,10 @@
 package se.arctosoft.vault.adapters;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +33,7 @@ import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -48,10 +49,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import se.arctosoft.vault.GalleryDirectoryActivity;
+import se.arctosoft.vault.DirectoryFragment;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryGridViewHolder;
 import se.arctosoft.vault.data.GalleryFile;
+import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.data.UniqueLinkedList;
 import se.arctosoft.vault.databinding.AdapterGalleryGridItemBinding;
 import se.arctosoft.vault.encryption.Encryption;
@@ -62,8 +64,8 @@ import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.interfaces.IOnSelectionModeChanged;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.GlideStuff;
-import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.StringStuff;
+import se.arctosoft.vault.viewmodel.GalleryViewModel;
 
 public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHolder> implements IOnSelectionModeChanged, FastScrollRecyclerView.SectionedAdapter {
     private static final String TAG = "GalleryFolderAdapter";
@@ -73,9 +75,10 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     private final WeakReference<FragmentActivity> weakReference;
     private final List<GalleryFile> galleryFiles;
     private final UniqueLinkedList<GalleryFile> selectedFiles;
-    private final Settings settings;
+    private final Password password;
     private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
     private boolean showFileNames;
+    private final GalleryViewModel galleryViewModel;
     private IOnFileDeleted onFileDeleted;
     private IOnFileClicked onFileCLicked;
     private IOnSelectionModeChanged onSelectionModeChanged;
@@ -97,13 +100,14 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         static final int TYPE_LOADED_NOTE = 3;
     }
 
-    public GalleryGridAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, boolean showFileNames, boolean isRootDir) {
+    public GalleryGridAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, boolean showFileNames, boolean isRootDir, GalleryViewModel galleryViewModel) {
         this.weakReference = new WeakReference<>(context);
-        this.settings = Settings.getInstance(context);
         this.galleryFiles = galleryFiles;
         this.showFileNames = showFileNames;
+        this.galleryViewModel = galleryViewModel;
         this.selectedFiles = new UniqueLinkedList<>();
         this.isRootDir = isRootDir;
+        password = Password.getInstance();
     }
 
     public void setNestedPath(String nestedPath) {
@@ -158,8 +162,20 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             holder.binding.txtName.setText(context.getString(R.string.gallery_all));
         } else if (galleryFile.isDirectory()) {
             holder.binding.imageView.setVisibility(View.VISIBLE);
+            galleryFile.findFilesInDirectory(context, () -> {
+                if (context != null) {
+                    context.runOnUiThread(() -> {
+                        int bindingAdapterPosition = holder.getBindingAdapterPosition();
+                        if (bindingAdapterPosition != RecyclerView.NO_POSITION) {
+                            galleryViewModel.getOnAdapterItemChanged().onChanged(bindingAdapterPosition);
+                        }
+                    });
+                }
+            });
             GalleryFile firstFile = galleryFile.getFirstFile();
-            if (firstFile != null) {
+            if (firstFile == null) {
+                Glide.with(context).clear(holder.binding.imageView);
+            } else {
                 Glide.with(context)
                         .load(firstFile.getThumbUri())
                         .apply(GlideStuff.getRequestOptions())
@@ -175,6 +191,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                 readText(context, galleryFile, holder);
             }
         } else {
+            //Log.e(TAG, "onBindViewHolder: load image, version " + galleryFile.getVersion() + ", " + galleryFile.getFileType().suffixPrefix);
             holder.binding.imageView.setVisibility(View.VISIBLE);
             Glide.with(context)
                     .load(galleryFile.getThumbUri())
@@ -205,7 +222,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     }
 
     private void readText(FragmentActivity context, GalleryFile galleryFile, GalleryGridViewHolder holder) {
-        Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), settings.getTempPassword(), new Encryption.IOnUriResult() {
+        Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
             @Override
             public void onUriResult(Uri outputUri) { // decrypted, now read it
                 try {
@@ -214,26 +231,20 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                     e.printStackTrace();
                     galleryFile.setText(context.getString(R.string.gallery_file_read_failed, e.getMessage()));
                 }
-                if (context instanceof GalleryDirectoryActivity) {
-                    context.runOnUiThread(() -> ((GalleryDirectoryActivity) context).onItemChanged(holder.getBindingAdapterPosition()));
-                }
+                galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition());
             }
 
             @Override
             public void onError(Exception e) {
                 e.printStackTrace();
                 galleryFile.setText(context.getString(R.string.gallery_file_decrypt_failed, e.getMessage()));
-                if (context instanceof GalleryDirectoryActivity) {
-                    context.runOnUiThread(() -> ((GalleryDirectoryActivity) context).onItemChanged(holder.getBindingAdapterPosition()));
-                }
+                galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition());
             }
 
             @Override
             public void onInvalidPassword(InvalidPasswordException e) {
                 galleryFile.setText(context.getString(R.string.gallery_file_decrypt_failed, e.getMessage()));
-                if (context instanceof GalleryDirectoryActivity) {
-                    context.runOnUiThread(() -> ((GalleryDirectoryActivity) context).onItemChanged(holder.getBindingAdapterPosition()));
-                }
+                galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition());
             }
         });
     }
@@ -251,36 +262,37 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             final int pos = holder.getBindingAdapterPosition();
             if (galleryFile.isAllFolder()) {
                 if (!selectMode) {
-                    context.startActivity(new Intent(context, GalleryDirectoryActivity.class)
-                            .putExtra(GalleryDirectoryActivity.EXTRA_IS_ALL, true));
+                    Bundle bundle = new Bundle();
+                    bundle.putBoolean(DirectoryFragment.ARGUMENT_IS_ALL, true);
+                    Navigation.findNavController(holder.binding.layout).navigate(R.id.action_directory_self, bundle);
                 }
-            } else if (selectMode && (isRootDir || !galleryFile.isDirectory())) {
-                if (!selectedFiles.contains(galleryFile)) {
-                    selectedFiles.add(galleryFile);
-                    lastSelectedPos = pos;
-                } else {
-                    selectedFiles.remove(galleryFile);
-                    if (selectedFiles.isEmpty()) {
-                        setSelectMode(false);
+            } else if (selectMode) {
+                if (isRootDir || !galleryFile.isDirectory()) {
+                    if (!selectedFiles.contains(galleryFile)) {
+                        selectedFiles.add(galleryFile);
+                        lastSelectedPos = pos;
+                    } else {
+                        selectedFiles.remove(galleryFile);
+                        if (selectedFiles.isEmpty()) {
+                            setSelectMode(false);
+                        }
+                        lastSelectedPos = -1;
                     }
-                    lastSelectedPos = -1;
+                    updateSelectedView(holder, galleryFile);
                 }
-                if (context instanceof GalleryDirectoryActivity activity) {
-                    activity.onSelectionChanged(selectedFiles.size());
-                }
-                updateSelectedView(holder, galleryFile);
             } else {
                 if (galleryFile.isDirectory()) {
-                    Intent intent = new Intent(context, GalleryDirectoryActivity.class);
+                    Bundle bundle = new Bundle();
                     if (isRootDir) {
-                        intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, DocumentFile.fromTreeUri(context, galleryFile.getUri()).getUri().toString());
+                        bundle.putString(DirectoryFragment.ARGUMENT_DIRECTORY, DocumentFile.fromTreeUri(context, galleryFile.getUri()).getUri().toString());
+                        bundle.putString(DirectoryFragment.ARGUMENT_NESTED_PATH, "/" + new File(galleryFile.getUri().getPath()).getName());
                     } else if (nestedPath != null) {
-                        intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString())
-                                .putExtra(GalleryDirectoryActivity.EXTRA_NESTED_PATH, nestedPath + "/" + new File(galleryFile.getUri().getPath()).getName());
+                        bundle.putString(DirectoryFragment.ARGUMENT_DIRECTORY, galleryFile.getUri().toString());
+                        bundle.putString(DirectoryFragment.ARGUMENT_NESTED_PATH, nestedPath + "/" + new File(galleryFile.getUri().getPath()).getName());
                     } else {
-                        intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString());
+                        bundle.putString(DirectoryFragment.ARGUMENT_DIRECTORY, galleryFile.getUri().toString());
                     }
-                    context.startActivity(intent);
+                    Navigation.findNavController(holder.binding.layout).navigate(R.id.action_directory_self, bundle);
                 } else {
                     if (onFileCLicked != null) {
                         onFileCLicked.onClick(pos);
@@ -307,9 +319,9 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                             }
                             notifyItemRangeChanged(minPos, 1 + (maxPos - minPos), new Payload(Payload.TYPE_SELECT_ALL));
                         }
-                        if (context instanceof GalleryDirectoryActivity activity) {
-                            activity.onSelectionChanged(selectedFiles.size());
-                        }
+                        //if (context instanceof GalleryDirectoryActivity activity) {
+                        //    activity.onSelectionChanged(selectedFiles.size());
+                        //}
                     } else {
                         holder.binding.layout.performClick();
                     }
@@ -406,9 +418,9 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             }
             notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
         }
-        if (weakReference.get() instanceof GalleryDirectoryActivity activity) {
-            activity.onSelectionChanged(selectedFiles.size());
-        }
+        //if (weakReference.get() instanceof GalleryDirectoryActivity activity) {
+        //    activity.onSelectionChanged(selectedFiles.size());
+        //}
     }
 
     public boolean toggleFilenames() {

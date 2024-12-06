@@ -17,6 +17,7 @@
     <string name="more">More</string>
     <string name="remove">Remove</string>
     <string name="licenses">Licenses</string>
+    <string name="settings">Settings</string>
 
     <string name="launcher_title">Vault locked</string>
     <string name="launcher_subtitle">Enter decryption password</string>
@@ -24,6 +25,10 @@
     <string name="launcher_button">Unlock vault</string>
     <string name="launcher_help_title">Help</string>
     <string name="launcher_help_message">Enter a password to use as decryption and encryption key. At least eight characters is recommended.\n\nTip: use different passwords to manage different vaults</string>
+
+    <string name="settings_encryption">Encryption</string>
+    <string name="settings_iteration_count_title">Iteration count</string>
+    <string name="settings_iteration_count_summary">Set the iteration count used when encrypting new files. A higher value creates a stronger encryption key but is also slower. Default is 50000.</string>
 
     <string name="menu_gallery_edit_included_folders">Edit included folders</string>
     <string name="menu_gallery_import">Import files</string>
@@ -48,9 +53,9 @@
     <string name="gallery_adapter_folder_name">%1$s (%2$d)</string>
     <string name="gallery_adapter_file_name">%1$s (%2$s)</string>
     <string name="gallery_add_folder">Add a folder</string>
+    <string name="gallery_import_media">Import media</string>
+    <string name="gallery_add_text">Import text</string>
     <string name="gallery_added_folder">Added %1$s</string>
-    <string name="gallery_added_folder_duplicate">You have already added %1$s</string>
-    <string name="gallery_added_folder_child">Added %1$s as a child of %2$s</string>
     <string name="gallery_import_files">Import files</string>
     <string name="gallery_import_images">Images/GIFs</string>
     <string name="gallery_import_videos">Videos</string>
@@ -100,6 +105,25 @@
     <string name="gallery_share_decrypting_error">Decrypt error: %1$s</string>
     <string name="gallery_share_with">Share/open with</string>
     <string name="gallery_click_to_open_directory">Click to open\n%1$s</string>
+    <string name="gallery_find_files_no_permission">No permission to read %1$s, please add it again</string>
+
+    <plurals name="bottom_modal_title">
+        <item quantity="one">Import %1$d file (%2$s)</item>
+        <item quantity="other">Import %1$d files (%2$s)</item>
+    </plurals>
+    <plurals name="bottom_modal_title_importing">
+        <item quantity="one">Importing %1$d file (%2$s)</item>
+        <item quantity="other">Importing %1$d files (%2$s)</item>
+    </plurals>
+    <string name="bottom_modal_body">Your files will be encrypted and imported into the folder you select below.</string>
+    <string name="bottom_modal_body_importing">Your files are being encrypted and imported into %1$s.</string>
+    <string name="bottom_modal_importing">Importing %1$d out of %2$d\n%3$s/%4$s MB</string>
+    <string name="bottom_modal_directory_other">Use other folder</string>
+    <string name="bottom_modal_directory_current">- Current folder \"%1$s\"</string>
+    <string name="bottom_modal_directory_item">- %1$s</string>
+    <string name="bottom_modal_checkbox_delete">Delete the original files after importing</string>
+    <string name="bottom_modal_destination">Select destination:</string>
+    <string name="bottom_modal_cancel">Cancel</string>
 
     <string name="dialog_remove_folder_title">Remove?</string>
     <plurals name="dialog_remove_folder_message">
@@ -131,6 +155,6 @@
     <string name="dialog_delete_file_title">Delete?</string>
     <string name="dialog_delete_file_message">Delete this file permanently?</string>
     <string name="dialog_about_title">About</string>
-    <string name="dialog_about_message">Valv gallery vault\n\nVersion %1$s-%2$s (%3$d)\n\nFiles are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.\n\n\u00A9 2023 Arctosoft AB</string>
+    <string name="dialog_about_message">Valv gallery vault\n\nVersion %1$s-%2$s (%3$d)\n\nFiles are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-SHA512.\n\n\u00A9 2024 Arctosoft AB</string>
 
 </resources>

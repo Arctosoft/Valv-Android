@@ -48,7 +48,7 @@ import se.arctosoft.vault.interfaces.IOnEdited;
 public class Dialogs {
     private static final String TAG = "Dialogs";
 
-    public static void showImportGalleryChooseDestinationDialog(FragmentActivity context, Settings settings, int fileCount, IOnDirectorySelected onDirectorySelected) {
+    /*public static void showImportGalleryChooseDestinationDialog(FragmentActivity context, Settings settings, int fileCount, IOnDirectorySelected onDirectorySelected) {
         List<Uri> directories = settings.getGalleryDirectoriesAsUri(false);
         List<String> names = new ArrayList<>(directories.size());
         for (int i = 0; i < directories.size(); i++) {
@@ -112,7 +112,7 @@ public class Dialogs {
         binding.checkbox.setVisibility(View.GONE);
         binding.recycler.setLayoutManager(new LinearLayoutManager(context));
         binding.recycler.setAdapter(adapter);
-    }
+    }*/
 
     public static void showCopyMoveChooseDestinationDialog(FragmentActivity context, Settings settings, int fileCount, IOnDirectorySelected onDirectorySelected) {
         List<Uri> directories = settings.getGalleryDirectoriesAsUri(false);
