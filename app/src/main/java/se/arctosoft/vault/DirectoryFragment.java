@@ -1029,6 +1029,9 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         } else if (id == R.id.move_selected) {
             //moveSelected();
             return true;
+        } else if (id == R.id.about) {
+            Dialogs.showAboutDialog(requireContext());
+            return true;
         }
 
         return false;

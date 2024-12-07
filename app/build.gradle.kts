@@ -72,7 +72,6 @@ dependencies {
     annotationProcessor(libs.glide.annotation)
 
     implementation(libs.glide)
-    implementation(libs.subsampling)
     implementation(libs.about.libraries)
     implementation(libs.about.libraries.compose)
 }

@@ -49,7 +49,6 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.google.android.material.color.MaterialColors;
 
 import java.io.File;
@@ -316,7 +315,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder) {
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOnClickListener(v -> onItemPressed(context));
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setMinimumDpi(40);
-            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOrientation(SubsamplingScaleImageView.ORIENTATION_USE_EXIF);
+            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOrientation(MySubsamplingScaleImageView.ORIENTATION_USE_EXIF);
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOnStateChangedListener(new MySubsamplingScaleImageView.OnStateChangedListener() {
                 @Override
                 public void onScaleChanged(float newScale, int origin) {

@@ -6,8 +6,8 @@
     }
   ],
   "artifactVersion": "2.0.1",
-  "description": "A custom image view for Android, designed for photo galleries and displaying huge images (e.g. maps and building plans) without OutOfMemoryErrors. ",
-  "name": "subsampling-scale-image-view",
+  "description": "Highly configurable, easily extendable deep zoom view for displaying huge images without loss of detail. Perfect for photo galleries, maps, building plans etc.",
+  "name": "SubsamplingScaleImageView",
   "website": "https://github.com/davemorrissey/subsampling-scale-image-view",
   "licenses": [
     "fsls1"

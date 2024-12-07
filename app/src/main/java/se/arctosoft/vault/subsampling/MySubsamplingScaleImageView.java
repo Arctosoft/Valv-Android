@@ -50,8 +50,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.exifinterface.media.ExifInterface;
 
-import com.davemorrissey.labs.subscaleview.ImageViewState;
-
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;

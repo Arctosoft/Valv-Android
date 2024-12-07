@@ -14,7 +14,6 @@ aboutLibraries = "11.2.3"
 exoplayer = "1.5.0"
 ui = "1.5.0"
 glide = "4.16.0"
-subsampling = "3.10.0"
 preference = "1.2.1"
 
 [libraries]
@@ -33,7 +32,6 @@ media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", versi
 media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "ui" }
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 glide-annotation = { group = "com.github.bumptech.glide", name = "compiler", version.ref = "glide" }
-subsampling = { group = "com.davemorrissey.labs", name = "subsampling-scale-image-view-androidx", version.ref = "subsampling" }
 
 about-libraries = { group = "com.mikepenz", name = "aboutlibraries", version.ref = "aboutLibraries" }
 about-libraries-compose = { group = "com.mikepenz", name = "aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
