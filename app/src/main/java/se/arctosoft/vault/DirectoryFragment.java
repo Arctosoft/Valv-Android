@@ -1074,6 +1074,8 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         } else if (id == R.id.filter_text) {
             filterBy(FILTER_TEXTS);
             return true;
+        } else if (id == R.id.toggle_filename) {
+            settings.setShowFilenames(galleryGridAdapter.toggleFilenames());
         }
 
         return false;

@@ -38,6 +38,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -588,7 +589,9 @@ public class Encryption {
             try {
                 InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
 
-                Path file = Files.createTempFile("temp_", extension);
+                File cacheDir = context.getCacheDir();
+                cacheDir.mkdir();
+                Path file = Files.createTempFile(null, extension);
                 Uri fileUri = Uri.fromFile(file.toFile());
                 OutputStream fos = context.getContentResolver().openOutputStream(fileUri);
                 Streams cis = getCipherInputStream(inputStream, password, false, version);
