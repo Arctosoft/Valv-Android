@@ -94,6 +94,7 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
         for (DocumentFile documentFile : filesToImport) {
             bytes += documentFile.length();
         }
+        importViewModel.setTotalBytes(bytes);
 
         Context context = requireContext();
         Settings settings = Settings.getInstance(context);

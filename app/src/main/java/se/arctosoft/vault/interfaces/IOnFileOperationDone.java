@@ -21,6 +21,6 @@ import java.util.List;
 
 import se.arctosoft.vault.data.GalleryFile;
 
-public interface IOnDeleteDone {
-    void onDone(List<GalleryFile> deletedFiles);
+public interface IOnFileOperationDone {
+    void onDone(List<GalleryFile> processedFiles);
 }

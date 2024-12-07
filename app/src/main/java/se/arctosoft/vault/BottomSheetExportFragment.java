@@ -32,19 +32,20 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import java.util.List;
 
 import se.arctosoft.vault.data.GalleryFile;
-import se.arctosoft.vault.databinding.BottomSheetDeleteBinding;
+import se.arctosoft.vault.databinding.BottomSheetExportBinding;
+import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.StringStuff;
-import se.arctosoft.vault.viewmodel.DeleteViewModel;
+import se.arctosoft.vault.viewmodel.ExportViewModel;
 
-public class BottomSheetDeleteFragment extends BottomSheetDialogFragment {
+public class BottomSheetExportFragment extends BottomSheetDialogFragment {
     private static final String TAG = "BottomSheetFragment";
 
-    private BottomSheetDeleteBinding binding;
-    private DeleteViewModel deleteViewModel;
+    private BottomSheetExportBinding binding;
+    private ExportViewModel exportViewModel;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        binding = BottomSheetDeleteBinding.inflate(inflater, container, false);
+        binding = BottomSheetExportBinding.inflate(inflater, container, false);
 
         return binding.getRoot();
     }
@@ -52,38 +53,38 @@ public class BottomSheetDeleteFragment extends BottomSheetDialogFragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        deleteViewModel = new ViewModelProvider(requireParentFragment()).get(DeleteViewModel.class);
-        List<GalleryFile> filesToDelete = deleteViewModel.getFilesToDelete();
-        if (filesToDelete.isEmpty()) {
+        exportViewModel = new ViewModelProvider(requireParentFragment()).get(ExportViewModel.class);
+        List<GalleryFile> filesToExport = exportViewModel.getFilesToExport();
+        if (filesToExport.isEmpty()) {
             dismiss();
             return;
         }
         long bytes = 0;
-        for (GalleryFile documentFile : filesToDelete) {
+        for (GalleryFile documentFile : filesToExport) {
             bytes += documentFile.getSize();
         }
-        deleteViewModel.setTotalBytes(bytes);
+        exportViewModel.setTotalBytes(bytes);
 
-        binding.title.setText(getResources().getQuantityString(R.plurals.delete_modal_title, filesToDelete.size(), filesToDelete.size(), StringStuff.bytesToReadableString(bytes)));
-
-        deleteViewModel.setOnDeleteDoneBottomSheet(deletedFiles -> {
+        binding.title.setText(getResources().getQuantityString(R.plurals.export_modal_title, filesToExport.size(), filesToExport.size(), StringStuff.bytesToReadableString(bytes)));
+        binding.body.setText(getString(R.string.export_modal_body, FileStuff.getFilenameWithPathFromUri(exportViewModel.getCurrentDocumentDirectory().getUri())));
+        exportViewModel.setOnDoneBottomSheet(deletedFiles -> {
             clearViewModel();
             dismiss();
         });
-        deleteViewModel.getProgressData().observe(this, progressData -> {
+        exportViewModel.getProgressData().observe(this, progressData -> {
             if (progressData != null) {
                 binding.progress.setProgressCompat(progressData.getProgressPercentage(), true);
-                binding.progressText.setText(getString(R.string.delete_modal_deleting, progressData.getProgress(), progressData.getTotal()));
+                binding.progressText.setText(getString(R.string.export_modal_exporting, progressData.getProgress(), progressData.getTotal()));
             } else {
                 binding.progress.setProgressCompat(0, false);
             }
         });
-        if (deleteViewModel.isDeleting()) {
+        if (exportViewModel.isDeleting()) {
             showDeleting();
         } else {
             long finalBytes = bytes;
-            binding.progressText.setText(getString(R.string.delete_modal_deleting, 0, filesToDelete.size()));
-            binding.buttonDelete.setOnClickListener(v -> doDelete(finalBytes));
+            binding.progressText.setText(getString(R.string.export_modal_exporting, 0, filesToExport.size()));
+            binding.buttonExport.setOnClickListener(v -> doExport(finalBytes));
         }
     }
 
@@ -92,29 +93,29 @@ public class BottomSheetDeleteFragment extends BottomSheetDialogFragment {
         dialog.setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
         binding.progress.setProgressCompat(0, false);
-        binding.buttonDelete.setVisibility(View.GONE);
-        binding.layoutContentDeleting.setVisibility(View.VISIBLE);
-        binding.title.setText(getResources().getQuantityString(R.plurals.delete_modal_title_deleting, deleteViewModel.getFilesToDelete().size(), deleteViewModel.getFilesToDelete().size(),
-                StringStuff.bytesToReadableString(deleteViewModel.getTotalBytes())));
-        binding.body.setText(getString(R.string.delete_modal_body_deleting));
+        binding.buttonExport.setVisibility(View.GONE);
+        binding.layoutContentProgress.setVisibility(View.VISIBLE);
+        binding.title.setText(getResources().getQuantityString(R.plurals.export_modal_title_exporting, exportViewModel.getFilesToExport().size(), exportViewModel.getFilesToExport().size(),
+                StringStuff.bytesToReadableString(exportViewModel.getTotalBytes())));
+        binding.body.setText(getString(R.string.export_modal_body_exporting));
         binding.buttonCancel.setOnClickListener(v -> {
-            deleteViewModel.cancelDelete();
+            exportViewModel.cancel();
             dismiss();
         });
     }
 
-    private void doDelete(long totalBytes) {
+    private void doExport(long totalBytes) {
         showDeleting();
-        deleteViewModel.getProgressData().setValue(null);
-        deleteViewModel.setTotalBytes(totalBytes);
-        deleteViewModel.setDeleting(true);
-        deleteViewModel.startDelete(requireActivity());
+        exportViewModel.getProgressData().setValue(null);
+        exportViewModel.setTotalBytes(totalBytes);
+        exportViewModel.setDeleting(true);
+        exportViewModel.start(requireActivity());
     }
 
     private void clearViewModel() {
-        deleteViewModel.setDeleting(false);
-        deleteViewModel.setTotalBytes(0);
-        deleteViewModel.getFilesToDelete().clear();
+        exportViewModel.setDeleting(false);
+        exportViewModel.setTotalBytes(0);
+        exportViewModel.getFilesToExport().clear();
     }
 
 }

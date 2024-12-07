@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.data.ProgressData;
-import se.arctosoft.vault.interfaces.IOnDeleteDone;
+import se.arctosoft.vault.interfaces.IOnFileOperationDone;
 import se.arctosoft.vault.interfaces.IOnProgress;
 import se.arctosoft.vault.utils.FileStuff;
 
@@ -51,7 +51,7 @@ public class DeleteViewModel extends ViewModel {
     private MutableLiveData<ProgressData> progressData;
 
     private Thread thread;
-    private IOnDeleteDone onDeleteDoneBottomSheet, onDeleteDoneFragment;
+    private IOnFileOperationDone onDeleteDoneBottomSheet, onDeleteDoneFragment;
 
     public MutableLiveData<ProgressData> getProgressData() {
         if (progressData == null) {
@@ -73,11 +73,11 @@ public class DeleteViewModel extends ViewModel {
         this.deleting = deleting;
     }
 
-    public void setOnDeleteDoneBottomSheet(IOnDeleteDone onImportDone) {
+    public void setOnDeleteDoneBottomSheet(IOnFileOperationDone onImportDone) {
         this.onDeleteDoneBottomSheet = onImportDone;
     }
 
-    public void setOnDeleteDoneFragment(IOnDeleteDone onDeleteDoneFragment) {
+    public void setOnDeleteDoneFragment(IOnFileOperationDone onDeleteDoneFragment) {
         this.onDeleteDoneFragment = onDeleteDoneFragment;
     }
 

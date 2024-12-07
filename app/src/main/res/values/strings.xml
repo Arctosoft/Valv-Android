@@ -81,6 +81,10 @@
     <string name="gallery_file_deleted">File deleted</string>
     <string name="gallery_file_not_deleted">Error, file could not be deleted</string>
     <string name="gallery_file_exported">Exported to %1$s</string>
+    <string name="gallery_selected_files_imported">Encrypted and imported %1$d files</string>
+    <string name="gallery_selected_files_imported_with_failed">Imported %1$d files, %2$d failed</string>
+    <string name="gallery_selected_files_deleted">Deleted %1$d files</string>
+    <string name="gallery_selected_files_deleted_with_failed">Deleted %1$d files, %2$d failed</string>
     <string name="gallery_selected_files_exported">Exported %1$d files</string>
     <string name="gallery_selected_files_exported_with_failed">Exported %1$d files, %2$d failed</string>
     <string name="gallery_selected_files_copied">Copied %1$d files</string>
@@ -144,6 +148,18 @@
     <string name="delete_modal_body">Delete the selected file(s) permanently? This action is irreversible.</string>
     <string name="delete_modal_body_deleting">Deleting…</string>
     <string name="delete_modal_deleting">Deleting %1$d out of %2$d</string>
+
+    <plurals name="export_modal_title">
+        <item quantity="one">Export %1$d file (%2$s)?</item>
+        <item quantity="other">Export %1$d files (%2$s)?</item>
+    </plurals>
+    <plurals name="export_modal_title_exporting">
+        <item quantity="one">Exporting %1$d file (%2$s)</item>
+        <item quantity="other">Exporting %1$d files (%2$s)</item>
+    </plurals>
+    <string name="export_modal_body">Decrypt and export the selected file(s) to %1$s?</string>
+    <string name="export_modal_body_exporting">Exporting…</string>
+    <string name="export_modal_exporting">Exporting %1$d out of %2$d</string>
 
     <string name="dialog_remove_folder_title">Remove?</string>
     <plurals name="dialog_remove_folder_message">
