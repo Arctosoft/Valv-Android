@@ -44,6 +44,7 @@ import com.bumptech.glide.request.target.Target;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -345,15 +346,14 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     }
 
     private void setSelectMode(boolean selectionMode) {
-        GalleryFile first = galleryFiles.isEmpty() ? null : galleryFiles.get(0);
         if (selectionMode && !selectMode) {
             selectMode = true;
-            notifyItemRangeChanged(first != null && first.isAllFolder() ? 1 : 0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
+            notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
         } else if (!selectionMode && selectMode) {
             selectMode = false;
             lastSelectedPos = -1;
             selectedFiles.clear();
-            notifyItemRangeChanged(first != null && first.isAllFolder() ? 1 : 0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
+            notifyItemRangeChanged(0, galleryFiles.size(), new Payload(Payload.TYPE_SELECT_ALL));
         }
         if (onSelectionModeChanged != null) {
             onSelectionModeChanged.onSelectionModeChanged(selectMode);
@@ -361,7 +361,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
     }
 
     private void updateSelectedView(GalleryGridViewHolder holder, GalleryFile galleryFile) {
-        if (selectMode && (isRootDir || !galleryFile.isDirectory())) {
+        if (!galleryFile.isAllFolder() && selectMode && (isRootDir || !galleryFile.isDirectory())) {
             holder.binding.checked.setVisibility(View.VISIBLE);
             holder.binding.checked.setChecked(selectedFiles.contains(galleryFile));
         } else {
@@ -396,7 +396,13 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         synchronized (LOCK) {
             selectedFiles.clear();
             if (isRootDir) {
-                selectedFiles.addAll(galleryFiles);
+                List<GalleryFile> filtered = new ArrayList<>(galleryFiles.size() - 1);
+                for (GalleryFile f : galleryFiles) {
+                    if (!f.isAllFolder()) {
+                        filtered.add(f);
+                    }
+                }
+                selectedFiles.addAll(filtered);
             } else {
                 for (GalleryFile g : galleryFiles) {
                     if (!g.isDirectory()) {

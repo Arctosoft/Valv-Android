@@ -305,6 +305,6 @@ public class GalleryFile implements Comparable<GalleryFile> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileUri);
+        return Objects.hash(fileType, isDirectory, isAllFolder, lastModified, size, version, fileUri, encryptedName);
     }
 }

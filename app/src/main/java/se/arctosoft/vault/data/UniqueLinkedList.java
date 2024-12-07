@@ -44,6 +44,22 @@ public class UniqueLinkedList<E> extends LinkedList<E> {
     }
 
     @Override
+    public boolean addAll(@NonNull Collection<? extends E> c) {
+        for (E e : c) {
+            add(e);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean addAll(int index, @NonNull Collection<? extends E> c) {
+        for (E e : c) {
+            add(e);
+        }
+        return true;
+    }
+
+    @Override
     public boolean contains(@Nullable Object o) {
         return keys.contains(o);
     }
@@ -75,4 +91,109 @@ public class UniqueLinkedList<E> extends LinkedList<E> {
         return super.removeAll(c);
     }
 
+    @Override
+    public void addFirst(E e) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public void addLast(E e) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public E getFirst() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public E getLast() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public E removeFirst() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public E removeLast() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public E set(int index, E element) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Nullable
+    @Override
+    public E peek() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public E element() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Nullable
+    @Override
+    public E poll() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public E remove() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public boolean offer(E e) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public boolean offerFirst(E e) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public boolean offerLast(E e) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Nullable
+    @Override
+    public E peekFirst() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Nullable
+    @Override
+    public E peekLast() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Nullable
+    @Override
+    public E pollFirst() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Nullable
+    @Override
+    public E pollLast() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public void push(E e) {
+        throw new RuntimeException("Not implemented");
+    }
+
+    @Override
+    public E pop() {
+        throw new RuntimeException("Not implemented");
+    }
 }
