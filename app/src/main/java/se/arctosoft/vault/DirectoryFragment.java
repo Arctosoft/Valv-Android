@@ -156,8 +156,6 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        requireActivity().addMenuProvider(this, getViewLifecycleOwner());
-
         passwordViewModel = new ViewModelProvider(requireActivity()).get(PasswordViewModel.class);
         galleryViewModel = new ViewModelProvider(this).get(GalleryViewModel.class);
         importViewModel = new ViewModelProvider(this).get(ImportViewModel.class);
@@ -892,7 +890,6 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         return files;
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     private void orderBy(int order) {
         this.orderBy = order;
         new Thread(() -> {
@@ -939,8 +936,9 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
                 }
                 requireActivity().runOnUiThread(() -> {
                     synchronized (LOCK) {
-                        galleryGridAdapter.notifyDataSetChanged();
-                        galleryPagerAdapter.notifyDataSetChanged();
+                        int size = galleryViewModel.getGalleryFiles().size();
+                        galleryGridAdapter.notifyItemRangeChanged(0, size);
+                        galleryPagerAdapter.notifyItemRangeChanged(0, size);
                     }
                 });
             }
@@ -977,10 +975,17 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        requireActivity().addMenuProvider(this, getViewLifecycleOwner());
+    }
+
+    @Override
     public void onStop() {
         if (galleryPagerAdapter != null) {
             galleryPagerAdapter.pausePlayers();
         }
+        requireActivity().removeMenuProvider(this);
         if (galleryViewModel != null && !galleryViewModel.isViewpagerVisible()) {
             StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) binding.recyclerView.getLayoutManager();
             if (layoutManager != null) {
@@ -1073,5 +1078,4 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
 
         return false;
     }
-
 }
