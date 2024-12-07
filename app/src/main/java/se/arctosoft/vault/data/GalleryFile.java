@@ -24,7 +24,6 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,7 +38,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private static final int FIND_FILES_DONE = 2;
 
     private final AtomicInteger findFilesInDirectoryStatus = new AtomicInteger(FIND_FILES_NOT_STARTED);
-    private final List<GalleryFile> filesInDirectory = new ArrayList<>();
+    private GalleryFile firstFileInDirectoryWithThumb;
 
     private final FileType fileType;
     private final String encryptedName, name;
@@ -49,6 +48,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private Uri fileUri;
     private Uri thumbUri, noteUri, decryptedCacheUri;
     private String originalName, nameWithPath, note, text;
+    private int fileCount;
 
     private GalleryFile(String name) {
         this.fileUri = null;
@@ -256,25 +256,12 @@ public class GalleryFile implements Comparable<GalleryFile> {
     }
 
     @Nullable
-    public List<GalleryFile> getFilesInDirectory() {
-        return filesInDirectory;
-    }
-
-    @Nullable
     public GalleryFile getFirstFile() {
-        if (filesInDirectory.isEmpty()) {
-            return null;
-        }
-        for (GalleryFile g : filesInDirectory) {
-            if (!g.isDirectory() && g.hasThumb()) {
-                return g;
-            }
-        }
-        return null;
+        return firstFileInDirectoryWithThumb;
     }
 
     public int getFileCount() {
-        return filesInDirectory.size();
+        return fileCount;
     }
 
     public void findFilesInDirectory(Context context, IOnDone onDone) {
@@ -283,8 +270,15 @@ public class GalleryFile implements Comparable<GalleryFile> {
         }
         new Thread(() -> {
             List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(context, fileUri);
-            this.filesInDirectory.clear();
-            this.filesInDirectory.addAll(galleryFiles);
+            this.fileCount = 0;
+            this.firstFileInDirectoryWithThumb = null;
+            for (GalleryFile f : galleryFiles) {
+                if (!f.isDirectory() && f.hasThumb()) {
+                    this.firstFileInDirectoryWithThumb = f;
+                    break;
+                }
+            }
+            this.fileCount = galleryFiles.size();
             findFilesInDirectoryStatus.set(FIND_FILES_DONE);
             if (onDone != null) {
                 onDone.onDone();
@@ -295,15 +289,6 @@ public class GalleryFile implements Comparable<GalleryFile> {
     public void resetFilesInDirectory() {
         findFilesInDirectoryStatus.set(FIND_FILES_NOT_STARTED);
     }
-
-    /*public void setFilesInDirectory(List<GalleryFile> filesInDirectory) {
-        if (this.filesInDirectory != null) {
-            this.filesInDirectory.clear();
-        } else {
-            this.filesInDirectory = new ArrayList<>(filesInDirectory.size());
-        }
-        this.filesInDirectory.addAll(filesInDirectory);
-    }*/
 
     @Override
     public int compareTo(GalleryFile o) {
