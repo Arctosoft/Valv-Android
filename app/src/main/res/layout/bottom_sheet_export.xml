@@ -69,7 +69,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/bottom_modal_item_margin"
-                android:text="@string/import_modal_cancel"
+                android:text="@string/cancel"
                 android:textColor="?android:attr/textColorSecondary"
                 android:visibility="gone" />
 

@@ -35,8 +35,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/bottom_modal_item_margin"
+            android:backgroundTint="@color/button_warning_color"
             android:text="@string/delete"
-            android:textColor="?android:attr/textColorSecondary" />
+            android:textColor="@color/white" />
 
         <androidx.appcompat.widget.LinearLayoutCompat
             android:id="@+id/layout_content_deleting"
@@ -70,7 +71,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/bottom_modal_item_margin"
-                android:text="@string/import_modal_cancel"
+                android:text="@string/cancel"
                 android:textColor="?android:attr/textColorSecondary"
                 android:visibility="gone" />
 

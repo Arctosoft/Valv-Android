@@ -58,6 +58,7 @@ import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.Toaster;
+import se.arctosoft.vault.viewmodel.CopyViewModel;
 import se.arctosoft.vault.viewmodel.DeleteViewModel;
 import se.arctosoft.vault.viewmodel.ExportViewModel;
 import se.arctosoft.vault.viewmodel.GalleryViewModel;
@@ -91,6 +92,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
     private ImportViewModel importViewModel;
     private DeleteViewModel deleteViewModel;
     private ExportViewModel exportViewModel;
+    private CopyViewModel copyViewModel;
 
     private GalleryGridAdapter galleryGridAdapter;
     private GalleryPagerAdapter galleryPagerAdapter;
@@ -166,6 +168,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         importViewModel = new ViewModelProvider(this).get(ImportViewModel.class);
         deleteViewModel = new ViewModelProvider(this).get(DeleteViewModel.class);
         exportViewModel = new ViewModelProvider(this).get(ExportViewModel.class);
+        copyViewModel = new ViewModelProvider(this).get(CopyViewModel.class);
         //binding.buttonFirst.setOnClickListener(v -> NavHostFragment.findNavController(DirectoryFragment.this).navigate(R.id.action_FirstFragment_to_SecondFragment));
         navController = NavHostFragment.findNavController(this);
         Log.e(TAG, "onViewCreated: locked? " + passwordViewModel.isLocked());
@@ -323,8 +326,8 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             });
         });
 
-        exportViewModel.setOnExportDoneFragment(processedFiles -> {
-            Log.e(TAG, "setOnExportDoneFragment:  exported " + processedFiles.size());
+        exportViewModel.setOnDoneFragment(processedFiles -> {
+            Log.e(TAG, "setOnExportDoneFragment: exported " + processedFiles.size());
             FragmentActivity activity = getActivity();
             if (activity == null || activity.isDestroyed()) {
                 return;
@@ -332,6 +335,18 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             activity.runOnUiThread(() -> {
                 galleryGridAdapter.onSelectionModeChanged(false);
                 Toaster.getInstance(activity).showLong(getString(R.string.gallery_selected_files_exported, processedFiles.size()));
+            });
+        });
+
+        copyViewModel.setOnDoneFragment(processedFiles -> {
+            Log.e(TAG, "setOnDoneFragment: copied " + processedFiles.size());
+            FragmentActivity activity = getActivity();
+            if (activity == null || activity.isDestroyed()) {
+                return;
+            }
+            activity.runOnUiThread(() -> {
+                galleryGridAdapter.onSelectionModeChanged(false);
+                Toaster.getInstance(activity).showLong(getString(R.string.gallery_selected_files_copied, processedFiles.size()));
             });
         });
     }
@@ -1024,7 +1039,13 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             bottomSheetDeleteFragment.show(childFragmentManager, null);
             return true;
         } else if (id == R.id.copy_selected) {
-            //copySelected();
+            copyViewModel.getFiles().clear();
+            copyViewModel.getFiles().addAll(galleryGridAdapter.getSelectedFiles());
+            copyViewModel.setCurrentDirectoryUri(galleryViewModel.getCurrentDirectoryUri());
+
+            BottomSheetCopyFragment bottomSheetCopyFragment = new BottomSheetCopyFragment();
+            FragmentManager childFragmentManager = getChildFragmentManager();
+            bottomSheetCopyFragment.show(childFragmentManager, null);
             return true;
         } else if (id == R.id.move_selected) {
             //moveSelected();

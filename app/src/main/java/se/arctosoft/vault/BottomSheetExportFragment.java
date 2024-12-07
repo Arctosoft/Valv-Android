@@ -79,7 +79,7 @@ public class BottomSheetExportFragment extends BottomSheetDialogFragment {
                 binding.progress.setProgressCompat(0, false);
             }
         });
-        if (exportViewModel.isDeleting()) {
+        if (exportViewModel.isRunning()) {
             showDeleting();
         } else {
             long finalBytes = bytes;
@@ -108,12 +108,12 @@ public class BottomSheetExportFragment extends BottomSheetDialogFragment {
         showDeleting();
         exportViewModel.getProgressData().setValue(null);
         exportViewModel.setTotalBytes(totalBytes);
-        exportViewModel.setDeleting(true);
+        exportViewModel.setRunning(true);
         exportViewModel.start(requireActivity());
     }
 
     private void clearViewModel() {
-        exportViewModel.setDeleting(false);
+        exportViewModel.setRunning(false);
         exportViewModel.setTotalBytes(0);
         exportViewModel.getFilesToExport().clear();
     }

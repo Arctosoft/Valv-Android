@@ -19,6 +19,7 @@
     <string name="licenses">Licenses</string>
     <string name="settings">Settings</string>
     <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
 
     <string name="launcher_title">Vault locked</string>
     <string name="launcher_subtitle">Enter decryption password</string>
@@ -119,6 +120,11 @@
     <string name="gallery_click_to_open_directory">Click to open\n%1$s</string>
     <string name="gallery_find_files_no_permission">No permission to read %1$s, please add it again</string>
 
+    <string name="select_destination">Select destination:</string>
+    <string name="use_other_folder">Use other folder</string>
+    <string name="modal_directory_item">- %1$s</string>
+    <string name="modal_current_folder">- Current folder \"%1$s\"</string>
+
     <plurals name="import_modal_title">
         <item quantity="one">Import %1$d file (%2$s)</item>
         <item quantity="other">Import %1$d files (%2$s)</item>
@@ -130,12 +136,20 @@
     <string name="import_modal_body">Your files will be encrypted and imported into the folder you select below.</string>
     <string name="import_modal_body_importing">Your files are being encrypted and imported into %1$s.</string>
     <string name="import_modal_importing">Importing %1$d out of %2$d\n%3$s/%4$s MB</string>
-    <string name="import_modal_directory_other">Use other folder</string>
-    <string name="import_modal_directory_current">- Current folder \"%1$s\"</string>
-    <string name="import_modal_directory_item">- %1$s</string>
     <string name="import_modal_checkbox_delete">Delete the original files after importing</string>
-    <string name="import_modal_destination">Select destination:</string>
-    <string name="import_modal_cancel">Cancel</string>
+
+    <plurals name="copy_modal_title">
+        <item quantity="one">Copy %1$d file (%2$s)</item>
+        <item quantity="other">Copy %1$d files (%2$s)</item>
+    </plurals>
+    <plurals name="copy_modal_title_copying">
+        <item quantity="one">Copying %1$d file (%2$s)</item>
+        <item quantity="other">Copying %1$d files (%2$s)</item>
+    </plurals>
+    <string name="copy_modal_body">Your files will be copied into the folder you select below.</string>
+    <string name="copy_modal_body_copying">Your files are being copied into %1$s.</string>
+    <string name="copy_modal_copying">Copying %1$d out of %2$d</string>
+    <string name="copy_error_same_directory">You can\'t copy to the current directory</string>
 
     <plurals name="delete_modal_title">
         <item quantity="one">Delete %1$d file (%2$s)?</item>

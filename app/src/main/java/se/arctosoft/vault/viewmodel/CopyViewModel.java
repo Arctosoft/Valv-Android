@@ -34,27 +34,27 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import se.arctosoft.vault.data.GalleryFile;
-import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.data.ProgressData;
-import se.arctosoft.vault.encryption.Encryption;
-import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.interfaces.IOnFileOperationDone;
 import se.arctosoft.vault.interfaces.IOnProgress;
+import se.arctosoft.vault.utils.FileStuff;
 
-public class ExportViewModel extends ViewModel {
-    private static final String TAG = "ExportViewModel";
+public class CopyViewModel extends ViewModel {
+    private static final String TAG = "CopyViewModel";
 
-    private final List<GalleryFile> filesToExport = new LinkedList<>();
+    private final List<GalleryFile> files = new LinkedList<>();
 
     private boolean running;
     private long totalBytes;
+    private String destinationFolderName;
     final AtomicBoolean interrupted = new AtomicBoolean(false);
 
     private MutableLiveData<ProgressData> progressData;
 
     private Thread thread;
     private IOnFileOperationDone onDoneBottomSheet, onDoneFragment;
-    private DocumentFile currentDocumentDirectory;
+    private DocumentFile destinationDirectory;
+    private Uri currentDirectoryUri, destinationUri;
 
     public MutableLiveData<ProgressData> getProgressData() {
         if (progressData == null) {
@@ -63,17 +63,41 @@ public class ExportViewModel extends ViewModel {
         return progressData;
     }
 
-    public void setCurrentDocumentDirectory(DocumentFile currentDocumentDirectory) {
-        this.currentDocumentDirectory = currentDocumentDirectory;
+    public void setDestinationFolderName(String destinationFolderName) {
+        this.destinationFolderName = destinationFolderName;
     }
 
-    public DocumentFile getCurrentDocumentDirectory() {
-        return currentDocumentDirectory;
+    public String getDestinationFolderName() {
+        return destinationFolderName;
+    }
+
+    public void setDestinationDirectory(DocumentFile destinationDirectory) {
+        this.destinationDirectory = destinationDirectory;
+    }
+
+    public DocumentFile getDestinationDirectory() {
+        return destinationDirectory;
+    }
+
+    public void setCurrentDirectoryUri(Uri currentDirectoryUri) {
+        this.currentDirectoryUri = currentDirectoryUri;
+    }
+
+    public Uri getCurrentDirectoryUri() {
+        return currentDirectoryUri;
+    }
+
+    public void setDestinationUri(Uri destinationUri) {
+        this.destinationUri = destinationUri;
+    }
+
+    public Uri getDestinationUri() {
+        return destinationUri;
     }
 
     @NonNull
-    public List<GalleryFile> getFilesToExport() {
-        return filesToExport;
+    public List<GalleryFile> getFiles() {
+        return files;
     }
 
     public boolean isRunning() {
@@ -116,8 +140,7 @@ public class ExportViewModel extends ViewModel {
         }
         interrupted.set(false);
         thread = new Thread(() -> {
-            Password password = Password.getInstance();
-            final int fileCount = filesToExport.size();
+            final int fileCount = files.size();
             final List<GalleryFile> doneFiles = Collections.synchronizedList(new ArrayList<>(fileCount));
             final long[] lastPublish = {0};
             final IOnProgress onProgress = currentBytesDeleted -> {
@@ -126,24 +149,17 @@ public class ExportViewModel extends ViewModel {
                     getProgressData().postValue(new ProgressData(fileCount, doneFiles.size() + 1, (int) Math.round((doneFiles.size() + 0.0) / fileCount * 100.0), null, null));
                 }
             };
-            for (GalleryFile f : filesToExport) {
-                Encryption.IOnUriResult result = new Encryption.IOnUriResult() {
-                    @Override
-                    public void onUriResult(Uri outputUri) {
-                        doneFiles.add(f);
-                        onProgress.onProgress(doneFiles.size());
-                    }
 
-                    @Override
-                    public void onError(Exception e) {
-                    }
-
-                    @Override
-                    public void onInvalidPassword(InvalidPasswordException e) {
-                    }
-                };
-                Encryption.decryptAndExport(activity, f.getUri(), currentDocumentDirectory, f, f.isVideo(), f.getVersion(), password.getPassword(), result);
+            Log.e(TAG, "start: " + destinationUri);
+            DocumentFile destinationDocument = DocumentFile.fromTreeUri(activity, destinationUri);
+            for (GalleryFile f : files) {
+                boolean success = FileStuff.copyTo(activity, f, destinationDocument);
+                if (success) {
+                    doneFiles.add(f);
+                    onProgress.onProgress(doneFiles.size());
+                }
             }
+
             if (onDoneBottomSheet != null) {
                 onDoneBottomSheet.onDone(doneFiles);
             }

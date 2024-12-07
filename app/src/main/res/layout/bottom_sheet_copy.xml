@@ -16,7 +16,7 @@
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@plurals/import_modal_title"
+            android:text="@plurals/copy_modal_title"
             android:textSize="@dimen/bottom_modal_title_size"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -25,7 +25,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/bottom_modal_item_margin"
-            android:text="@string/import_modal_body"
+            android:text="@string/copy_modal_body"
             app:layout_constraintTop_toBottomOf="@id/title" />
 
         <androidx.appcompat.widget.LinearLayoutCompat
@@ -33,14 +33,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/checkbox_delete_after"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/bottom_modal_item_margin"
-                android:text="@string/import_modal_checkbox_delete"
-                app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -70,7 +62,7 @@
         </androidx.appcompat.widget.LinearLayoutCompat>
 
         <androidx.appcompat.widget.LinearLayoutCompat
-            android:id="@+id/layout_content_importing"
+            android:id="@+id/layout_content_copying"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/bottom_modal_item_margin"
@@ -91,7 +83,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/bottom_modal_item_margin"
-                android:text="@string/import_modal_importing"
+                android:text="@string/copy_modal_copying"
                 android:textAlignment="center"
                 app:layout_constraintTop_toBottomOf="@id/title" />
 
