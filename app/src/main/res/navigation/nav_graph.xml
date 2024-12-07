@@ -25,6 +25,19 @@
                 app:argType="string"
                 app:nullable="true" />
         </action>
+        <action
+            android:id="@+id/action_directory_to_directory_all"
+            app:destination="@id/directory_all" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/directory_all"
+        android:name="se.arctosoft.vault.DirectoryAllFragment"
+        android:label="@string/gallery_all"
+        tools:layout="@layout/fragment_directory">
+        <action
+            android:id="@+id/action_directory_to_settings"
+            app:destination="@id/settings" />
     </fragment>
 
     <fragment

@@ -251,9 +251,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             final int pos = holder.getBindingAdapterPosition();
             if (galleryFile.isAllFolder()) {
                 if (!selectMode) {
-                    Bundle bundle = new Bundle();
-                    bundle.putBoolean(DirectoryFragment.ARGUMENT_IS_ALL, true);
-                    Navigation.findNavController(holder.binding.layout).navigate(R.id.action_directory_self, bundle);
+                    Navigation.findNavController(holder.binding.layout).navigate(R.id.action_directory_to_directory_all);
                 }
             } else if (selectMode) {
                 if (isRootDir || !galleryFile.isDirectory()) {
