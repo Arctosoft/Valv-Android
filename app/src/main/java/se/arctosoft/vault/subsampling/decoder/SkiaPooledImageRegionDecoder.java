@@ -28,15 +28,12 @@ import android.graphics.BitmapRegionDecoder;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.net.Uri;
-import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.io.File;
-import java.io.FileFilter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -44,7 +41,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.regex.Pattern;
 
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.subsampling.MySubsamplingScaleImageView;
@@ -174,57 +170,6 @@ public class SkiaPooledImageRegionDecoder implements ImageRegionDecoder {
      */
     private void initialiseDecoder() throws Exception {
         BitmapRegionDecoder decoder;
-        /*String uriString = uri.toString();
-        long fileLength = Long.MAX_VALUE;
-        if (uriString.startsWith(RESOURCE_PREFIX)) {
-            Resources res;
-            String packageName = uri.getAuthority();
-            if (context.getPackageName().equals(packageName)) {
-                res = context.getResources();
-            } else {
-                PackageManager pm = context.getPackageManager();
-                res = pm.getResourcesForApplication(packageName);
-            }
-
-            int id = 0;
-            List<String> segments = uri.getPathSegments();
-            int size = segments.size();
-            if (size == 2 && segments.get(0).equals("drawable")) {
-                String resName = segments.get(1);
-                id = res.getIdentifier(resName, "drawable", packageName);
-            } else if (size == 1 && TextUtils.isDigitsOnly(segments.get(0))) {
-                try {
-                    id = Integer.parseInt(segments.get(0));
-                } catch (NumberFormatException ignored) {
-                }
-            }
-            try {
-                AssetFileDescriptor descriptor = context.getResources().openRawResourceFd(id);
-                fileLength = descriptor.getLength();
-            } catch (Exception e) {
-                // Pooling disabled
-            }
-            decoder = BitmapRegionDecoder.newInstance(context.getResources().openRawResource(id), false);
-        } else if (uriString.startsWith(ASSET_PREFIX)) {
-            String assetName = uriString.substring(ASSET_PREFIX.length());
-            try {
-                AssetFileDescriptor descriptor = context.getAssets().openFd(assetName);
-                fileLength = descriptor.getLength();
-            } catch (Exception e) {
-                // Pooling disabled
-            }
-            decoder = BitmapRegionDecoder.newInstance(context.getAssets().open(assetName, AssetManager.ACCESS_RANDOM), false);
-        } else if (uriString.startsWith(FILE_PREFIX)) {
-            decoder = BitmapRegionDecoder.newInstance(uriString.substring(FILE_PREFIX.length()), false);
-            try {
-                File file = new File(uriString);
-                if (file.exists()) {
-                    fileLength = file.length();
-                }
-            } catch (Exception e) {
-                // Pooling disabled
-            }
-        } else {*/
         Encryption.Streams streams = null;
         try {
             ContentResolver contentResolver = context.getContentResolver();
@@ -235,7 +180,6 @@ public class SkiaPooledImageRegionDecoder implements ImageRegionDecoder {
                 streams.close();
             }
         }
-        //}
         this.imageDimensions.set(decoder.getWidth(), decoder.getHeight());
         decoderLock.writeLock().lock();
         try {
@@ -434,33 +378,7 @@ public class SkiaPooledImageRegionDecoder implements ImageRegionDecoder {
     }
 
     private int getNumberOfCores() {
-        if (Build.VERSION.SDK_INT >= 17) {
-            return Runtime.getRuntime().availableProcessors();
-        } else {
-            return getNumCoresOldPhones();
-        }
-    }
-
-    /**
-     * Gets the number of cores available in this device, across all processors.
-     * Requires: Ability to peruse the filesystem at "/sys/devices/system/cpu"
-     *
-     * @return The number of cores, or 1 if failed to get result
-     */
-    private int getNumCoresOldPhones() {
-        class CpuFilter implements FileFilter {
-            @Override
-            public boolean accept(File pathname) {
-                return Pattern.matches("cpu[0-9]+", pathname.getName());
-            }
-        }
-        try {
-            File dir = new File("/sys/devices/system/cpu/");
-            File[] files = dir.listFiles(new CpuFilter());
-            return files.length;
-        } catch (Exception e) {
-            return 1;
-        }
+        return Runtime.getRuntime().availableProcessors();
     }
 
     private boolean isLowMemory() {
