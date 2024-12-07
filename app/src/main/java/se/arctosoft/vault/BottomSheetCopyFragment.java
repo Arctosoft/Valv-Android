@@ -18,6 +18,7 @@
 package se.arctosoft.vault;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -65,6 +66,7 @@ public class BottomSheetCopyFragment extends BottomSheetDialogFragment {
             Settings.getInstance(context).addGalleryDirectory(uri, false, null);
             DocumentFile pickedDirectory = DocumentFile.fromTreeUri(context, uri);
             if (pickedDirectory != null) {
+                context.getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 doCopy(uri, FileStuff.getFilenameWithPathFromUri(uri), pickedDirectory);
             }
         }
@@ -132,6 +134,7 @@ public class BottomSheetCopyFragment extends BottomSheetDialogFragment {
                 settings.removeGalleryDirectory(uri);
                 Toaster.getInstance(context).showLong(context.getString(R.string.directory_does_not_exist));
                 directories.remove(pos);
+                names.remove(pos);
                 adapter.notifyItemRemoved(pos);
             } else {
                 doCopy(uri, names.get(pos), directory);
@@ -158,7 +161,7 @@ public class BottomSheetCopyFragment extends BottomSheetDialogFragment {
         binding.layoutContentCopying.setVisibility(View.VISIBLE);
         binding.title.setText(getResources().getQuantityString(R.plurals.copy_modal_title_copying, copyViewModel.getFiles().size(), copyViewModel.getFiles().size(),
                 StringStuff.bytesToReadableString(copyViewModel.getTotalBytes())));
-        binding.body.setText(getString(R.string.copy_modal_body_copying));
+        binding.body.setText(getString(R.string.copy_modal_body_copying, copyViewModel.getDestinationFolderName()));
         binding.buttonCancel.setOnClickListener(v -> {
             copyViewModel.cancel();
             dismiss();
@@ -166,12 +169,12 @@ public class BottomSheetCopyFragment extends BottomSheetDialogFragment {
     }
 
     private void doCopy(Uri destinationUri, String destinationFolderName, DocumentFile destinationDirectory) {
-        showDeleting();
         copyViewModel.getProgressData().setValue(null);
         copyViewModel.setDestinationDirectory(destinationDirectory);
         copyViewModel.setDestinationFolderName(destinationFolderName);
         copyViewModel.setDestinationUri(destinationUri);
         copyViewModel.setRunning(true);
+        showDeleting();
         copyViewModel.start(requireActivity());
     }
 

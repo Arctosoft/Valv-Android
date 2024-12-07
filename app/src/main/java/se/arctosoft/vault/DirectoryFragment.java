@@ -63,6 +63,7 @@ import se.arctosoft.vault.viewmodel.DeleteViewModel;
 import se.arctosoft.vault.viewmodel.ExportViewModel;
 import se.arctosoft.vault.viewmodel.GalleryViewModel;
 import se.arctosoft.vault.viewmodel.ImportViewModel;
+import se.arctosoft.vault.viewmodel.MoveViewModel;
 import se.arctosoft.vault.viewmodel.PasswordViewModel;
 
 public class DirectoryFragment extends Fragment implements MenuProvider {
@@ -93,6 +94,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
     private DeleteViewModel deleteViewModel;
     private ExportViewModel exportViewModel;
     private CopyViewModel copyViewModel;
+    private MoveViewModel moveViewModel;
 
     private GalleryGridAdapter galleryGridAdapter;
     private GalleryPagerAdapter galleryPagerAdapter;
@@ -169,7 +171,7 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         deleteViewModel = new ViewModelProvider(this).get(DeleteViewModel.class);
         exportViewModel = new ViewModelProvider(this).get(ExportViewModel.class);
         copyViewModel = new ViewModelProvider(this).get(CopyViewModel.class);
-        //binding.buttonFirst.setOnClickListener(v -> NavHostFragment.findNavController(DirectoryFragment.this).navigate(R.id.action_FirstFragment_to_SecondFragment));
+        moveViewModel = new ViewModelProvider(this).get(MoveViewModel.class);
         navController = NavHostFragment.findNavController(this);
         Log.e(TAG, "onViewCreated: locked? " + passwordViewModel.isLocked());
         if (passwordViewModel.isLocked()) {
@@ -203,7 +205,6 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             }
         };
         requireActivity().getOnBackPressedDispatcher().addCallback(getViewLifecycleOwner(), callback);
-        Log.e(TAG, "init: handleOnBackPressed add? " + requireActivity().getOnBackPressedDispatcher().hasEnabledCallbacks());
 
         Bundle arguments = getArguments();
         if (arguments != null) {
@@ -216,11 +217,8 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         boolean isAllFolder = galleryViewModel.isAllFolder();
         if (galleryViewModel.getCurrentDirectoryUri() != null) {
             galleryViewModel.setRootDir(false);
-            ActionBar ab = ((AppCompatActivity) requireActivity()).getSupportActionBar();
-
-            if (ab != null) {
-                ab.setDisplayHomeAsUpEnabled(true);
-                ab.setTitle(isAllFolder ? getString(R.string.gallery_all) : FileStuff.getFilenameFromUri(galleryViewModel.getCurrentDirectoryUri(), false));
+            if (!initActionBar(isAllFolder)) { // getSupportActionBar() is null directly after orientation change
+                binding.recyclerView.post(() -> initActionBar(isAllFolder));
             }
         } else {
             galleryViewModel.setRootDir(true);
@@ -236,20 +234,17 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             setupGrid();
             setClickListeners();
 
-            Log.e(TAG, "init: " + galleryViewModel.isInitialised());
             if (!galleryViewModel.isInitialised()) {
                 addRootFolders();
             }
         } else {
             DocumentFile documentFile = DocumentFile.fromSingleUri(context, galleryViewModel.getCurrentDirectoryUri());
             if (isAllFolder || (documentFile != null && documentFile.isDirectory() && documentFile.exists())) {
-                Log.e(TAG, "init: find");
                 setupViewpager();
                 setupGrid();
                 setClickListeners();
 
                 if (!galleryViewModel.isInitialised()) {
-                    Log.e(TAG, "init: not initialised");
                     if (isAllFolder) {
                         findAllFiles();
                     } else {
@@ -263,6 +258,21 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             }
         }
 
+        initViewModels();
+    }
+
+    private boolean initActionBar(boolean isAllFolder) {
+        ActionBar ab = ((AppCompatActivity) requireActivity()).getSupportActionBar();
+
+        if (ab != null) {
+            ab.setDisplayHomeAsUpEnabled(true);
+            ab.setTitle(isAllFolder ? getString(R.string.gallery_all) : FileStuff.getFilenameFromUri(galleryViewModel.getCurrentDirectoryUri(), false));
+            return true;
+        }
+        return false;
+    }
+
+    private void initViewModels() {
         importViewModel.setOnImportDoneFragment((destinationUri, sameDirectory, importedCount, failedCount, thumbErrorCount) -> {
             Log.e(TAG, "setOnImportDoneFragment: " + destinationUri + ", " + sameDirectory + ", " + importedCount + ", " + failedCount + ", " + thumbErrorCount);
 
@@ -270,10 +280,13 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             if (activity == null || activity.isDestroyed()) {
                 return;
             }
-            activity.runOnUiThread(() -> Toaster.getInstance(activity).showLong(getString(R.string.gallery_selected_files_imported, importedCount)));
-            if (sameDirectory || (destinationUri != null && galleryViewModel.getCurrentDirectoryUri() != null
-                    && destinationUri.toString().equals(galleryViewModel.getCurrentDirectoryUri().toString()))) { // files added to current directory
-                activity.runOnUiThread(() -> {
+            activity.runOnUiThread(() -> {
+                Toaster.getInstance(activity).showLong(getString(R.string.gallery_selected_files_imported, importedCount));
+
+                if (galleryViewModel.isRootDir() && galleryViewModel.getGalleryFiles().isEmpty()) {
+                    settings.addGalleryDirectory(destinationUri, true, null);
+                    addRootFolders();
+                } else if (sameDirectory || (destinationUri != null && galleryViewModel.getCurrentDirectoryUri() != null && destinationUri.toString().equals(galleryViewModel.getCurrentDirectoryUri().toString()))) { // files added to current directory
                     synchronized (LOCK) {
                         int size = galleryViewModel.getGalleryFiles().size();
                         galleryViewModel.getGalleryFiles().clear();
@@ -283,22 +296,19 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
                         galleryViewModel.setInitialised(false);
                         findFilesIn(galleryViewModel.getCurrentDirectoryUri());
                     }
-                });
-            } else {
-                synchronized (LOCK) {
-                    for (int i = 0; i < galleryViewModel.getGalleryFiles().size(); i++) {
-                        GalleryFile g = galleryViewModel.getGalleryFiles().get(i);
-                        if (g.isDirectory() && g.getUri() != null && g.getUri().equals(destinationUri)) {
-                            //List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(activity, destinationUri);
-                            //g.setFilesInDirectory(galleryFiles);
-                            g.resetFilesInDirectory();
-                            int finalI = i;
-                            activity.runOnUiThread(() -> galleryGridAdapter.notifyItemChanged(finalI));
-                            break;
+                } else {
+                    synchronized (LOCK) {
+                        for (int i = 0; i < galleryViewModel.getGalleryFiles().size(); i++) {
+                            GalleryFile g = galleryViewModel.getGalleryFiles().get(i);
+                            if (g.isDirectory() && g.getUri() != null && g.getUri().equals(destinationUri)) {
+                                g.resetFilesInDirectory();
+                                galleryGridAdapter.notifyItemChanged(i);
+                                break;
+                            }
                         }
                     }
                 }
-            }
+            });
         });
 
         deleteViewModel.setOnDeleteDoneFragment(deletedFiles -> {
@@ -347,6 +357,31 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             activity.runOnUiThread(() -> {
                 galleryGridAdapter.onSelectionModeChanged(false);
                 Toaster.getInstance(activity).showLong(getString(R.string.gallery_selected_files_copied, processedFiles.size()));
+            });
+        });
+
+        moveViewModel.setOnDoneFragment(processedFiles -> {
+            Log.e(TAG, "setOnDoneFragment: moved " + processedFiles.size());
+            FragmentActivity activity = getActivity();
+            if (activity == null || activity.isDestroyed()) {
+                return;
+            }
+            activity.runOnUiThread(() -> {
+                Toaster.getInstance(activity).showLong(getString(R.string.gallery_selected_files_moved, processedFiles.size()));
+                synchronized (LOCK) {
+                    List<GalleryFile> galleryFiles = galleryViewModel.getGalleryFiles();
+                    for (int i = galleryFiles.size() - 1; i >= 0; i--) {
+                        GalleryFile f = galleryFiles.get(i);
+                        for (GalleryFile moved : processedFiles) {
+                            if (f.equals(moved)) {
+                                galleryFiles.remove(i);
+                                galleryGridAdapter.notifyItemRemoved(i);
+                                galleryPagerAdapter.notifyItemRemoved(i);
+                            }
+                        }
+                    }
+                    galleryGridAdapter.onSelectionModeChanged(false);
+                }
             });
         });
     }
@@ -552,6 +587,9 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
                 Uri directoryUri = documentFile.getUri();
                 //List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(context, directoryUri);
 
+                if (galleryViewModel.getGalleryFiles().isEmpty()) {
+                    addAllFolder();
+                }
                 synchronized (LOCK) {
                     galleryViewModel.getGalleryFiles().add(0, GalleryFile.asDirectory(directoryUri/*, galleryFiles*/));
                     galleryGridAdapter.notifyItemInserted(0);
@@ -622,14 +660,20 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         }
         activity.runOnUiThread(() -> {
             if (navController.getPreviousBackStackEntry() == null && !galleryViewModel.getGalleryFiles().isEmpty()) {
-                synchronized (LOCK) {
-                    galleryViewModel.getGalleryFiles().add(0, GalleryFile.asAllFolder(getString(R.string.gallery_all)));
-                    galleryGridAdapter.notifyItemInserted(0);
-                }
+                addAllFolder();
             }
+            binding.noMedia.setVisibility(directories.isEmpty() ? View.VISIBLE : View.GONE);
             setLoading(false);
         });
         galleryViewModel.setInitialised(true);
+    }
+
+    private void addAllFolder() {
+        synchronized (LOCK) {
+            galleryViewModel.getGalleryFiles().add(0, GalleryFile.asAllFolder(getString(R.string.gallery_all)));
+            galleryGridAdapter.notifyItemInserted(0);
+        }
+        binding.noMedia.setVisibility(View.GONE);
     }
 
     private void findAllFiles() {
@@ -1048,7 +1092,13 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
             bottomSheetCopyFragment.show(childFragmentManager, null);
             return true;
         } else if (id == R.id.move_selected) {
-            //moveSelected();
+            moveViewModel.getFiles().clear();
+            moveViewModel.getFiles().addAll(galleryGridAdapter.getSelectedFiles());
+            moveViewModel.setCurrentDirectoryUri(galleryViewModel.getCurrentDirectoryUri());
+
+            BottomSheetMoveFragment bottomSheetMoveFragment = new BottomSheetMoveFragment();
+            FragmentManager childFragmentManager = getChildFragmentManager();
+            bottomSheetMoveFragment.show(childFragmentManager, null);
             return true;
         } else if (id == R.id.about) {
             Dialogs.showAboutDialog(requireContext());

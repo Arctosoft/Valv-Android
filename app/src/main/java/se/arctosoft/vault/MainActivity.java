@@ -49,17 +49,6 @@ public class MainActivity extends AppCompatActivity {
                 binding.toolbar.setVisibility(View.VISIBLE);
             }
         });
-
-        /*OnBackPressedCallback callback = new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (!navController.popBackStack()) {
-                    Password.lock(MainActivity.this);
-                    finish();
-                }
-            }
-        };
-        getOnBackPressedDispatcher().addCallback(this, callback);*/
     }
 
     @Override

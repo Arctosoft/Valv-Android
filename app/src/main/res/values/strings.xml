@@ -119,6 +119,7 @@
     <string name="gallery_share_with">Share/open with</string>
     <string name="gallery_click_to_open_directory">Click to open\n%1$s</string>
     <string name="gallery_find_files_no_permission">No permission to read %1$s, please add it again</string>
+    <string name="gallery_no_folders">It\'s empty here!\n\nStart by adding a folder or importing some files.</string>
 
     <string name="select_destination">Select destination:</string>
     <string name="use_other_folder">Use other folder</string>
@@ -149,7 +150,18 @@
     <string name="copy_modal_body">Your files will be copied into the folder you select below.</string>
     <string name="copy_modal_body_copying">Your files are being copied into %1$s.</string>
     <string name="copy_modal_copying">Copying %1$d out of %2$d</string>
-    <string name="copy_error_same_directory">You can\'t copy to the current directory</string>
+
+    <plurals name="move_modal_title">
+        <item quantity="one">Move %1$d file (%2$s)</item>
+        <item quantity="other">Move %1$d files (%2$s)</item>
+    </plurals>
+    <plurals name="move_modal_title_moving">
+        <item quantity="one">Moving %1$d file (%2$s)</item>
+        <item quantity="other">Moving %1$d files (%2$s)</item>
+    </plurals>
+    <string name="move_modal_body">Your files will be moved into the folder you select below.</string>
+    <string name="move_modal_body_moving">Your files are being moved into %1$s.</string>
+    <string name="move_modal_moving">Moving %1$d out of %2$d</string>
 
     <plurals name="delete_modal_title">
         <item quantity="one">Delete %1$d file (%2$s)?</item>

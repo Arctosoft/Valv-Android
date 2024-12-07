@@ -104,10 +104,10 @@ public class BottomSheetDeleteFragment extends BottomSheetDialogFragment {
     }
 
     private void doDelete(long totalBytes) {
-        showDeleting();
         deleteViewModel.getProgressData().setValue(null);
         deleteViewModel.setTotalBytes(totalBytes);
         deleteViewModel.setDeleting(true);
+        showDeleting();
         deleteViewModel.startDelete(requireActivity());
     }
 

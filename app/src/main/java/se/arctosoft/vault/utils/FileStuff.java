@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -148,7 +147,6 @@ public class FileStuff {
 
     public static String getFilenameWithPathFromUri(@NonNull Uri uri) {
         String[] split = uri.getLastPathSegment().split(":");
-        Log.e(TAG, "getFilenameWithPathFromUri: " + Arrays.toString(split));
         return split[split.length - 1];
     }
 

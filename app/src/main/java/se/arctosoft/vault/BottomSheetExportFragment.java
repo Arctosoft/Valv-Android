@@ -105,10 +105,10 @@ public class BottomSheetExportFragment extends BottomSheetDialogFragment {
     }
 
     private void doExport(long totalBytes) {
-        showDeleting();
         exportViewModel.getProgressData().setValue(null);
         exportViewModel.setTotalBytes(totalBytes);
         exportViewModel.setRunning(true);
+        showDeleting();
         exportViewModel.start(requireActivity());
     }
 
