@@ -91,8 +91,6 @@ public class GalleryViewModel extends ViewModel {
                         DocumentFile found = currentDocumentDirectory.findFile(s);
                         if (found != null) {
                             currentDocumentDirectory = found;
-                        } else {
-                            break;
                         }
                     }
                 }

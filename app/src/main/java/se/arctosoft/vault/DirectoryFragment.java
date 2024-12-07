@@ -198,8 +198,8 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
 
         Bundle arguments = getArguments();
         if (arguments != null) {
-            galleryViewModel.setDirectory(arguments.getString(ARGUMENT_DIRECTORY), context);
             galleryViewModel.setNestedPath(arguments.getString(ARGUMENT_NESTED_PATH, ""));
+            galleryViewModel.setDirectory(arguments.getString(ARGUMENT_DIRECTORY), context);
             galleryViewModel.setAllFolder(arguments.getBoolean(ARGUMENT_IS_ALL, false));
         }
         Log.e(TAG, "init: directory: " + galleryViewModel.getDirectory());
@@ -356,7 +356,11 @@ public class DirectoryFragment extends Fragment implements MenuProvider {
         //Log.e(TAG, "showViewpager: " + show + " " + pos);
         galleryViewModel.setViewpagerVisible(show);
         galleryPagerAdapter.showPager(show);
-        ActionBar ab = ((AppCompatActivity) requireActivity()).getSupportActionBar();
+        FragmentActivity activity = getActivity();
+        if (activity == null || activity.isDestroyed()) {
+            return;
+        }
+        ActionBar ab = ((AppCompatActivity) activity).getSupportActionBar();
 
         if (show) {
             if (ab != null) {
