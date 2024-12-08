@@ -1,0 +1,15 @@
+{
+  "uniqueId": "com.davemorrissey.labs:subsampling-scale-image-view",
+  "developers": [
+    {
+      "name": "David Morrissey"
+    }
+  ],
+  "artifactVersion": "2.0.1",
+  "description": "Highly configurable, easily extendable deep zoom view for displaying huge images without loss of detail. Perfect for photo galleries, maps, building plans etc.",
+  "name": "SubsamplingScaleImageView",
+  "website": "https://github.com/davemorrissey/subsampling-scale-image-view",
+  "licenses": [
+    "fsls1"
+  ]
+}

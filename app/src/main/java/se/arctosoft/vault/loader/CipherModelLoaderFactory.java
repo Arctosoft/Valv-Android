@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,19 +29,19 @@ import com.bumptech.glide.load.model.MultiModelLoaderFactory;
 
 import java.io.InputStream;
 
-import javax.crypto.CipherInputStream;
-
 public class CipherModelLoaderFactory implements ModelLoaderFactory<Uri, InputStream> {
     private final Context context;
+    private final int version;
 
-    public CipherModelLoaderFactory(@NonNull Context context) {
+    public CipherModelLoaderFactory(@NonNull Context context, int version) {
         this.context = context.getApplicationContext();
+        this.version = version;
     }
 
     @NonNull
     @Override
     public ModelLoader<Uri, InputStream> build(@NonNull MultiModelLoaderFactory multiFactory) {
-        return new CipherModelLoader(context);
+        return new CipherModelLoader(context, version);
     }
 
     @Override

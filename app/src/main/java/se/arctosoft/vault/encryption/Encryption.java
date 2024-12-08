@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 package se.arctosoft.vault.encryption;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.util.Log;
@@ -30,12 +31,18 @@ import androidx.fragment.app.FragmentActivity;
 
 import com.bumptech.glide.Glide;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -46,6 +53,7 @@ import java.security.spec.KeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -68,11 +76,13 @@ public class Encryption {
     private static final String TAG = "Encryption";
     private static final String CIPHER = "ChaCha20/NONE/NoPadding";
     private static final String KEY_ALGORITHM = "PBKDF2withHmacSHA512";
-    private static final int ITERATION_COUNT = 20000;
+    private static final int ITERATION_COUNT_V1 = 20000;
     private static final int KEY_LENGTH = 256;
     private static final int SALT_LENGTH = 16;
     private static final int IV_LENGTH = 12;
     private static final int CHECK_LENGTH = 12;
+    private static final int INTEGER_LENGTH = 4;
+    private static final String JSON_ORIGINAL_NAME = "originalName";
 
     public static final String ENCRYPTED_PREFIX = ".valv.";
     public static final String PREFIX_IMAGE_FILE = ".valv.i.1-";
@@ -82,50 +92,77 @@ public class Encryption {
     public static final String PREFIX_NOTE_FILE = ".valv.n.1-";
     public static final String PREFIX_THUMB = ".valv.t.1-";
 
-    public static Pair<Boolean, Boolean> importFileToDirectory(FragmentActivity context, DocumentFile sourceFile, DocumentFile directory, Settings settings, @Nullable IOnProgress onProgress) {
-        char[] tempPassword = settings.getTempPassword();
-        if (tempPassword == null || tempPassword.length == 0) {
+    public static final String ENCRYPTED_SUFFIX = ".valv";
+    public static final String SUFFIX_IMAGE_FILE = "-i.valv";
+    public static final String SUFFIX_GIF_FILE = "-g.valv";
+    public static final String SUFFIX_VIDEO_FILE = "-v.valv";
+    public static final String SUFFIX_TEXT_FILE = "-x.valv";
+    public static final String SUFFIX_NOTE_FILE = "-n.valv";
+    public static final String SUFFIX_THUMB = "-t.valv";
+
+    public static String getSuffixFromMime(@Nullable String mimeType) {
+        if (mimeType == null) {
+            return Encryption.SUFFIX_IMAGE_FILE;
+        } else if (mimeType.equals("image/gif")) {
+            return Encryption.SUFFIX_GIF_FILE;
+        } else if (mimeType.startsWith("image/")) {
+            return Encryption.SUFFIX_IMAGE_FILE;
+        } else if (mimeType.startsWith("text/")) {
+            return Encryption.SUFFIX_TEXT_FILE;
+        } else {
+            return Encryption.SUFFIX_VIDEO_FILE;
+        }
+    }
+
+    public static Pair<Boolean, Boolean> importFileToDirectory(FragmentActivity context, DocumentFile sourceFile, DocumentFile directory, char[] password, int version, @Nullable IOnProgress onProgress, AtomicBoolean interrupted) {
+        if (password == null || password.length == 0) {
             throw new RuntimeException("No password");
         }
 
         String generatedName = StringStuff.getRandomFileName();
-        DocumentFile file = directory.createFile("", FileType.fromMimeType(sourceFile.getType()).encryptionPrefix + generatedName);
-        DocumentFile thumb = directory.createFile("", PREFIX_THUMB + generatedName);
+        DocumentFile file = directory.createFile("", generatedName + getSuffixFromMime(sourceFile.getType()));
+        DocumentFile thumb = directory.createFile("", generatedName + SUFFIX_THUMB);
 
         if (file == null) {
             Log.e(TAG, "importFileToDirectory: could not create file from " + sourceFile.getUri());
             return new Pair<>(false, false);
         }
         try {
-            createFile(context, sourceFile.getUri(), file, tempPassword, sourceFile.getName(), onProgress);
-        } catch (GeneralSecurityException | IOException e) {
+            createFile(context, sourceFile.getUri(), file, password, sourceFile.getName(), onProgress, version, interrupted);
+        } catch (GeneralSecurityException | IOException | JSONException e) {
             e.printStackTrace();
             file.delete();
             return new Pair<>(false, false);
         }
+        if (interrupted.get()) {
+            file.delete();
+            if (thumb != null) {
+                thumb.delete();
+            }
+            return new Pair<>(false, false);
+        }
         boolean createdThumb = false;
         try {
-            createThumb(context, sourceFile.getUri(), thumb, tempPassword, sourceFile.getName());
+            createThumb(context, sourceFile.getUri(), thumb, password, sourceFile.getName(), version);
             createdThumb = true;
         } catch (GeneralSecurityException | IOException | ExecutionException |
-                 InterruptedException e) {
+                 InterruptedException | JSONException e) {
             e.printStackTrace();
             thumb.delete();
         }
         return new Pair<>(true, createdThumb);
     }
 
-    public static DocumentFile importNoteToDirectory(FragmentActivity context, String note, String fileNameWithoutPrefix, DocumentFile directory, Settings settings) {
-        char[] tempPassword = settings.getTempPassword();
-        if (tempPassword == null || tempPassword.length == 0) {
+    public static DocumentFile importNoteToDirectory(FragmentActivity context, String note, String fileNameWithoutPrefix, DocumentFile directory, char[] password, int version) {
+        if (password == null || password.length == 0) {
             throw new RuntimeException("No password");
         }
 
-        DocumentFile file = directory.createFile("", Encryption.PREFIX_NOTE_FILE + fileNameWithoutPrefix);
+        DocumentFile file = directory.createFile("", version < 2 ? Encryption.PREFIX_NOTE_FILE + fileNameWithoutPrefix : fileNameWithoutPrefix + Encryption.SUFFIX_NOTE_FILE);
 
         try {
-            createTextFile(context, note, file, tempPassword, fileNameWithoutPrefix);
-        } catch (GeneralSecurityException | IOException e) {
+            createTextFile(context, note, file, password, fileNameWithoutPrefix, version);
+        } catch (GeneralSecurityException | IOException | JSONException e) {
             Log.e(TAG, "importNoteToDirectory: failed " + e.getMessage());
             e.printStackTrace();
             file.delete();
@@ -135,20 +172,19 @@ public class Encryption {
         return file;
     }
 
-    public static DocumentFile importTextToDirectory(FragmentActivity context, String text, @Nullable String fileNameWithoutPrefix, DocumentFile directory, Settings settings) {
-        char[] tempPassword = settings.getTempPassword();
-        if (tempPassword == null || tempPassword.length == 0) {
+    public static DocumentFile importTextToDirectory(FragmentActivity context, String text, @Nullable String fileNameWithoutSuffix, DocumentFile directory, char[] password, int version) {
+        if (password == null || password.length == 0) {
             throw new RuntimeException("No password");
         }
 
-        if (fileNameWithoutPrefix == null) {
-            fileNameWithoutPrefix = StringStuff.getRandomFileName();
+        if (fileNameWithoutSuffix == null) {
+            fileNameWithoutSuffix = StringStuff.getRandomFileName();
         }
-        DocumentFile file = directory.createFile("", Encryption.PREFIX_TEXT_FILE + fileNameWithoutPrefix);
+        DocumentFile file = directory.createFile("", version < 2 ? Encryption.PREFIX_TEXT_FILE + fileNameWithoutSuffix : fileNameWithoutSuffix + Encryption.SUFFIX_TEXT_FILE);
 
         try {
-            createTextFile(context, text, file, tempPassword, fileNameWithoutPrefix + FileType.TEXT.extension);
-        } catch (GeneralSecurityException | IOException e) {
+            createTextFile(context, text, file, password, version < 2 ? fileNameWithoutSuffix + FileType.TEXT_V1.extension : fileNameWithoutSuffix + FileType.TEXT_V2.extension, version);
+        } catch (GeneralSecurityException | IOException | JSONException e) {
             Log.e(TAG, "importTextToDirectory: failed " + e.getMessage());
             e.printStackTrace();
             file.delete();
@@ -225,13 +261,17 @@ public class Encryption {
         }
     }
 
-    private static void createFile(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, String sourceFileName, @Nullable IOnProgress onProgress) throws GeneralSecurityException, IOException {
-        Streams streams = getCipherOutputStream(context, input, outputFile, password, false, sourceFileName);
+    private static void createFile(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, String sourceFileName, @Nullable IOnProgress onProgress, int version, AtomicBoolean interrupted) throws GeneralSecurityException, IOException, JSONException {
+        Streams streams = getCipherOutputStream(context, input, outputFile, password, sourceFileName, version);
 
         int read;
         byte[] buffer = new byte[2048];
         long progress = 0;
         while ((read = streams.inputStream.read(buffer)) != -1) {
+            if (interrupted.get()) {
+                streams.close();
+                return;
+            }
             streams.outputStream.write(buffer, 0, read);
             if (onProgress != null) {
                 progress += read;
@@ -242,21 +282,16 @@ public class Encryption {
         streams.close();
     }
 
-    private static void createTextFile(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
-        Streams streams = getTextCipherOutputStream(context, input, outputFile, password, sourceFileName);
+    private static void createTextFile(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName, int version) throws GeneralSecurityException, IOException, JSONException {
+        Streams streams = getTextCipherOutputStream(context, input, outputFile, password, sourceFileName, version);
         streams.outputStream.write(streams.inputString.getBytes(StandardCharsets.UTF_8));
         streams.close();
     }
 
-    private static void createThumb(FragmentActivity context, Uri input, DocumentFile outputThumbFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException, ExecutionException, InterruptedException {
-        Streams streams = getCipherOutputStream(context, input, outputThumbFile, password, true, sourceFileName);
+    private static void createThumb(FragmentActivity context, Uri input, DocumentFile outputThumbFile, char[] password, String sourceFileName, int version) throws GeneralSecurityException, IOException, ExecutionException, InterruptedException, JSONException {
+        Streams streams = getCipherOutputStream(context, input, outputThumbFile, password, sourceFileName, version);
 
-        Bitmap bitmap = Glide.with(context)
-                .asBitmap()
-                .load(input)
-                .centerCrop()
-                .submit(512, 512)
-                .get();
+        Bitmap bitmap = Glide.with(context).asBitmap().load(input).centerCrop().submit(512, 512).get();
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 75, stream);
@@ -267,113 +302,239 @@ public class Encryption {
         streams.close();
     }
 
-    public static Streams getCipherInputStream(@NonNull InputStream inputStream, char[] password, boolean isThumb) throws IOException, GeneralSecurityException, InvalidPasswordException {
-        byte[] salt = new byte[SALT_LENGTH];
-        byte[] ivBytes = new byte[IV_LENGTH];
-        byte[] checkBytes1 = new byte[CHECK_LENGTH];
-        byte[] checkBytes2 = new byte[CHECK_LENGTH];
+    public static Streams getCipherInputStream(@NonNull InputStream inputStream, char[] password, boolean isThumb, int version) throws IOException, GeneralSecurityException, InvalidPasswordException, JSONException {
+        if (version < 2) {
+            byte[] salt = new byte[SALT_LENGTH];
+            byte[] ivBytes = new byte[IV_LENGTH];
+            byte[] checkBytes1 = new byte[CHECK_LENGTH];
+            byte[] checkBytes2 = new byte[CHECK_LENGTH];
 
-        inputStream.read(salt);
-        inputStream.read(ivBytes);
-        if (isThumb) {
+            inputStream.read(salt);
+            inputStream.read(ivBytes);
+            if (isThumb) {
+                inputStream.read(checkBytes1);
+            }
+
+            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
+            KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT_V1, KEY_LENGTH);
+            SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
+
+            Cipher cipher = Cipher.getInstance(CIPHER);
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
+            CipherInputStream cipherInputStream = new MyCipherInputStream(inputStream, cipher);
+            if (isThumb) {
+                cipherInputStream.read(checkBytes2);
+                if (!Arrays.equals(checkBytes1, checkBytes2)) {
+                    throw new InvalidPasswordException("Invalid password");
+                }
+            }
+            ArrayList<Byte> bytes = new ArrayList<>();
+
+            if (cipherInputStream.read() == 0x0A) {
+                int count = 0;
+                byte[] read = new byte[1];
+                while ((cipherInputStream.read(read)) > 0) {
+                    if (read[0] == 0x0A) {
+                        break;
+                    }
+                    bytes.add(read[0]);
+                    if (++count > 300) {
+                        throw new IOException("Not valid file");
+                    }
+                }
+            } else {
+                throw new IOException("Not valid file");
+            }
+            byte[] arr = new byte[bytes.size()];
+            for (int i = 0; i < bytes.size(); i++) {
+                arr[i] = bytes.get(i);
+            }
+            return new Streams(cipherInputStream, secretKey, new String(arr, StandardCharsets.UTF_8));
+        } else {
+            byte[] versionBytes = new byte[INTEGER_LENGTH];
+            byte[] salt = new byte[SALT_LENGTH];
+            byte[] ivBytes = new byte[IV_LENGTH];
+            byte[] iterationCount = new byte[INTEGER_LENGTH];
+            byte[] checkBytes1 = new byte[CHECK_LENGTH];
+            byte[] checkBytes2 = new byte[CHECK_LENGTH];
+
+            //1. VERSION SALT IVBYTES ITERATIONCOUNT CHECKBYTES CHECKBYTES_ENC\n
+            //2. {originalName}\n
+            //3. file data
+            inputStream.read(versionBytes);
+            inputStream.read(salt);
+            inputStream.read(ivBytes);
+            inputStream.read(iterationCount);
             inputStream.read(checkBytes1);
-        }
 
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
-        KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
-        SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
+            //final int VERSION = fromByteArray(versionBytes); // not used until version 3
+            final int ITERATION_COUNT = fromByteArray(iterationCount);
 
-        Cipher cipher = Cipher.getInstance(CIPHER);
-        cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-        CipherInputStream cipherInputStream = new MyCipherInputStream(inputStream, cipher);
-        if (isThumb) {
+            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
+            KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
+            SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
+
+            Cipher cipher = Cipher.getInstance(CIPHER);
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
+            CipherInputStream cipherInputStream = new MyCipherInputStream(inputStream, cipher);
+
             cipherInputStream.read(checkBytes2);
             if (!Arrays.equals(checkBytes1, checkBytes2)) {
                 throw new InvalidPasswordException("Invalid password");
             }
-        }
-        ArrayList<Byte> bytes = new ArrayList<>();
-
-        if (cipherInputStream.read() == 0x0A) {
-            int count = 0;
-            byte[] read = new byte[1];
-            while ((cipherInputStream.read(read)) > 0) {
-                if (read[0] == 0x0A) {
-                    break;
-                }
-                bytes.add(read[0]);
-                if (++count > 300) {
-                    throw new IOException("Not valid file");
-                }
+            if (cipherInputStream.read() != 0x0A) { // jump to line 2
+                throw new IOException("Not valid file");
             }
-        } else {
-            throw new IOException("Not valid file");
+            byte[] jsonBytes = readUntilNewline(cipherInputStream); // read line 2
+            JSONObject json = new JSONObject(new String(jsonBytes, StandardCharsets.UTF_8));
+            String originalName = json.has(JSON_ORIGINAL_NAME) ? json.getString(JSON_ORIGINAL_NAME) : "";
+
+            return new Streams(cipherInputStream, secretKey, originalName); // pass on line 3
+        }
+    }
+
+    @NonNull
+    private static byte[] readUntilNewline(@NonNull InputStream inputStream) throws IOException {
+        ArrayList<Byte> bytes = new ArrayList<>();
+        byte[] read = new byte[1];
+        while ((inputStream.read(read)) > 0) {
+            if (read[0] == 0x0A) { // newline \n character
+                break;
+            }
+            bytes.add(read[0]);
         }
         byte[] arr = new byte[bytes.size()];
         for (int i = 0; i < bytes.size(); i++) {
             arr[i] = bytes.get(i);
         }
-        return new Streams(cipherInputStream, secretKey, new String(arr, StandardCharsets.UTF_8));
+        return arr;
     }
 
-    private static Streams getCipherOutputStream(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, boolean isThumb, String sourceFileName) throws GeneralSecurityException, IOException {
-        SecureRandom sr = SecureRandom.getInstanceStrong();
-        byte[] salt = new byte[SALT_LENGTH];
-        byte[] ivBytes = new byte[IV_LENGTH];
-        byte[] checkBytes = new byte[CHECK_LENGTH];
-        generateSecureRandom(sr, salt, ivBytes, isThumb ? checkBytes : null);
+    private static Streams getCipherOutputStream(FragmentActivity context, Uri input, DocumentFile outputFile, char[] password, String sourceFileName, int version) throws GeneralSecurityException, IOException, JSONException {
+        if (version < 2) {
+            SecureRandom sr = SecureRandom.getInstanceStrong();
+            byte[] salt = new byte[SALT_LENGTH];
+            byte[] ivBytes = new byte[IV_LENGTH];
+            generateSecureRandom(sr, salt, ivBytes, null);
 
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
-        KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
-        SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
+            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
+            KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT_V1, KEY_LENGTH);
+            SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
 
-        Cipher cipher = Cipher.getInstance(CIPHER);
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
+            Cipher cipher = Cipher.getInstance(CIPHER);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
 
-        InputStream inputStream = context.getContentResolver().openInputStream(input);
-        OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(outputFile.getUri()), 1024 * 32);
-        writeSaltAndIV(isThumb, salt, ivBytes, checkBytes, fos);
-        fos.flush();
-        CipherOutputStream cipherOutputStream = new CipherOutputStream(fos, cipher);
-        if (isThumb) {
+            InputStream inputStream = context.getContentResolver().openInputStream(input);
+            OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(outputFile.getUri()), 1024 * 32);
+            writeSaltAndIV(null, salt, ivBytes, null, null, fos);
+            fos.flush();
+            CipherOutputStream cipherOutputStream = new CipherOutputStream(fos, cipher);
+            cipherOutputStream.write(("\n" + sourceFileName + "\n").getBytes(StandardCharsets.UTF_8));
+            return new Streams(inputStream, cipherOutputStream, secretKey);
+        } else {
+            SecureRandom sr = SecureRandom.getInstanceStrong();
+            Settings settings = Settings.getInstance(context);
+            final int ITERATION_COUNT = settings.getIterationCount();
+            byte[] versionBytes = toByteArray(version);
+            byte[] salt = new byte[SALT_LENGTH];
+            byte[] ivBytes = new byte[IV_LENGTH];
+            byte[] iterationCount = toByteArray(ITERATION_COUNT);
+            byte[] checkBytes = new byte[CHECK_LENGTH];
+            generateSecureRandom(sr, salt, ivBytes, checkBytes);
+
+            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
+            KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
+            SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
+
+            Cipher cipher = Cipher.getInstance(CIPHER);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
+
+            InputStream inputStream = context.getContentResolver().openInputStream(input);
+            OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(outputFile.getUri()), 1024 * 32);
+            writeSaltAndIV(versionBytes, salt, ivBytes, iterationCount, checkBytes, fos);
+            fos.flush();
+            CipherOutputStream cipherOutputStream = new CipherOutputStream(fos, cipher);
             cipherOutputStream.write(checkBytes);
+            JSONObject json = new JSONObject();
+            json.put(JSON_ORIGINAL_NAME, sourceFileName);
+            cipherOutputStream.write(("\n" + json + "\n").getBytes(StandardCharsets.UTF_8));
+            return new Streams(inputStream, cipherOutputStream, secretKey);
         }
-        cipherOutputStream.write(("\n" + sourceFileName + "\n").getBytes(StandardCharsets.UTF_8));
-        return new Streams(inputStream, cipherOutputStream, secretKey);
     }
 
-    private static Streams getTextCipherOutputStream(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName) throws GeneralSecurityException, IOException {
-        SecureRandom sr = SecureRandom.getInstanceStrong();
-        byte[] salt = new byte[SALT_LENGTH];
-        byte[] ivBytes = new byte[IV_LENGTH];
-        generateSecureRandom(sr, salt, ivBytes, null);
+    private static Streams getTextCipherOutputStream(FragmentActivity context, String input, DocumentFile outputFile, char[] password, String sourceFileName, int version) throws GeneralSecurityException, IOException, JSONException {
+        if (version < 2) {
+            SecureRandom sr = SecureRandom.getInstanceStrong();
+            byte[] salt = new byte[SALT_LENGTH];
+            byte[] ivBytes = new byte[IV_LENGTH];
+            generateSecureRandom(sr, salt, ivBytes, null);
 
-        SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
-        KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
-        SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
-        IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
+            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
+            KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT_V1, KEY_LENGTH);
+            SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
 
-        Cipher cipher = Cipher.getInstance(CIPHER);
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
+            Cipher cipher = Cipher.getInstance(CIPHER);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
 
-        OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(outputFile.getUri()), 1024 * 32);
-        writeSaltAndIV(false, salt, ivBytes, null, fos);
-        fos.flush();
-        CipherOutputStream cipherOutputStream = new CipherOutputStream(fos, cipher);
-        cipherOutputStream.write(("\n" + sourceFileName + "\n").getBytes(StandardCharsets.UTF_8));
-        return new Streams(input, cipherOutputStream, secretKey);
+            OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(outputFile.getUri()), 1024 * 32);
+            writeSaltAndIV(null, salt, ivBytes, null, null, fos);
+            fos.flush();
+            CipherOutputStream cipherOutputStream = new CipherOutputStream(fos, cipher);
+            cipherOutputStream.write(("\n" + sourceFileName + "\n").getBytes(StandardCharsets.UTF_8));
+            return new Streams(input, cipherOutputStream, secretKey);
+        } else {
+            SecureRandom sr = SecureRandom.getInstanceStrong();
+            Settings settings = Settings.getInstance(context);
+            final int ITERATION_COUNT = settings.getIterationCount();
+            byte[] versionBytes = toByteArray(version);
+            byte[] salt = new byte[SALT_LENGTH];
+            byte[] ivBytes = new byte[IV_LENGTH];
+            byte[] iterationCount = toByteArray(ITERATION_COUNT);
+            byte[] checkBytes = new byte[CHECK_LENGTH];
+            generateSecureRandom(sr, salt, ivBytes, checkBytes);
+
+            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance(KEY_ALGORITHM);
+            KeySpec keySpec = new PBEKeySpec(password, salt, ITERATION_COUNT, KEY_LENGTH);
+            SecretKey secretKey = secretKeyFactory.generateSecret(keySpec);
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(ivBytes);
+
+            Cipher cipher = Cipher.getInstance(CIPHER);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
+
+            OutputStream fos = new BufferedOutputStream(context.getContentResolver().openOutputStream(outputFile.getUri()), 1024 * 32);
+            writeSaltAndIV(versionBytes, salt, ivBytes, iterationCount, checkBytes, fos);
+            fos.flush();
+            CipherOutputStream cipherOutputStream = new CipherOutputStream(fos, cipher);
+            cipherOutputStream.write(checkBytes);
+            JSONObject json = new JSONObject();
+            json.put(JSON_ORIGINAL_NAME, sourceFileName);
+            cipherOutputStream.write(("\n" + json + "\n").getBytes(StandardCharsets.UTF_8));
+            return new Streams(input, cipherOutputStream, secretKey);
+        }
+    }
+
+    public static byte[] toByteArray(int value) {
+        return new byte[]{(byte) (value >> 24), (byte) (value >> 16), (byte) (value >> 8), (byte) value};
+    }
+
+    public static int fromByteArray(byte[] bytes) {
+        return bytes[0] << 24 | (bytes[1] & 0xFF) << 16 | (bytes[2] & 0xFF) << 8 | (bytes[3] & 0xFF);
     }
 
     @NonNull
-    public static String getOriginalFilename(@NonNull InputStream inputStream, char[] password, boolean isThumb) {
+    public static String getOriginalFilename(@NonNull InputStream inputStream, char[] password, boolean isThumb, int version) {
         String name = "";
         try {
-            Streams streams = getCipherInputStream(inputStream, password, isThumb);
+            Streams streams = getCipherInputStream(inputStream, password, isThumb, version);
             name = streams.getOriginalFileName();
             streams.close();
-        } catch (IOException | GeneralSecurityException | InvalidPasswordException e) {
+        } catch (IOException | GeneralSecurityException | InvalidPasswordException |
+                 JSONException e) {
             e.printStackTrace();
         }
         return name;
@@ -387,23 +548,53 @@ public class Encryption {
         }
     }
 
-    private static void writeSaltAndIV(boolean isThumb, byte[] salt, byte[] ivBytes, byte[] checkBytes, OutputStream fos) throws IOException {
+    private static void writeSaltAndIV(@Nullable byte[] version, byte[] salt, byte[] ivBytes, @Nullable byte[] iterationCount, @Nullable byte[] checkBytes, OutputStream fos) throws IOException {
+        if (version != null) {
+            fos.write(version);
+        }
         fos.write(salt);
         fos.write(ivBytes);
-        if (isThumb) {
+        if (iterationCount != null) {
+            fos.write(iterationCount);
+        }
+        if (checkBytes != null) {
             fos.write(checkBytes);
         }
     }
 
-    public static void decryptToCache(FragmentActivity context, Uri encryptedInput, @Nullable String extension, char[] password, IOnUriResult onUriResult) {
+    public static String readEncryptedTextFromUri(@NonNull Uri encryptedInput, Context context, int version, char[] password) {
+        try {
+            InputStream inputStream = context.getContentResolver().openInputStream(encryptedInput);
+            Streams cis = getCipherInputStream(inputStream, password, false, version);
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(cis.inputStream, StandardCharsets.UTF_8));
+
+            StringBuilder sb = new StringBuilder();
+            int read;
+            char[] buffer = new char[8192];
+            while ((read = br.read(buffer)) != -1) {
+                sb.append(buffer, 0, read);
+            }
+
+            return sb.toString();
+        } catch (GeneralSecurityException | InvalidPasswordException | JSONException |
+                 IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static void decryptToCache(FragmentActivity context, Uri encryptedInput, @Nullable String extension, int version, char[] password, IOnUriResult onUriResult) {
         new Thread(() -> {
             try {
                 InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
 
-                Path file = Files.createTempFile("temp_", extension);
+                File cacheDir = context.getCacheDir();
+                cacheDir.mkdir();
+                Path file = Files.createTempFile(null, extension);
                 Uri fileUri = Uri.fromFile(file.toFile());
                 OutputStream fos = context.getContentResolver().openOutputStream(fileUri);
-                Streams cis = getCipherInputStream(inputStream, password, false);
+                Streams cis = getCipherInputStream(inputStream, password, false, version);
 
                 int read;
                 byte[] buffer = new byte[2048];
@@ -415,7 +606,7 @@ public class Encryption {
                 inputStream.close();
 
                 context.runOnUiThread(() -> onUriResult.onUriResult(fileUri));
-            } catch (GeneralSecurityException | IOException e) {
+            } catch (GeneralSecurityException | IOException | JSONException e) {
                 e.printStackTrace();
                 context.runOnUiThread(() -> onUriResult.onError(e));
             } catch (InvalidPasswordException e) {
@@ -426,12 +617,12 @@ public class Encryption {
         }).start();
     }
 
-    public static void decryptAndExport(FragmentActivity context, Uri encryptedInput, DocumentFile directory, GalleryFile galleryFile, char[] password, IOnUriResult onUriResult, boolean isVideo) {
+    public static void decryptAndExport(FragmentActivity context, Uri encryptedInput, DocumentFile directory, GalleryFile galleryFile, boolean isVideo, int version, char[] password, IOnUriResult onUriResult) {
         DocumentFile documentFile = directory != null ? directory : DocumentFile.fromTreeUri(context, encryptedInput);
         String originalFileName = galleryFile.getOriginalName();
         if (originalFileName == null) {
             try {
-                originalFileName = Encryption.getOriginalFilename(context.getContentResolver().openInputStream(encryptedInput), password, false);
+                originalFileName = Encryption.getOriginalFilename(context.getContentResolver().openInputStream(encryptedInput), password, false, version);
                 galleryFile.setOriginalName(originalFileName);
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -443,7 +634,7 @@ public class Encryption {
             InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(encryptedInput), 1024 * 32);
 
             OutputStream fos = context.getContentResolver().openOutputStream(file.getUri());
-            Streams cis = getCipherInputStream(inputStream, password, false);
+            Streams cis = getCipherInputStream(inputStream, password, false, version);
 
             int read;
             byte[] buffer = new byte[2048];
@@ -455,7 +646,7 @@ public class Encryption {
             inputStream.close();
 
             onUriResult.onUriResult(file.getUri());
-        } catch (GeneralSecurityException | IOException e) {
+        } catch (GeneralSecurityException | IOException | JSONException e) {
             e.printStackTrace();
             onUriResult.onError(e);
         } catch (InvalidPasswordException e) {

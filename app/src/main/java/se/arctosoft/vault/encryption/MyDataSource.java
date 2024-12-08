@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,14 +29,16 @@ import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DataSpec;
 import androidx.media3.datasource.TransferListener;
 
+import org.json.JSONException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 
 import javax.crypto.CipherInputStream;
 
+import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.exception.InvalidPasswordException;
-import se.arctosoft.vault.utils.Settings;
 
 @OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
 public class MyDataSource implements DataSource {
@@ -45,9 +47,13 @@ public class MyDataSource implements DataSource {
 
     private Encryption.Streams streams;
     private Uri uri;
+    private final Password password;
+    private final int version;
 
-    public MyDataSource(@NonNull Context context) {
+    public MyDataSource(@NonNull Context context, int version, Password password) {
         this.context = context.getApplicationContext();
+        this.version = version;
+        this.password = password;
     }
 
     @Override
@@ -55,8 +61,8 @@ public class MyDataSource implements DataSource {
         uri = dataSpec.uri;
         try {
             InputStream fileStream = context.getContentResolver().openInputStream(uri);
-            streams = Encryption.getCipherInputStream(fileStream, Settings.getInstance(context).getTempPassword(), false);
-        } catch (GeneralSecurityException | InvalidPasswordException e) {
+            streams = Encryption.getCipherInputStream(fileStream, password.getPassword(), false, version);
+        } catch (GeneralSecurityException | InvalidPasswordException | JSONException e) {
             e.printStackTrace();
             Log.e(TAG, "open error", e);
             return 0;

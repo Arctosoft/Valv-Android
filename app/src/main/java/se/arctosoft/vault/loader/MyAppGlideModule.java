@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,9 +34,11 @@ import java.io.InputStream;
 
 @GlideModule
 public class MyAppGlideModule extends AppGlideModule {
+
     @Override
     public void registerComponents(@NonNull Context context, @NonNull Glide glide, @NonNull Registry registry) {
-        registry.prepend(Uri.class, InputStream.class, new CipherModelLoaderFactory(context));
+        registry.prepend(Uri.class, InputStream.class, new CipherModelLoaderFactory(context, 1));
+        registry.prepend(Uri.class, InputStream.class, new CipherModelLoaderFactory(context, 2));
     }
 
     @Override

@@ -1,6 +1,7 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="Theme.Vault" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.Valv" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/primary_color</item>
         <item name="colorPrimaryVariant">@color/primary_dark_color</item>
@@ -11,6 +12,7 @@
         <item name="colorOnSecondary">@color/black</item>
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:windowLightStatusBar">?attr/isLightTheme</item>
         <!-- Customize your theme here. -->
         <item name="gallery_viewpager_background">@color/white</item>
         <item name="gallery_viewpager_buttons_background">@color/viewpager_buttons_bg_day</item>
@@ -23,16 +25,9 @@
         <item name="snackbarStyle">@style/MySnackBarStyle</item>
     </style>
 
-    <style name="MySnackBarStyle" parent="Widget.MaterialComponents.Snackbar">
+    <style name="MySnackBarStyle" parent="Widget.Material3.Snackbar">
         <item name="android:backgroundTint">@color/button_warning_color</item>
     </style>
 
-    <!--<style name="Theme.Vault.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-    </style>
-
-    <style name="Theme.Vault.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-    <style name="Theme.Vault.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />-->
+    <style name="Theme.Valv" parent="Base.Theme.Valv" />
 </resources>

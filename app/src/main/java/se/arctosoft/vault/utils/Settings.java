@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,12 +27,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 import se.arctosoft.vault.data.StoredDirectory;
-import se.arctosoft.vault.encryption.Password;
 import se.arctosoft.vault.interfaces.IOnDirectoryAdded;
 
 public class Settings {
@@ -40,11 +38,13 @@ public class Settings {
     private static final String SHARED_PREFERENCES_NAME = "prefs";
     private static final String PREF_DIRECTORIES = "p.gallery.dirs";
     private static final String PREF_SHOW_FILENAMES_IN_GRID = "p.gallery.fn";
+    public static final String PREF_ENCRYPTION_ITERATION_COUNT = "encryption_iteration_count";
+    public static final String PREF_ENCRYPTION_USE_DISK_CACHE = "encryption_use_disk_cache";
+    public static final String PREF_APP_SECURE = "app_secure";
+    public static final String PREF_APP_EDIT_FOLDERS = "app_edit_folders";
 
     private final Context context;
     private static Settings settings;
-
-    private char[] password = null;
 
     public static Settings getInstance(@NonNull Context context) {
         if (settings == null) {
@@ -65,50 +65,29 @@ public class Settings {
         return context.getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE).edit();
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        Log.d(TAG, "finalize: ");
-        Password.lock(context, this);
-        super.finalize();
+    public int getIterationCount() {
+        return getSharedPrefs().getInt(PREF_ENCRYPTION_ITERATION_COUNT, 50000);
     }
 
-    @Nullable
-    public char[] getTempPassword() {
-        return password;
+    public void setIterationCount(int iterationCount) {
+        getSharedPrefsEditor().putInt(PREF_ENCRYPTION_ITERATION_COUNT, iterationCount).apply();
     }
 
-    public boolean isLocked() {
-        return password == null || password.length == 0;
+    public boolean useDiskCache() {
+        return getSharedPrefs().getBoolean(PREF_ENCRYPTION_USE_DISK_CACHE, true);
     }
 
-    public void setTempPassword(@NonNull char[] password) {
-        this.password = password;
+    public void setUseDiskCache(boolean useDiskCache) {
+        getSharedPrefsEditor().putBoolean(PREF_ENCRYPTION_USE_DISK_CACHE, useDiskCache).apply();
     }
 
-    public void clearTempPassword() {
-        if (password != null) {
-            Arrays.fill(password, (char) 0);
-            password = null;
-        }
+    public boolean isSecureFlag() {
+        return getSharedPrefs().getBoolean(PREF_APP_SECURE, true);
     }
 
-    public void addGalleryDirectory(@NonNull Uri uri, @Nullable IOnDirectoryAdded onDirectoryAdded) {
+    public void addGalleryDirectory(@NonNull Uri uri, boolean asRootDir, @Nullable IOnDirectoryAdded onDirectoryAdded) {
         List<StoredDirectory> directories = getGalleryDirectories(false);
-        boolean isRootDir = true;
-        Uri parentFolder = null;
-        final String newLast = uri.getLastPathSegment() + "/";
-        for (StoredDirectory storedDirectory : directories) {
-            if (!storedDirectory.isRootDir()) {
-                continue;
-            }
-            if (!uri.equals(storedDirectory.getUri()) && newLast.startsWith(storedDirectory.getUri().getLastPathSegment() + "/")) { // prevent adding a child of an already added folder
-                isRootDir = false;
-                parentFolder = storedDirectory.getUri();
-                break;
-            }
-        }
-        String uriString = uri.toString();
-        StoredDirectory newDir = new StoredDirectory(uriString, isRootDir);
+        StoredDirectory newDir = new StoredDirectory(uri, asRootDir);
         boolean reordered = false;
         if (directories.contains(newDir)) {
             Log.d(TAG, "addGalleryDirectory: uri already saved");
@@ -122,25 +101,27 @@ public class Settings {
         getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
         if (onDirectoryAdded != null) {
             if (reordered) {
-                onDirectoryAdded.onAlreadyExists(isRootDir);
-            } else if (isRootDir) {
+                onDirectoryAdded.onAlreadyExists();
+            } else if (asRootDir) {
                 onDirectoryAdded.onAddedAsRoot();
             } else {
-                onDirectoryAdded.onAddedAsChildOf(parentFolder);
+                onDirectoryAdded.onAdded();
             }
         }
     }
 
     public void removeGalleryDirectory(@NonNull Uri uri) {
         List<StoredDirectory> directories = getGalleryDirectories(false);
-        directories.remove(new StoredDirectory(uri.toString(), false));
+        String[] split = uri.toString().split("/document/");
+        directories.remove(new StoredDirectory(split[0], false));
+        directories.remove(new StoredDirectory(uri, false));
         getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
     }
 
     public void removeGalleryDirectories(@NonNull List<Uri> uris) {
         List<StoredDirectory> directories = getGalleryDirectories(false);
         for (Uri u : uris) {
-            directories.remove(new StoredDirectory(u.toString(), false));
+            directories.remove(new StoredDirectory(u, false));
         }
         getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
     }
@@ -177,6 +158,7 @@ public class Settings {
     private List<StoredDirectory> getGalleryDirectories(boolean rootDirsOnly) {
         String s = getSharedPrefs().getString(PREF_DIRECTORIES, null);
         List<StoredDirectory> storedDirectories = new ArrayList<>();
+        Log.e(TAG, "getGalleryDirectories: " + s);
         if (s != null && !s.isEmpty()) {
             String[] split = s.split("\n");
             for (String value : split) {

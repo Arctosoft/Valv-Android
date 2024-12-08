@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,17 +24,24 @@ import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.media3.datasource.DataSource;
 
+import se.arctosoft.vault.data.Password;
+import se.arctosoft.vault.viewmodel.PasswordViewModel;
+
 public class MyDataSourceFactory implements DataSource.Factory {
     private final Context context;
+    private final int version;
+    private final Password password;
 
-    public MyDataSourceFactory(Context context) {
+    public MyDataSourceFactory(Context context, int version, Password password) {
         this.context = context;
+        this.version = version;
+        this.password = password;
     }
 
     @OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
     @NonNull
     @Override
     public DataSource createDataSource() {
-        return new MyDataSource(context);
+        return new MyDataSource(context, version, password);
     }
 }
