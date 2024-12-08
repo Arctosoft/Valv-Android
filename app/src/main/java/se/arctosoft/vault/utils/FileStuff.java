@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,20 +26,16 @@ import android.net.Uri;
 import android.provider.DocumentsContract;
 import android.util.Log;
 
-import androidx.activity.result.ActivityResult;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,11 +49,13 @@ public class FileStuff {
 
     @NonNull
     public static List<GalleryFile> getFilesInFolder(Context context, Uri pickedDir) {
+        //Log.e(TAG, "getFilesInFolder: " + pickedDir);
         Uri realUri = DocumentsContract.buildChildDocumentsUriUsingTree(pickedDir, DocumentsContract.getDocumentId(pickedDir));
         List<CursorFile> files = new ArrayList<>();
         Cursor c = context.getContentResolver().query(
                 realUri,
-                new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_LAST_MODIFIED, DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.COLUMN_SIZE},
+                new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                        DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.COLUMN_SIZE},
                 null,
                 null,
                 null);
@@ -89,13 +87,15 @@ public class FileStuff {
         List<CursorFile> documentNote = new ArrayList<>();
         List<GalleryFile> galleryFiles = new ArrayList<>();
         for (CursorFile file : files) {
-            if (!file.getName().startsWith(Encryption.ENCRYPTED_PREFIX) && !file.isDirectory()) {
+            String name = file.getName();
+            if (!name.startsWith(Encryption.ENCRYPTED_PREFIX) && !name.endsWith(Encryption.ENCRYPTED_SUFFIX) && !file.isDirectory()) {
                 continue;
             }
+            //Log.e(TAG, "getEncryptedFilesInFolder: found " + name);
 
-            if (file.getName().startsWith(Encryption.PREFIX_THUMB)) {
+            if (name.endsWith(Encryption.SUFFIX_THUMB) || name.startsWith(Encryption.PREFIX_THUMB)) {
                 documentThumbs.add(file);
-            } else if (file.getName().startsWith(Encryption.PREFIX_NOTE_FILE)) {
+            } else if (name.endsWith(Encryption.SUFFIX_NOTE_FILE) || name.startsWith(Encryption.PREFIX_NOTE_FILE)) {
                 documentNote.add(file);
             } else {
                 documentFiles.add(file);
@@ -104,7 +104,7 @@ public class FileStuff {
 
         for (CursorFile file : documentFiles) {
             if (file.isDirectory()) {
-                galleryFiles.add(GalleryFile.asDirectory(file, null));
+                galleryFiles.add(GalleryFile.asDirectory(file));
                 continue;
             }
             file.setNameWithoutPrefix(FileStuff.getNameWithoutPrefix(file.getName()));
@@ -126,21 +126,12 @@ public class FileStuff {
         return null;
     }
 
-    public static void pickImageFiles(@NonNull BetterActivityResult<Intent, ActivityResult> activityLauncher, BetterActivityResult.OnActivityResult<ActivityResult> onActivityResult) {
-        pickFiles(activityLauncher, "image/*", onActivityResult);
-    }
-
-    public static void pickVideoFiles(@NonNull BetterActivityResult<Intent, ActivityResult> activityLauncher, BetterActivityResult.OnActivityResult<ActivityResult> onActivityResult) {
-        pickFiles(activityLauncher, "video/*", onActivityResult);
-    }
-
-    private static void pickFiles(BetterActivityResult<Intent, ActivityResult> activityLauncher, String mimeType, BetterActivityResult.OnActivityResult<ActivityResult> onActivityResult) {
+    public static Intent getPickFilesIntent(String mimeType) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType(mimeType);
         intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-
-        activityLauncher.launch(intent, onActivityResult);
+        return intent;
     }
 
     @NonNull
@@ -163,43 +154,33 @@ public class FileStuff {
         String[] split = uri.getLastPathSegment().split("/");
         String s = split[split.length - 1];
         if (withoutPrefix) {
-            return s.split("-", 2)[1];
+            if (s.startsWith(Encryption.ENCRYPTED_PREFIX)) {
+                return s.substring(s.indexOf("-") + 1);
+            } else {
+                return s.substring(0, s.lastIndexOf("-"));
+            }
         }
         return s;
     }
 
-    public static String getNameWithoutPrefix(@NonNull String s) {
-        return s.split("-", 2)[1];
-    }
-
-    public static String readTextFromUri(@NonNull Uri uri, Context context) throws IOException {
-        InputStream in = context.getContentResolver().openInputStream(uri);
-        BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-
-        StringBuilder sb = new StringBuilder();
-        int read;
-        char[] buffer = new char[8192];
-        while ((read = br.read(buffer)) != -1) {
-            sb.append(buffer, 0, read);
+    public static String getNameWithoutPrefix(@NonNull String encryptedName) {
+        if (encryptedName.startsWith(Encryption.ENCRYPTED_PREFIX)) {
+            return encryptedName.substring(encryptedName.indexOf("-") + 1);
+        } else {
+            return encryptedName.substring(0, encryptedName.lastIndexOf("-"));
         }
-
-        return sb.toString();
     }
 
     @NonNull
-    public static List<DocumentFile> getDocumentsFromDirectoryResult(Context context, @NonNull Intent data) {
-        ClipData clipData = data.getClipData();
-        List<Uri> uris = FileStuff.uriListFromClipData(clipData);
-        if (uris.isEmpty()) {
-            Uri dataUri = data.getData();
-            if (dataUri != null) {
-                uris.add(dataUri);
-            }
-        }
+    public static List<DocumentFile> getDocumentsFromDirectoryResult(Context context, List<Uri> uris) {
         List<DocumentFile> documentFiles = new ArrayList<>();
+        if (context == null) {
+            return documentFiles;
+        }
         for (Uri uri : uris) {
             DocumentFile pickedFile = DocumentFile.fromSingleUri(context, uri);
-            if (pickedFile != null && pickedFile.getType() != null && (pickedFile.getType().startsWith("image/") || pickedFile.getType().startsWith("video/")) && !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX)) {
+            if (pickedFile != null && pickedFile.getType() != null && (pickedFile.getType().startsWith("image/") || pickedFile.getType().startsWith("video/")) &&
+                    (!pickedFile.getName().endsWith(Encryption.ENCRYPTED_SUFFIX) || !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX))) {
                 documentFiles.add(pickedFile);
             }
         }
@@ -209,9 +190,13 @@ public class FileStuff {
     @NonNull
     public static List<DocumentFile> getDocumentsFromShareIntent(Context context, @NonNull List<Uri> uris) {
         List<DocumentFile> documentFiles = new ArrayList<>();
+        if (context == null) {
+            return documentFiles;
+        }
         for (Uri uri : uris) {
             DocumentFile pickedFile = DocumentFile.fromSingleUri(context, uri);
-            if (pickedFile != null && pickedFile.getType() != null && (pickedFile.getType().startsWith("image/") || pickedFile.getType().startsWith("video/")) && !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX)) {
+            if (pickedFile != null && pickedFile.getType() != null && (pickedFile.getType().startsWith("image/") || pickedFile.getType().startsWith("video/")) &&
+                    (!pickedFile.getName().endsWith(Encryption.ENCRYPTED_SUFFIX) || !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX))) {
                 documentFiles.add(pickedFile);
             }
         }
@@ -276,9 +261,10 @@ public class FileStuff {
             return false;
         }
         String generatedName = StringStuff.getRandomFileName();
-        DocumentFile file = directory.createFile("", sourceFile.getFileType().encryptionPrefix + generatedName);
-        DocumentFile thumbFile = sourceFile.getThumbUri() == null ? null : directory.createFile("", Encryption.PREFIX_THUMB + generatedName);
-        DocumentFile noteFile = sourceFile.getNoteUri() == null ? null : directory.createFile("", Encryption.PREFIX_NOTE_FILE + generatedName);
+        int version = sourceFile.getVersion();
+        DocumentFile file = directory.createFile("", version < 2 ? sourceFile.getFileType().suffixPrefix + generatedName : generatedName + sourceFile.getFileType().suffixPrefix);
+        DocumentFile thumbFile = sourceFile.getThumbUri() == null ? null : directory.createFile("", version < 2 ? Encryption.PREFIX_THUMB + generatedName : generatedName + Encryption.SUFFIX_THUMB);
+        DocumentFile noteFile = sourceFile.getNoteUri() == null ? null : directory.createFile("", version < 2 ? Encryption.PREFIX_NOTE_FILE + generatedName : generatedName + Encryption.SUFFIX_NOTE_FILE);
 
         if (file == null) {
             Log.e(TAG, "copyTo: could not create file from " + sourceFile.getUri());
@@ -298,9 +284,11 @@ public class FileStuff {
             Log.e(TAG, "moveTo: can't move " + sourceFile.getUri().getLastPathSegment() + " to the same folder");
             return false;
         }
-        DocumentFile file = directory.createFile("", sourceFile.getEncryptedName());
-        DocumentFile thumbFile = sourceFile.getThumbUri() == null ? null : directory.createFile("", Encryption.PREFIX_THUMB + sourceFile.getEncryptedName().split("-", 2)[1]);
-        DocumentFile noteFile = sourceFile.getNoteUri() == null ? null : directory.createFile("", Encryption.PREFIX_NOTE_FILE + sourceFile.getEncryptedName().split("-", 2)[1]);
+        String nameWithoutPrefix = getNameWithoutPrefix(sourceFile.getEncryptedName());
+        int version = sourceFile.getVersion();
+        DocumentFile file = directory.createFile("", version < 2 ? sourceFile.getFileType().suffixPrefix + nameWithoutPrefix : nameWithoutPrefix + sourceFile.getFileType().suffixPrefix);
+        DocumentFile thumbFile = sourceFile.getThumbUri() == null ? null : directory.createFile("", version < 2 ? Encryption.PREFIX_THUMB + nameWithoutPrefix : nameWithoutPrefix + Encryption.SUFFIX_THUMB);
+        DocumentFile noteFile = sourceFile.getNoteUri() == null ? null : directory.createFile("", version < 2 ? Encryption.PREFIX_NOTE_FILE + nameWithoutPrefix : nameWithoutPrefix + Encryption.SUFFIX_NOTE_FILE);
 
         if (file == null) {
             Log.e(TAG, "moveTo: could not create file from " + sourceFile.getUri());
@@ -315,7 +303,7 @@ public class FileStuff {
         return writeTo(context, sourceFile.getUri(), file.getUri());
     }
 
-    private static boolean writeTo(Context context, Uri src, Uri dest) {
+    public static boolean writeTo(Context context, Uri src, Uri dest) {
         try {
             InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(src), 1024 * 32);
             OutputStream outputStream = new BufferedOutputStream(context.getContentResolver().openOutputStream(dest));

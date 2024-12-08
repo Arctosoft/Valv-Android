@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,27 +18,41 @@
 
 package se.arctosoft.vault.data;
 
+import android.content.Context;
+import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import se.arctosoft.vault.interfaces.IOnDone;
 import se.arctosoft.vault.utils.FileStuff;
 
 public class GalleryFile implements Comparable<GalleryFile> {
     private static final String TAG = "GalleryFile";
+    private static final int FIND_FILES_NOT_STARTED = 0;
+    private static final int FIND_FILES_RUNNING = 1;
+    private static final int FIND_FILES_DONE = 2;
+
+    private final AtomicInteger findFilesInDirectoryStatus = new AtomicInteger(FIND_FILES_NOT_STARTED);
+    private GalleryFile firstFileInDirectoryWithThumb;
+
     private final FileType fileType;
     private final String encryptedName, name;
     private final boolean isDirectory, isAllFolder;
-    private Uri fileUri;
     private final long lastModified, size;
+    private final int version;
+    private Uri fileUri;
     private Uri thumbUri, noteUri, decryptedCacheUri;
-    private List<GalleryFile> filesInDirectory;
     private String originalName, nameWithPath, note, text;
+    private int fileCount;
 
     private GalleryFile(String name) {
         this.fileUri = null;
@@ -50,25 +64,43 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.lastModified = Long.MAX_VALUE;
         this.isDirectory = true;
         this.fileType = FileType.DIRECTORY;
+        this.version = fileType.version;
         this.size = -1;
         this.isAllFolder = true;
+    }
+
+    private GalleryFile(String name, String text) {
+        this.fileUri = null;
+        this.encryptedName = name;
+        this.name = name;
+        this.thumbUri = null;
+        this.noteUri = null;
+        this.decryptedCacheUri = null;
+        this.lastModified = Long.MAX_VALUE;
+        this.isDirectory = false;
+        this.fileType = FileType.TEXT_V2;
+        this.version = fileType.version;
+        this.size = text.getBytes(StandardCharsets.UTF_8).length;
+        this.isAllFolder = false;
+        this.text = text;
     }
 
     private GalleryFile(@NonNull CursorFile file, @Nullable CursorFile thumb, @Nullable CursorFile note) {
         this.fileUri = file.getUri();
         this.encryptedName = file.getName();
-        this.name = encryptedName.split("-", 2)[1];
         this.thumbUri = thumb == null ? null : thumb.getUri();
         this.noteUri = note == null ? null : note.getUri();
         this.decryptedCacheUri = null;
         this.lastModified = file.getLastModified();
         this.isDirectory = false;
         this.fileType = FileType.fromFilename(encryptedName);
+        this.version = fileType.version;
         this.size = file.getSize();
         this.isAllFolder = false;
+        this.name = FileStuff.getNameWithoutPrefix(encryptedName);
     }
 
-    private GalleryFile(@NonNull Uri fileUri, List<GalleryFile> filesInDirectory) {
+    private GalleryFile(@NonNull Uri fileUri) {
         this.fileUri = fileUri;
         this.encryptedName = FileStuff.getFilenameFromUri(fileUri, false);
         this.name = encryptedName;
@@ -78,12 +110,12 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.lastModified = System.currentTimeMillis();
         this.isDirectory = true;
         this.fileType = FileType.fromFilename(encryptedName);
-        this.filesInDirectory = filesInDirectory;
+        this.version = fileType.version;
         this.size = 0;
         this.isAllFolder = false;
     }
 
-    private GalleryFile(@NonNull CursorFile file, List<GalleryFile> filesInDirectory) {
+    private GalleryFile(@NonNull CursorFile file) {
         this.fileUri = file.getUri();
         this.encryptedName = file.getName();
         this.name = encryptedName;
@@ -93,21 +125,26 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.lastModified = file.getLastModified();
         this.isDirectory = true;
         this.fileType = FileType.DIRECTORY;
-        this.filesInDirectory = filesInDirectory;
+        this.version = fileType.version;
         this.size = 0;
         this.isAllFolder = false;
     }
 
-    public static GalleryFile asDirectory(Uri directoryUri, List<GalleryFile> filesInDirectory) {
-        return new GalleryFile(directoryUri, filesInDirectory);
+    public static GalleryFile asDirectory(Uri directoryUri) {
+        return new GalleryFile(directoryUri);
     }
 
-    public static GalleryFile asDirectory(CursorFile cursorFile, List<GalleryFile> filesInDirectory) {
-        return new GalleryFile(cursorFile, filesInDirectory);
+    public static GalleryFile asDirectory(CursorFile cursorFile) {
+        return new GalleryFile(cursorFile);
     }
 
     public static GalleryFile asFile(CursorFile cursorFile, @Nullable CursorFile thumbUri, @Nullable CursorFile noteUri) {
         return new GalleryFile(cursorFile, thumbUri, noteUri);
+    }
+
+    public static GalleryFile asTempText(String text) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        return new GalleryFile(simpleDateFormat.format(new Date()), text);
     }
 
     public static GalleryFile asAllFolder(String name) {
@@ -127,16 +164,24 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.decryptedCacheUri = decryptedCacheUri;
     }
 
+    public int getVersion() {
+        return version;
+    }
+
+    public AtomicInteger getFindFilesInDirectoryStatus() {
+        return findFilesInDirectoryStatus;
+    }
+
     public boolean isVideo() {
-        return FileType.VIDEO == fileType;
+        return fileType.type == FileType.TYPE_VIDEO;
     }
 
     public boolean isGif() {
-        return FileType.GIF == fileType;
+        return fileType.type == FileType.TYPE_GIF;
     }
 
     public boolean isText() {
-        return FileType.TEXT == fileType;
+        return fileType.type == FileType.TYPE_TEXT;
     }
 
     public long getSize() {
@@ -236,34 +281,38 @@ public class GalleryFile implements Comparable<GalleryFile> {
     }
 
     @Nullable
-    public List<GalleryFile> getFilesInDirectory() {
-        return filesInDirectory;
-    }
-
-    @Nullable
     public GalleryFile getFirstFile() {
-        if (filesInDirectory == null || filesInDirectory.isEmpty()) {
-            return null;
-        }
-        for (GalleryFile g : filesInDirectory) {
-            if (!g.isDirectory() && g.hasThumb()) {
-                return g;
-            }
-        }
-        return null;
+        return firstFileInDirectoryWithThumb;
     }
 
     public int getFileCount() {
-        return filesInDirectory == null ? 0 : filesInDirectory.size();
+        return fileCount;
     }
 
-    public void setFilesInDirectory(List<GalleryFile> filesInDirectory) {
-        if (this.filesInDirectory != null) {
-            this.filesInDirectory.clear();
-        } else {
-            this.filesInDirectory = new ArrayList<>(filesInDirectory.size());
+    public void findFilesInDirectory(Context context, IOnDone onDone) {
+        if (!isDirectory || fileUri == null || !findFilesInDirectoryStatus.compareAndSet(FIND_FILES_NOT_STARTED, FIND_FILES_RUNNING)) {
+            return;
         }
-        this.filesInDirectory.addAll(filesInDirectory);
+        new Thread(() -> {
+            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(context, fileUri);
+            this.fileCount = 0;
+            this.firstFileInDirectoryWithThumb = null;
+            for (GalleryFile f : galleryFiles) {
+                if (!f.isDirectory() && f.hasThumb()) {
+                    this.firstFileInDirectoryWithThumb = f;
+                    break;
+                }
+            }
+            this.fileCount = galleryFiles.size();
+            findFilesInDirectoryStatus.set(FIND_FILES_DONE);
+            if (onDone != null) {
+                onDone.onDone();
+            }
+        }).start();
+    }
+
+    public void resetFilesInDirectory() {
+        findFilesInDirectoryStatus.set(FIND_FILES_NOT_STARTED);
     }
 
     @Override
@@ -281,6 +330,6 @@ public class GalleryFile implements Comparable<GalleryFile> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileUri);
+        return Objects.hash(fileType, isDirectory, isAllFolder, lastModified, size, version, fileUri, encryptedName);
     }
 }

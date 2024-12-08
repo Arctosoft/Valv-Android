@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 
 package se.arctosoft.vault.adapters;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -26,16 +27,24 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
+import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.ImportListViewHolder;
 import se.arctosoft.vault.databinding.AdapterImportListItemBinding;
 import se.arctosoft.vault.utils.Dialogs;
 
 public class ImportListAdapter extends RecyclerView.Adapter<ImportListViewHolder> {
     private final List<String> names;
-    private final Dialogs.IOnPositionSelected onPositionSelected;
+    private final Context context;
+    private final String firstPosName;
+    private Dialogs.IOnPositionSelected onPositionSelected;
 
-    public ImportListAdapter(List<String> names, Dialogs.IOnPositionSelected onPositionSelected) {
+    public ImportListAdapter(List<String> names, Context context, String firstPosName) {
         this.names = names;
+        this.context = context;
+        this.firstPosName = firstPosName;
+    }
+
+    public void setOnPositionSelected(Dialogs.IOnPositionSelected onPositionSelected) {
         this.onPositionSelected = onPositionSelected;
     }
 
@@ -48,7 +57,11 @@ public class ImportListAdapter extends RecyclerView.Adapter<ImportListViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull ImportListViewHolder holder, int position) {
-        holder.binding.text.setText(names.get(position));
+        if (position == 0 && firstPosName != null) {
+            holder.binding.text.setText(context.getString(R.string.modal_current_folder, firstPosName));
+        } else {
+            holder.binding.text.setText(context.getString(R.string.modal_directory_item, names.get(position)));
+        }
         holder.binding.text.setOnClickListener(v -> onPositionSelected.onSelected(position));
     }
 

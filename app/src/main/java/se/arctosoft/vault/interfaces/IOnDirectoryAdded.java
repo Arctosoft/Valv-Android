@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,14 +18,10 @@
 
 package se.arctosoft.vault.interfaces;
 
-import android.net.Uri;
-
-import androidx.annotation.NonNull;
-
 public interface IOnDirectoryAdded {
+    void onAdded();
+
     void onAddedAsRoot();
 
-    void onAddedAsChildOf(@NonNull Uri parentUri);
-
-    void onAlreadyExists(boolean isRootDir);
+    void onAlreadyExists();
 }

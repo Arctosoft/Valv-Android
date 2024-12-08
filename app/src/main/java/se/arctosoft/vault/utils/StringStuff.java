@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import androidx.annotation.NonNull;
 import java.util.Random;
 
 public class StringStuff {
-    private static final String ALLOWED_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
+    private static final String ALLOWED_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int NAME_LENGTH = 32;
 
     public static String getRandomFileName() {

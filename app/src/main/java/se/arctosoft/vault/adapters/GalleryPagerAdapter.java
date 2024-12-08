@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
@@ -34,6 +36,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.core.content.FileProvider;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
 import androidx.media3.common.MediaItem;
@@ -43,27 +48,26 @@ import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.ProgressiveMediaSource;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.davemorrissey.labs.subscaleview.ImageSource;
-import com.davemorrissey.labs.subscaleview.SubsamplingScaleImageView;
 import com.google.android.material.color.MaterialColors;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import se.arctosoft.vault.BuildConfig;
-import se.arctosoft.vault.GalleryDirectoryActivity;
+import se.arctosoft.vault.DirectoryFragment;
 import se.arctosoft.vault.R;
 import se.arctosoft.vault.adapters.viewholders.GalleryPagerViewHolder;
 import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
+import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemDirectoryBinding;
 import se.arctosoft.vault.databinding.AdapterGalleryViewpagerItemGifBinding;
@@ -74,11 +78,15 @@ import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.encryption.MyDataSourceFactory;
 import se.arctosoft.vault.exception.InvalidPasswordException;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
+import se.arctosoft.vault.subsampling.ImageSource;
+import se.arctosoft.vault.subsampling.MySubsamplingScaleImageView;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
+import se.arctosoft.vault.utils.GlideStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.StringStuff;
 import se.arctosoft.vault.utils.Toaster;
+import se.arctosoft.vault.viewmodel.GalleryViewModel;
 
 public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHolder> {
     private static final String TAG = "GalleryFullscreenAdapter";
@@ -87,22 +95,25 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private final List<GalleryFile> galleryFiles;
     private final IOnFileDeleted onFileDeleted;
     private final DocumentFile currentDirectory;
-    private final boolean isAllFolder;
-    private final Settings settings;
+    private final GalleryViewModel galleryViewModel;
+    private final boolean isAllFolder, useDiskCache;
     private final String nestedPath;
     private final Map<Integer, ExoPlayer> players;
+    private final Password password;
     private boolean isFullscreen;
 
-    public GalleryPagerAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted, DocumentFile currentDirectory, boolean isAllFolder, String nestedPath) {
+    public GalleryPagerAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted, DocumentFile currentDirectory, boolean isAllFolder, String nestedPath, GalleryViewModel galleryViewModel) {
         this.weakReference = new WeakReference<>(context);
         this.galleryFiles = galleryFiles;
         this.onFileDeleted = onFileDeleted;
         this.currentDirectory = currentDirectory;
+        this.galleryViewModel = galleryViewModel;
         this.isFullscreen = false;
-        this.settings = Settings.getInstance(context);
         this.isAllFolder = isAllFolder;
         this.nestedPath = nestedPath;
         this.players = new HashMap<>();
+        this.password = Password.getInstance();
+        this.useDiskCache = Settings.getInstance(context).useDiskCache();
     }
 
     @NonNull
@@ -110,22 +121,54 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     public GalleryPagerViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
         AdapterGalleryViewpagerItemBinding parentBinding = AdapterGalleryViewpagerItemBinding.inflate(layoutInflater, parent, false);
-        if (viewType == FileType.IMAGE.i) {
+        setPadding(parentBinding);
+        if (viewType == FileType.TYPE_IMAGE) {
             AdapterGalleryViewpagerItemImageBinding imageBinding = AdapterGalleryViewpagerItemImageBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerImageViewHolder(parentBinding, imageBinding);
-        } else if (viewType == FileType.GIF.i) {
+        } else if (viewType == FileType.TYPE_GIF) {
             AdapterGalleryViewpagerItemGifBinding gifBinding = AdapterGalleryViewpagerItemGifBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerGifViewHolder(parentBinding, gifBinding);
-        } else if (viewType == FileType.VIDEO.i) {
+        } else if (viewType == FileType.TYPE_VIDEO) {
             AdapterGalleryViewpagerItemVideoBinding videoBinding = AdapterGalleryViewpagerItemVideoBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerVideoViewHolder(parentBinding, videoBinding);
-        } else if (viewType == FileType.TEXT.i) {
+        } else if (viewType == FileType.TYPE_TEXT) {
             AdapterGalleryViewpagerItemTextBinding textBinding = AdapterGalleryViewpagerItemTextBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerTextViewHolder(parentBinding, textBinding);
         } else {
             AdapterGalleryViewpagerItemDirectoryBinding videoBinding = AdapterGalleryViewpagerItemDirectoryBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder(parentBinding, videoBinding);
         }
+    }
+
+    private static void setPadding(@NonNull AdapterGalleryViewpagerItemBinding parentBinding) {
+        ViewCompat.setOnApplyWindowInsetsListener(parentBinding.lLButtons, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(bars.left, 0, bars.right, bars.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        ViewCompat.setOnApplyWindowInsetsListener(parentBinding.txtName, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(bars.left, bars.top, bars.right, 0);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        ViewCompat.setOnApplyWindowInsetsListener(parentBinding.imgFullscreen, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(bars.left, bars.top, bars.right, 0);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        View.OnAttachStateChangeListener onAttachStateChangeListener = new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(@NonNull View view) {
+                view.requestApplyInsets();
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(@NonNull View view) {
+            }
+        };
+        parentBinding.lLButtons.addOnAttachStateChangeListener(onAttachStateChangeListener);
+        parentBinding.txtName.addOnAttachStateChangeListener(onAttachStateChangeListener);
+        parentBinding.imgFullscreen.addOnAttachStateChangeListener(onAttachStateChangeListener);
     }
 
     @Override
@@ -162,19 +205,28 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         holder.parentBinding.txtName.setVisibility(View.GONE);
         ((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.name.setText(context.getString(R.string.gallery_click_to_open_directory, galleryFile.getNameWithPath()));
         ((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.getRoot().setOnClickListener(v -> {
-            Intent intent = new Intent(context, GalleryDirectoryActivity.class);
+            /*Intent intent = new Intent(context, GalleryDirectoryActivity.class);
             if (nestedPath != null) {
                 intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString())
                         .putExtra(GalleryDirectoryActivity.EXTRA_NESTED_PATH, nestedPath + "/" + new File(galleryFile.getUri().getPath()).getName());
             } else {
                 intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString());
             }
-            context.startActivity(intent);
+            context.startActivity(intent);*/
+            Bundle bundle = new Bundle();
+            if (nestedPath != null) {
+                bundle.putString(DirectoryFragment.ARGUMENT_DIRECTORY, galleryFile.getUri().toString());
+                bundle.putString(DirectoryFragment.ARGUMENT_NESTED_PATH, nestedPath + "/" + new File(galleryFile.getUri().getPath()).getName());
+            } else {
+                bundle.putString(DirectoryFragment.ARGUMENT_DIRECTORY, galleryFile.getUri().toString());
+            }
+            Navigation.findNavController(((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.getRoot()).navigate(R.id.action_directory_self, bundle);
         });
         GalleryFile firstFile = galleryFile.getFirstFile();
         if (firstFile != null) {
             Glide.with(context)
                     .load(firstFile.getThumbUri())
+                    .apply(GlideStuff.getRequestOptions(useDiskCache))
                     .into(((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.thumb);
         }
     }
@@ -215,7 +267,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         if (!galleryFile.isDirectory() && galleryFile.getOriginalName() == null) {
             new Thread(() -> {
                 try {
-                    String originalFilename = Encryption.getOriginalFilename(context.getContentResolver().openInputStream(galleryFile.getUri()), settings.getTempPassword(), false);
+                    String originalFilename = Encryption.getOriginalFilename(context.getContentResolver().openInputStream(galleryFile.getUri()), password.getPassword(), false, galleryFile.getVersion());
                     galleryFile.setOriginalName(originalFilename);
                     int pos = holder.getBindingAdapterPosition();
                     if (pos == position) {
@@ -241,17 +293,18 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         holder.binding.playerView.setVisibility(View.INVISIBLE);
         Glide.with(context)
                 .load(galleryFile.getThumbUri())
+                .apply(GlideStuff.getRequestOptions(useDiskCache))
                 .into(holder.binding.imgThumb);
         holder.parentBinding.imgFullscreen.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
         holder.binding.rLPlay.setOnClickListener(v -> {
             holder.binding.rLPlay.setVisibility(View.GONE);
             holder.binding.playerView.setVisibility(View.VISIBLE);
-            playVideo(context, galleryFile.getUri(), holder);
+            playVideo(context, galleryFile.getUri(), holder, galleryFile.getVersion());
         });
     }
 
     @OptIn(markerClass = UnstableApi.class)
-    private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
+    private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, int version) {
         final int pos = holder.getBindingAdapterPosition();
         ExoPlayer player = players.get(pos);
         for (ExoPlayer player1 : players.values()) {
@@ -260,7 +313,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             }
         }
         if (player == null) {
-            DataSource.Factory dataSourceFactory = new MyDataSourceFactory(context);
+            DataSource.Factory dataSourceFactory = new MyDataSourceFactory(context, version, password);
             ProgressiveMediaSource.Factory progressiveFactory = new ProgressiveMediaSource.Factory(dataSourceFactory);
             player = new ExoPlayer.Builder(context)
                     .setMediaSourceFactory(progressiveFactory)
@@ -297,8 +350,8 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder) {
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOnClickListener(v -> onItemPressed(context));
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setMinimumDpi(40);
-            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOrientation(SubsamplingScaleImageView.ORIENTATION_USE_EXIF);
-            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOnStateChangedListener(new SubsamplingScaleImageView.OnStateChangedListener() {
+            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOrientation(MySubsamplingScaleImageView.ORIENTATION_USE_EXIF);
+            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOnStateChangedListener(new MySubsamplingScaleImageView.OnStateChangedListener() {
                 @Override
                 public void onScaleChanged(float newScale, int origin) {
                     showButtons(holder, newScale <= ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.getMinScale());
@@ -312,37 +365,11 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
             ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView.setOnClickListener(v -> onItemPressed(context));
         }
-        if (galleryFile.getDecryptedCacheUri() == null) {
-            new Thread(() -> Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
-                @Override
-                public void onUriResult(Uri outputUri) {
-                    galleryFile.setDecryptedCacheUri(outputUri);
-                    loadImage(outputUri, holder, context);
-                }
-
-                @Override
-                public void onError(Exception e) {
-                    e.printStackTrace();
-                    //Toaster.getInstance(context).showLong("Failed to decrypt " + galleryFile.getName() + ": " + e.getMessage());
-                }
-
-                @Override
-                public void onInvalidPassword(InvalidPasswordException e) {
-                    e.printStackTrace();
-                    //Log.e(TAG, "onInvalidPassword: " + e.getMessage());
-                    //removeFileAt(holder.getAdapterPosition(), context);
-                }
-            })).start();
-        } else {
-            loadImage(galleryFile.getDecryptedCacheUri(), holder, context);
-        }
+        loadImage(galleryFile.getUri(), holder, context, galleryFile.getVersion());
     }
 
     private void onItemPressed(FragmentActivity context) {
-        //context.onBackPressed();
-        //toggleFullscreen(context);
         setFullscreen(context, !this.isFullscreen);
-        //showButtons(holder, !this.isFullscreen);
     }
 
     private void toggleFullscreen(@NonNull FragmentActivity context) {
@@ -367,13 +394,14 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         notifyItemRangeChanged(0, galleryFiles.size(), isFullscreen);
     }
 
-    private void loadImage(Uri outputUri, GalleryPagerViewHolder holder, FragmentActivity context) {
+    private void loadImage(Uri uri, GalleryPagerViewHolder holder, FragmentActivity context, int version) {
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder) {
-            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setImage(ImageSource.uri(outputUri));
+            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setImage(ImageSource.uri(uri, password.getPassword(), version));
         } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
             Glide.with(context)
                     .asGif()
-                    .load(outputUri)
+                    .load(uri)
+                    .apply(GlideStuff.getRequestOptions(useDiskCache))
                     .into(((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView);
         }
     }
@@ -466,18 +494,17 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             if (lio > 0) {
                 name = name.substring(0, lio);
             }
+            Log.e(TAG, "showEditFile: " + name + ", " + galleryFile.getVersion());
             DocumentFile.fromSingleUri(context, galleryFile.getUri()).delete();
             if (galleryFile.getNoteUri() != null) {
                 DocumentFile.fromSingleUri(context, galleryFile.getNoteUri()).delete();
             }
 
-            DocumentFile createdFile = Encryption.importTextToDirectory(context, text, name, currentDirectory, settings);
+            DocumentFile createdFile = Encryption.importTextToDirectory(context, text, name, currentDirectory, password.getPassword(), galleryFile.getVersion());
             if (createdFile != null) {
                 galleryFile.setFileUri(createdFile.getUri());
             }
-            if (context instanceof GalleryDirectoryActivity) {
-                ((GalleryDirectoryActivity) context).onItemChanged(holder.getBindingAdapterPosition());
-            }
+            galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition());
         });
     }
 
@@ -486,7 +513,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             shareOrOpenWith(context, galleryFile.getDecryptedCacheUri(), open);
         } else {
             Toaster.getInstance(context).showShort(context.getString(R.string.gallery_share_decrypting));
-            Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), Settings.getInstance(context).getTempPassword(), new Encryption.IOnUriResult() {
+            Encryption.decryptToCache(context, galleryFile.getUri(), FileStuff.getExtensionOrDefault(galleryFile), galleryFile.getVersion(), password.getPassword(), new Encryption.IOnUriResult() {
                 @Override
                 public void onUriResult(Uri outputUri) {
                     galleryFile.setDecryptedCacheUri(outputUri);
@@ -526,8 +553,8 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                         public void onInvalidPassword(InvalidPasswordException e) {
                             //removeFileAt(holder.getAdapterPosition(), context);
                         }
-                    };
-                    Encryption.decryptAndExport(context, galleryFile.getUri(), currentDirectory, galleryFile, Settings.getInstance(context).getTempPassword(), result, galleryFile.isVideo());
+                    }; // TODO does not export to current directory
+                    Encryption.decryptAndExport(context, galleryFile.getUri(), currentDirectory, galleryFile, galleryFile.isVideo(), galleryFile.getVersion(), password.getPassword(), result);
                 }).start());
     }
 
@@ -569,7 +596,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     }
 
     private void saveNote(FragmentActivity context, GalleryFile galleryFile, String text) {
-        DocumentFile createdFile = Encryption.importNoteToDirectory(context, text, FileStuff.getNameWithoutPrefix(galleryFile.getEncryptedName()), currentDirectory, settings);
+        DocumentFile createdFile = Encryption.importNoteToDirectory(context, text, FileStuff.getNameWithoutPrefix(galleryFile.getEncryptedName()), currentDirectory, password.getPassword(), galleryFile.getVersion());
         if (createdFile != null) {
             galleryFile.setNoteUri(createdFile.getUri());
         }
@@ -598,32 +625,11 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             } else {
                 holder.parentBinding.noteLayout.setVisibility(View.VISIBLE);
                 holder.parentBinding.note.setText(context.getString(R.string.gallery_loading_note));
-                Encryption.decryptToCache(context, galleryFile.getNoteUri(), FileStuff.getExtensionOrDefault(galleryFile), settings.getTempPassword(), new Encryption.IOnUriResult() {
-                    @Override
-                    public void onUriResult(Uri outputUri) { // decrypted, now read it
-                        try {
-                            galleryFile.setNote(FileStuff.readTextFromUri(outputUri, context));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            galleryFile.setNote(context.getString(R.string.gallery_note_read_failed, e.getMessage()));
-                        }
-                        context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        e.printStackTrace();
-                        galleryFile.setNote(context.getString(R.string.gallery_note_decrypt_failed, e.getMessage()));
-                        context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
-
-                    }
-
-                    @Override
-                    public void onInvalidPassword(InvalidPasswordException e) {
-                        galleryFile.setNote(context.getString(R.string.gallery_note_decrypt_failed, e.getMessage()));
-                        context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
-                    }
-                });
+                new Thread(() -> {
+                    String text = Encryption.readEncryptedTextFromUri(galleryFile.getNoteUri(), context, galleryFile.getVersion(), password.getPassword());
+                    galleryFile.setNote(text);
+                    context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
+                }).start();
             }
         } else {
             holder.parentBinding.noteLayout.setVisibility(View.GONE);
@@ -644,17 +650,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     @Override
     public int getItemViewType(int position) {
         GalleryFile galleryFile = galleryFiles.get(position);
-        if (galleryFile.getFileType() == FileType.IMAGE) {
-            return FileType.IMAGE.i;
-        } else if (galleryFile.getFileType() == FileType.GIF) {
-            return FileType.GIF.i;
-        } else if (galleryFile.getFileType() == FileType.VIDEO) {
-            return FileType.VIDEO.i;
-        } else if (galleryFile.getFileType() == FileType.TEXT) {
-            return FileType.TEXT.i;
-        } else {
-            return FileType.DIRECTORY.i;
-        }
+        return galleryFile.getFileType().type;
     }
 
     @Override

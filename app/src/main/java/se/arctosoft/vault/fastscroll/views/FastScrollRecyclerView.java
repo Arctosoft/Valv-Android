@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  * Copyright (c) 2016 Tim Malseed
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -303,7 +303,7 @@ public class FastScrollRecyclerView extends RecyclerView implements RecyclerView
             scrollOffset = -(exactItemPos % mScrollPosState.rowHeight);
         }
 
-        RecyclerView.LayoutManager layoutManager = getLayoutManager();
+        LayoutManager layoutManager = getLayoutManager();
         if (layoutManager instanceof LinearLayoutManager) {
             ((LinearLayoutManager) layoutManager).scrollToPositionWithOffset(scrollPosition, scrollOffset);
         } else if (layoutManager instanceof StaggeredGridLayoutManager) {

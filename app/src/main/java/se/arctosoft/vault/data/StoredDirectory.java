@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,12 @@ public class StoredDirectory {
         this.rootDir = rootDir;
     }
 
+    public StoredDirectory(@NonNull Uri uri, boolean rootDir) {
+        this.uriString = uri.toString();
+        this.uri = uri;
+        this.rootDir = rootDir;
+    }
+
     public String getUriString() {
         return uriString;
     }
@@ -52,7 +58,7 @@ public class StoredDirectory {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StoredDirectory that = (StoredDirectory) o;
-        return uri.equals(that.uri);
+        return uri.equals(that.uri) || uriString.equals(that.uriString);
     }
 
     @Override

@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,17 +20,19 @@ package se.arctosoft.vault.utils;
 
 import androidx.annotation.NonNull;
 
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.signature.ObjectKey;
 
-import se.arctosoft.vault.LaunchActivity;
+import se.arctosoft.vault.MainActivity;
 
 public class GlideStuff {
 
     @NonNull
-    public static RequestOptions getRequestOptions() {
+    public static RequestOptions getRequestOptions(boolean useDiskCache) {
         return new RequestOptions()
-                .signature(new ObjectKey(LaunchActivity.GLIDE_KEY));
+                .diskCacheStrategy(useDiskCache ? DiskCacheStrategy.AUTOMATIC : DiskCacheStrategy.NONE)
+                .signature(new ObjectKey(MainActivity.GLIDE_KEY));
     }
 
 }

@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import java.lang.ref.WeakReference;
 
 public class Toaster {
     private static Toaster toaster;
-    private static android.widget.Toast toast;
+    private static Toast toast;
     private final WeakReference<Context> weakReference;
 
     private Toaster(@NonNull Context context) {

@@ -1,6 +1,6 @@
 /*
  * Valv-Android
- * Copyright (C) 2023 Arctosoft AB
+ * Copyright (C) 2024 Arctosoft AB
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,56 +18,77 @@
 
 package se.arctosoft.vault.data;
 
-import static android.provider.DocumentsContract.Document.MIME_TYPE_DIR;
-
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import se.arctosoft.vault.encryption.Encryption;
 
 public enum FileType {
-    DIRECTORY(0, null, null),
-    IMAGE(1, Encryption.PREFIX_IMAGE_FILE, ".jpg"),
-    GIF(2, Encryption.PREFIX_GIF_FILE, ".gif"),
-    VIDEO(3, Encryption.PREFIX_VIDEO_FILE, ".mp4"),
-    TEXT(4, Encryption.PREFIX_TEXT_FILE, ".txt");
+    DIRECTORY(0, null, null, 1),
+    IMAGE_V1(1, ".jpg", Encryption.PREFIX_IMAGE_FILE, 1),
+    IMAGE_V2(1, ".jpg", Encryption.SUFFIX_IMAGE_FILE, 2),
+    GIF_V1(2, ".gif", Encryption.PREFIX_GIF_FILE, 1),
+    GIF_V2(2, ".gif", Encryption.SUFFIX_GIF_FILE, 2),
+    VIDEO_V1(3, ".mp4", Encryption.PREFIX_VIDEO_FILE, 1),
+    VIDEO_V2(3, ".mp4", Encryption.SUFFIX_VIDEO_FILE, 2),
+    TEXT_V1(4, ".txt", Encryption.PREFIX_TEXT_FILE, 1),
+    TEXT_V2(4, ".txt", Encryption.SUFFIX_TEXT_FILE, 2);
 
-    public final int i;
-    public final String encryptionPrefix, extension;
+    public static final int TYPE_DIRECTORY = 0;
+    public static final int TYPE_IMAGE = 1;
+    public static final int TYPE_GIF = 2;
+    public static final int TYPE_VIDEO = 3;
+    public static final int TYPE_TEXT = 4;
 
-    FileType(int i, String encryptionPrefix, String extension) {
-        this.i = i;
-        this.encryptionPrefix = encryptionPrefix;
+    public final String extension, suffixPrefix;
+    public final int type, version;
+
+    FileType(int type, String extension, String suffixPrefix, int version) {
+        this.type = type;
         this.extension = extension;
+        this.suffixPrefix = suffixPrefix;
+        this.version = version;
     }
 
     public static FileType fromFilename(@NonNull String name) {
-        if (name.contains(Encryption.PREFIX_IMAGE_FILE)) {
-            return IMAGE;
-        } else if (name.contains(Encryption.PREFIX_GIF_FILE)) {
-            return GIF;
-        } else if (name.contains(Encryption.PREFIX_VIDEO_FILE)) {
-            return VIDEO;
-        } else if (name.contains(Encryption.PREFIX_TEXT_FILE)) {
-            return TEXT;
+        if (name.startsWith(Encryption.PREFIX_IMAGE_FILE)) {
+            return IMAGE_V1;
+        } else if (name.endsWith(Encryption.SUFFIX_IMAGE_FILE)) {
+            return IMAGE_V2;
+        } else if (name.startsWith(Encryption.PREFIX_GIF_FILE)) {
+            return GIF_V1;
+        } else if (name.endsWith(Encryption.SUFFIX_GIF_FILE)) {
+            return GIF_V2;
+        } else if (name.startsWith(Encryption.PREFIX_VIDEO_FILE)) {
+            return VIDEO_V1;
+        } else if (name.endsWith(Encryption.SUFFIX_VIDEO_FILE)) {
+            return VIDEO_V2;
+        } else if (name.startsWith(Encryption.PREFIX_TEXT_FILE)) {
+            return TEXT_V1;
+        } else if (name.endsWith(Encryption.SUFFIX_TEXT_FILE)) {
+            return TEXT_V2;
         } else {
             return DIRECTORY;
         }
     }
 
-    public static FileType fromMimeType(@Nullable String mimeType) {
-        if (mimeType == null) {
-            return FileType.IMAGE;
-        } else if (mimeType.equals("image/gif")) {
-            return FileType.GIF;
-        } else if (mimeType.equals(MIME_TYPE_DIR)) {
-            return FileType.DIRECTORY;
-        } else if (mimeType.startsWith("image/")) {
-            return FileType.IMAGE;
-        } else if (mimeType.startsWith("text/")) {
-            return FileType.TEXT;
-        } else {
-            return FileType.VIDEO;
-        }
+    public boolean isDirectory() {
+        return this == DIRECTORY;
+    }
+
+    public boolean isImage() {
+        return this == IMAGE_V1 || this == IMAGE_V2;
+    }
+
+    public boolean isGif() {
+        return this == GIF_V1 || this == GIF_V2;
+    }
+
+
+    public boolean isVideo() {
+        return this == VIDEO_V1 || this == VIDEO_V2;
+    }
+
+    public boolean isText() {
+        return this == TEXT_V1 || this == TEXT_V2;
     }
 }
