@@ -36,7 +36,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
 import androidx.core.view.MenuProvider;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
@@ -150,6 +153,34 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
         } else {
             init();
         }
+
+        setPadding();
+    }
+
+    private void setPadding() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.layoutFabsAdd, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(bars.left, 0, bars.right, bars.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        ViewCompat.setOnApplyWindowInsetsListener(binding.layoutFabsRemoveFolders, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(bars.left, 0, bars.right, bars.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        View.OnAttachStateChangeListener onAttachStateChangeListener = new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(@NonNull View view) {
+                view.requestApplyInsets();
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(@NonNull View view) {
+
+            }
+        };
+        binding.layoutFabsAdd.addOnAttachStateChangeListener(onAttachStateChangeListener);
+        binding.layoutFabsRemoveFolders.addOnAttachStateChangeListener(onAttachStateChangeListener);
     }
 
     public abstract void init();

@@ -30,7 +30,7 @@
 
     <string name="settings_encryption">Encryption</string>
     <string name="settings_iteration_count_title">Iteration count</string>
-    <string name="settings_iteration_count_summary">Set the iteration count used when encrypting new files. A higher value creates a stronger encryption key but is also slower. Default is 50000.\nCurrent: %1$d</string>
+    <string name="settings_iteration_count_summary">Set the iteration count used for key generation when encrypting new files. A higher value creates a stronger encryption key but is also slower. Default is 50000.\nCurrent: %1$d</string>
     <string name="settings_iteration_count_hint">Min 20000, max 500000</string>
     <string name="settings_use_disk_cache_title">Use disk cache</string>
     <string name="settings_use_disk_cache_summary_on">Decrypts media files you view to the app\'s private cache directory for faster loading. The cache directory is deleted when locking/restarting the app.</string>

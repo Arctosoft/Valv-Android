@@ -148,6 +148,12 @@ public class DirectoryFragment extends DirectoryBaseFragment {
         });
     }
 
+    @Override
+    void showViewpager(boolean show, int pos, boolean animate) {
+        binding.layoutFabsAdd.setVisibility(show ? View.GONE : View.VISIBLE);
+        super.showViewpager(show, pos, animate);
+    }
+
     private void checkSharedData() {
         Log.e(TAG, "checkSharedData: " + (shareViewModel != null ? shareViewModel.getFilesReceived().size() : ""));
         if (!shareViewModel.getFilesReceived().isEmpty() && importViewModel != null) {

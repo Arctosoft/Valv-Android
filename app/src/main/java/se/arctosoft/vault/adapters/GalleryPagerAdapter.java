@@ -36,6 +36,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.core.content.FileProvider;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
 import androidx.media3.common.MediaItem;
@@ -118,6 +121,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     public GalleryPagerViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
         AdapterGalleryViewpagerItemBinding parentBinding = AdapterGalleryViewpagerItemBinding.inflate(layoutInflater, parent, false);
+        setPadding(parentBinding);
         if (viewType == FileType.TYPE_IMAGE) {
             AdapterGalleryViewpagerItemImageBinding imageBinding = AdapterGalleryViewpagerItemImageBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerImageViewHolder(parentBinding, imageBinding);
@@ -134,6 +138,37 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             AdapterGalleryViewpagerItemDirectoryBinding videoBinding = AdapterGalleryViewpagerItemDirectoryBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder(parentBinding, videoBinding);
         }
+    }
+
+    private static void setPadding(@NonNull AdapterGalleryViewpagerItemBinding parentBinding) {
+        ViewCompat.setOnApplyWindowInsetsListener(parentBinding.lLButtons, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(bars.left, 0, bars.right, bars.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        ViewCompat.setOnApplyWindowInsetsListener(parentBinding.txtName, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(bars.left, bars.top, bars.right, 0);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        ViewCompat.setOnApplyWindowInsetsListener(parentBinding.imgFullscreen, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            v.setPadding(bars.left, bars.top, bars.right, 0);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        View.OnAttachStateChangeListener onAttachStateChangeListener = new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(@NonNull View view) {
+                view.requestApplyInsets();
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(@NonNull View view) {
+            }
+        };
+        parentBinding.lLButtons.addOnAttachStateChangeListener(onAttachStateChangeListener);
+        parentBinding.txtName.addOnAttachStateChangeListener(onAttachStateChangeListener);
+        parentBinding.imgFullscreen.addOnAttachStateChangeListener(onAttachStateChangeListener);
     }
 
     @Override

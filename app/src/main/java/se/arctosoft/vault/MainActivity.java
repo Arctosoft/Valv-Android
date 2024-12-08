@@ -54,9 +54,9 @@ public class MainActivity extends AppCompatActivity {
 
         navController.addOnDestinationChangedListener((controller, destination, arguments) -> {
             if (destination.getId() == R.id.password) {
-                binding.toolbar.setVisibility(View.GONE);
+                binding.appBar.setVisibility(View.GONE);
             } else {
-                binding.toolbar.setVisibility(View.VISIBLE);
+                binding.appBar.setVisibility(View.VISIBLE);
             }
         });
 
