@@ -41,6 +41,7 @@ public class Settings {
     public static final String PREF_ENCRYPTION_ITERATION_COUNT = "encryption_iteration_count";
     public static final String PREF_ENCRYPTION_USE_DISK_CACHE = "encryption_use_disk_cache";
     public static final String PREF_APP_SECURE = "app_secure";
+    public static final String PREF_APP_EDIT_FOLDERS = "app_edit_folders";
 
     private final Context context;
     private static Settings settings;

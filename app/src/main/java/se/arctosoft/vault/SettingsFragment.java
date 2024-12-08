@@ -1,5 +1,6 @@
 package se.arctosoft.vault;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -18,6 +19,8 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
 
+import java.util.List;
+
 import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.Settings;
@@ -31,6 +34,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
         setPreferencesFromResource(R.xml.root_preferences, rootKey);
 
         Preference iterationCount = findPreference(Settings.PREF_ENCRYPTION_ITERATION_COUNT);
+        Preference editFolders = findPreference(Settings.PREF_APP_EDIT_FOLDERS);
         SwitchPreferenceCompat useDiskCache = findPreference(Settings.PREF_ENCRYPTION_USE_DISK_CACHE);
         SwitchPreferenceCompat secure = findPreference(Settings.PREF_APP_SECURE);
 
@@ -68,6 +72,14 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
         useDiskCache.setOnPreferenceChangeListener((preference, newValue) -> {
             boolean enabled = (boolean) newValue;
             settings.setUseDiskCache(enabled);
+            return true;
+        });
+
+        editFolders.setOnPreferenceClickListener(preference -> {
+            Dialogs.showEditIncludedFolders(activity, settings, selectedToRemove -> {
+                settings.removeGalleryDirectories(selectedToRemove);
+                Toaster.getInstance(activity).showLong(getResources().getQuantityString(R.plurals.edit_included_removed, selectedToRemove.size(), selectedToRemove.size()));
+            });
             return true;
         });
     }
