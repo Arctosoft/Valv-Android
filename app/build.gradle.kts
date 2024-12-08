@@ -54,6 +54,9 @@ android {
 }
 
 dependencies {
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+    testImplementation(libs.junit)
 
     implementation(libs.appcompat)
     implementation(libs.material)
@@ -61,9 +64,7 @@ dependencies {
     implementation(libs.navigation.fragment)
     implementation(libs.navigation.ui)
     implementation(libs.preference)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.ext.junit)
-    androidTestImplementation(libs.espresso.core)
+    implementation(libs.activity)
 
     implementation(libs.security.crypto)
     implementation(libs.media3.exoplayer)
