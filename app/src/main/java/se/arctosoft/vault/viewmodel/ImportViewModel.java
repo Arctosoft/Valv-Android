@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.data.ProgressData;
 import se.arctosoft.vault.encryption.Encryption;
@@ -43,6 +44,7 @@ public class ImportViewModel extends ViewModel {
     private static final String TAG = "ImportViewModel";
 
     private final List<DocumentFile> filesToImport = new LinkedList<>();
+    private final List<GalleryFile> textToImport = new LinkedList<>();
 
     private boolean importing, deleteAfterImport, sameDirectory;
     private long totalBytes;
@@ -66,6 +68,10 @@ public class ImportViewModel extends ViewModel {
     @NonNull
     public List<DocumentFile> getFilesToImport() {
         return filesToImport;
+    }
+
+    public List<GalleryFile> getTextToImport() {
+        return textToImport;
     }
 
     public boolean isImporting() {
@@ -165,13 +171,15 @@ public class ImportViewModel extends ViewModel {
             int thumbErrors = 0;
             final double[] bytesDone = new double[]{0};
             final long[] lastPublish = {0};
+            final int totalSize = filesToImport.size() + textToImport.size();
             final IOnProgress onProgress = progress1 -> {
                 if (System.currentTimeMillis() - lastPublish[0] > 20) {
                     lastPublish[0] = System.currentTimeMillis();
-                    getProgressData().postValue(new ProgressData(filesToImport.size(), progress[0], (int) Math.round((bytesDone[0] + progress1) / totalBytes * 100.0),
+                    getProgressData().postValue(new ProgressData(totalSize, progress[0], (int) Math.round((bytesDone[0] + progress1) / totalBytes * 100.0),
                             decimalFormat.format((bytesDone[0] + progress1) / 1000000.0), totalMB));
                 }
             };
+            onProgress.onProgress(0);
             for (DocumentFile file : filesToImport) {
                 if (Thread.currentThread().isInterrupted() || interrupted.get()) {
                     if (onImportDoneFragment != null) {
@@ -201,6 +209,28 @@ public class ImportViewModel extends ViewModel {
                 }
                 if (deleteAfterImport && imported.first) {
                     file.delete();
+                }
+            }
+            for (GalleryFile text : textToImport) {
+                if (Thread.currentThread().isInterrupted() || interrupted.get()) {
+                    if (onImportDoneFragment != null) {
+                        onImportDoneFragment.onDone(importToUri, sameDirectory, progress[0] - 1, errors, thumbErrors);
+                    }
+                    Log.e(TAG, "startImport: interrupted, stop");
+                    break;
+                }
+
+                DocumentFile importedFile = Encryption.importTextToDirectory(activity, text.getText(), text.getName(), destinationDirectory, password.getPassword(), 2);
+
+                if (interrupted.get()) {
+                    break;
+                }
+                progress[0]++;
+                bytesDone[0] += text.getSize();
+                if (importedFile == null) {
+                    errors++;
+                } else {
+                    onProgress.onProgress(text.getSize());
                 }
             }
             Uri importToUri1 = getImportToUri();

@@ -86,8 +86,7 @@ public class Settings {
 
     public void addGalleryDirectory(@NonNull Uri uri, boolean asRootDir, @Nullable IOnDirectoryAdded onDirectoryAdded) {
         List<StoredDirectory> directories = getGalleryDirectories(false);
-        String uriString = uri.toString();
-        StoredDirectory newDir = new StoredDirectory(uriString, asRootDir);
+        StoredDirectory newDir = new StoredDirectory(uri, asRootDir);
         boolean reordered = false;
         if (directories.contains(newDir)) {
             Log.d(TAG, "addGalleryDirectory: uri already saved");
@@ -112,14 +111,16 @@ public class Settings {
 
     public void removeGalleryDirectory(@NonNull Uri uri) {
         List<StoredDirectory> directories = getGalleryDirectories(false);
-        directories.remove(new StoredDirectory(uri.toString(), false));
+        String[] split = uri.toString().split("/document/");
+        directories.remove(new StoredDirectory(split[0], false));
+        directories.remove(new StoredDirectory(uri, false));
         getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
     }
 
     public void removeGalleryDirectories(@NonNull List<Uri> uris) {
         List<StoredDirectory> directories = getGalleryDirectories(false);
         for (Uri u : uris) {
-            directories.remove(new StoredDirectory(u.toString(), false));
+            directories.remove(new StoredDirectory(u, false));
         }
         getSharedPrefsEditor().putString(PREF_DIRECTORIES, stringListAsString(directories)).apply();
     }
@@ -156,6 +157,7 @@ public class Settings {
     private List<StoredDirectory> getGalleryDirectories(boolean rootDirsOnly) {
         String s = getSharedPrefs().getString(PREF_DIRECTORIES, null);
         List<StoredDirectory> storedDirectories = new ArrayList<>();
+        Log.e(TAG, "getGalleryDirectories: " + s);
         if (s != null && !s.isEmpty()) {
             String[] split = s.split("\n");
             for (String value : split) {

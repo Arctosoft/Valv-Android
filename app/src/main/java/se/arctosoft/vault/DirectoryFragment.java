@@ -53,6 +53,7 @@ public class DirectoryFragment extends DirectoryBaseFragment {
             List<DocumentFile> documents = FileStuff.getDocumentsFromDirectoryResult(context, uris);
             if (!documents.isEmpty() && importViewModel != null) {
                 importViewModel.getFilesToImport().clear();
+                importViewModel.getTextToImport().clear();
                 importViewModel.getFilesToImport().addAll(documents);
                 importViewModel.setCurrentDirectoryUri(galleryViewModel.getCurrentDirectoryUri());
 
@@ -184,6 +185,20 @@ public class DirectoryFragment extends DirectoryBaseFragment {
             resultLauncherOpenDocuments.launch(mimeTypes);
             binding.fab.performClick();
         });
+        binding.fabAddText.setOnClickListener(v -> {
+            Dialogs.showImportTextDialog(context, null, false, text -> {
+                GalleryFile tempText = GalleryFile.asTempText(text);
+                importViewModel.getFilesToImport().clear();
+                importViewModel.getTextToImport().clear();
+                importViewModel.getTextToImport().add(tempText);
+                importViewModel.setCurrentDirectoryUri(galleryViewModel.getCurrentDirectoryUri());
+
+                BottomSheetImportFragment bottomSheetImportFragment = new BottomSheetImportFragment();
+                FragmentManager childFragmentManager = getChildFragmentManager();
+                bottomSheetImportFragment.show(childFragmentManager, null);
+            });
+            binding.fab.performClick();
+        });
         binding.fabsContainer.setOnClickListener(v -> {
             if (expandedFabs) {
                 binding.fab.performClick();
@@ -198,8 +213,14 @@ public class DirectoryFragment extends DirectoryBaseFragment {
                     for (GalleryFile f : galleryGridAdapter.getSelectedFiles()) {
                         FragmentActivity activity = requireActivity();
                         settings.removeGalleryDirectory(f.getUri());
+                        Log.e(TAG, "onRemoveFolderClicked: remove " + f.getUri());
                         try {
                             activity.getContentResolver().releasePersistableUriPermission(f.getUri(), Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                        } catch (SecurityException e) {
+                            e.printStackTrace();
+                        }
+                        try {
+                            activity.getContentResolver().releasePersistableUriPermission(Uri.parse(f.getUri().toString().split("/document/")[0]), Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                         } catch (SecurityException e) {
                             e.printStackTrace();
                         }

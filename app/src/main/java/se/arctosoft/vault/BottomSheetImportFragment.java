@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import se.arctosoft.vault.adapters.ImportListAdapter;
+import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.databinding.BottomSheetImportBinding;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
@@ -70,6 +71,9 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
                 for (DocumentFile documentFile : importViewModel.getFilesToImport()) {
                     bytes += documentFile.length();
                 }
+                for (GalleryFile galleryFile : importViewModel.getTextToImport()) {
+                    bytes += galleryFile.getSize();
+                }
                 doImport(bytes, uri, FileStuff.getFilenameWithPathFromUri(uri), binding.checkboxDeleteAfter.isChecked(), pickedDirectory,
                         importViewModel.getCurrentDirectoryUri() != null && uri.toString().equals(importViewModel.getCurrentDirectoryUri().toString()));
             }
@@ -88,13 +92,18 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
         super.onViewCreated(view, savedInstanceState);
         importViewModel = new ViewModelProvider(requireParentFragment()).get(ImportViewModel.class);
         List<DocumentFile> filesToImport = importViewModel.getFilesToImport();
-        if (filesToImport.isEmpty()) {
+        List<GalleryFile> textToImport = importViewModel.getTextToImport();
+        final int totalSize = filesToImport.size() + textToImport.size();
+        if (filesToImport.isEmpty() && textToImport.isEmpty()) {
             dismiss();
             return;
         }
         long bytes = 0;
         for (DocumentFile documentFile : filesToImport) {
             bytes += documentFile.length();
+        }
+        for (GalleryFile galleryFile : textToImport) {
+            bytes += galleryFile.getSize();
         }
         importViewModel.setTotalBytes(bytes);
 
@@ -104,7 +113,7 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
         List<String> names = new ArrayList<>(directories.size() + 1);
 
         final boolean hasUri = importViewModel.getCurrentDirectoryUri() != null;
-        binding.title.setText(getResources().getQuantityString(R.plurals.import_modal_title, filesToImport.size(), filesToImport.size(), StringStuff.bytesToReadableString(bytes)));
+        binding.title.setText(getResources().getQuantityString(R.plurals.import_modal_title, totalSize, totalSize, StringStuff.bytesToReadableString(bytes)));
         String currentName = hasUri ? FileStuff.getFilenameWithPathFromUri(importViewModel.getCurrentDirectoryUri()) : null;
         if (hasUri) {
             names.add(currentName);
@@ -170,7 +179,8 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
         binding.progress.setProgressCompat(0, false);
         binding.layoutContentMain.setVisibility(View.GONE);
         binding.layoutContentImporting.setVisibility(View.VISIBLE);
-        binding.title.setText(getResources().getQuantityString(R.plurals.import_modal_title_importing, importViewModel.getFilesToImport().size(), importViewModel.getFilesToImport().size(), StringStuff.bytesToReadableString(importViewModel.getTotalBytes())));
+        final int totalSize = importViewModel.getFilesToImport().size() + importViewModel.getTextToImport().size();
+        binding.title.setText(getResources().getQuantityString(R.plurals.import_modal_title_importing, totalSize, totalSize, StringStuff.bytesToReadableString(importViewModel.getTotalBytes())));
         binding.body.setText(getString(R.string.import_modal_body_importing, importViewModel.getDestinationFolderName()));
         binding.buttonCancel.setOnClickListener(v -> {
             importViewModel.cancelImport();
@@ -193,6 +203,7 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
 
     private void clearViewModel() {
         importViewModel.getFilesToImport().clear();
+        importViewModel.getTextToImport().clear();
         importViewModel.setImporting(false);
         importViewModel.setDestinationDirectory(null);
         importViewModel.setDestinationFolderName(null);

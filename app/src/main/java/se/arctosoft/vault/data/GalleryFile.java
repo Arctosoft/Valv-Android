@@ -19,12 +19,16 @@
 package se.arctosoft.vault.data;
 
 import android.content.Context;
+import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -63,6 +67,22 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.version = fileType.version;
         this.size = -1;
         this.isAllFolder = true;
+    }
+
+    private GalleryFile(String name, String text) {
+        this.fileUri = null;
+        this.encryptedName = name;
+        this.name = name;
+        this.thumbUri = null;
+        this.noteUri = null;
+        this.decryptedCacheUri = null;
+        this.lastModified = Long.MAX_VALUE;
+        this.isDirectory = false;
+        this.fileType = FileType.TEXT_V2;
+        this.version = fileType.version;
+        this.size = text.getBytes(StandardCharsets.UTF_8).length;
+        this.isAllFolder = false;
+        this.text = text;
     }
 
     private GalleryFile(@NonNull CursorFile file, @Nullable CursorFile thumb, @Nullable CursorFile note) {
@@ -120,6 +140,11 @@ public class GalleryFile implements Comparable<GalleryFile> {
 
     public static GalleryFile asFile(CursorFile cursorFile, @Nullable CursorFile thumbUri, @Nullable CursorFile noteUri) {
         return new GalleryFile(cursorFile, thumbUri, noteUri);
+    }
+
+    public static GalleryFile asTempText(String text) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        return new GalleryFile(simpleDateFormat.format(new Date()), text);
     }
 
     public static GalleryFile asAllFolder(String name) {
