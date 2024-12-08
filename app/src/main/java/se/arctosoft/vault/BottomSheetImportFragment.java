@@ -126,10 +126,15 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
         setupRecyclerView(names, context, currentName, bytes, hasUri, directories, settings);
         binding.buttonNewFolder.setOnClickListener(v -> resultLauncherAddFolder.launch(importViewModel.getCurrentDirectoryUri()));
         if (importViewModel.isFromShare()) {
+            binding.checkboxDeleteAfter.setVisibility(View.VISIBLE);
             binding.checkboxDeleteAfter.setEnabled(false);
             binding.checkboxDeleteAfter.setChecked(false);
             binding.deleteNote.setVisibility(View.VISIBLE);
+        } else if (importViewModel.getFilesToImport().isEmpty() && !importViewModel.getTextToImport().isEmpty()) {
+            binding.checkboxDeleteAfter.setVisibility(View.GONE);
+            binding.deleteNote.setVisibility(View.GONE);
         } else {
+            binding.checkboxDeleteAfter.setVisibility(View.VISIBLE);
             binding.checkboxDeleteAfter.setEnabled(true);
             binding.deleteNote.setVisibility(View.GONE);
         }
