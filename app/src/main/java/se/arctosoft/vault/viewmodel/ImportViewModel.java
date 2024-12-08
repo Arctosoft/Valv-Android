@@ -46,7 +46,7 @@ public class ImportViewModel extends ViewModel {
     private final List<DocumentFile> filesToImport = new LinkedList<>();
     private final List<GalleryFile> textToImport = new LinkedList<>();
 
-    private boolean importing, deleteAfterImport, sameDirectory;
+    private boolean importing, deleteAfterImport, sameDirectory, fromShare;
     private long totalBytes;
     private String destinationFolderName;
     private Uri currentDirectoryUri, importToUri;
@@ -104,6 +104,14 @@ public class ImportViewModel extends ViewModel {
 
     public boolean isSameDirectory() {
         return sameDirectory;
+    }
+
+    public boolean isFromShare() {
+        return fromShare;
+    }
+
+    public void setFromShare(boolean fromShare) {
+        this.fromShare = fromShare;
     }
 
     public boolean isDeleteAfterImport() {

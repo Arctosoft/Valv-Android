@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.snackbar.Snackbar;
 
@@ -28,6 +29,7 @@ import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.Toaster;
+import se.arctosoft.vault.viewmodel.ShareViewModel;
 
 public class DirectoryFragment extends DirectoryBaseFragment {
     private static final String TAG = "DirectoryFragment";
@@ -36,6 +38,7 @@ public class DirectoryFragment extends DirectoryBaseFragment {
     public static final String ARGUMENT_NESTED_PATH = "nestedPath";
 
     private Snackbar snackBarBackPressed;
+    private ShareViewModel shareViewModel;
 
     private final ActivityResultLauncher<Uri> resultLauncherAddFolder = registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(), uri -> {
         if (uri != null) {
@@ -136,6 +139,29 @@ public class DirectoryFragment extends DirectoryBaseFragment {
         }
 
         initViewModels();
+        shareViewModel = new ViewModelProvider(requireActivity()).get(ShareViewModel.class);
+        shareViewModel.getHasData().observe(getViewLifecycleOwner(), aBoolean -> {
+            Log.e(TAG, "onChanged: " + aBoolean);
+            if (aBoolean) {
+                checkSharedData();
+            }
+        });
+    }
+
+    private void checkSharedData() {
+        Log.e(TAG, "checkSharedData: " + (shareViewModel != null ? shareViewModel.getFilesReceived().size() : ""));
+        if (!shareViewModel.getFilesReceived().isEmpty() && importViewModel != null) {
+            importViewModel.getFilesToImport().clear();
+            importViewModel.getTextToImport().clear();
+            importViewModel.getFilesToImport().addAll(shareViewModel.getFilesReceived());
+            importViewModel.setCurrentDirectoryUri(galleryViewModel.getCurrentDirectoryUri());
+            importViewModel.setFromShare(true);
+            shareViewModel.clear();
+
+            BottomSheetImportFragment bottomSheetImportFragment = new BottomSheetImportFragment();
+            FragmentManager childFragmentManager = getChildFragmentManager();
+            bottomSheetImportFragment.show(childFragmentManager, null);
+        }
     }
 
     boolean expandedFabs = false;
@@ -370,4 +396,9 @@ public class DirectoryFragment extends DirectoryBaseFragment {
         binding.noMedia.setVisibility(View.GONE);
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        checkSharedData();
+    }
 }

@@ -43,6 +43,16 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
+                android:id="@+id/delete_note"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/import_modal_checkbox_delete_share"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp"
+                android:textStyle="italic"
+                app:layout_constraintTop_toBottomOf="@id/title" />
+
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/bottom_modal_item_margin"

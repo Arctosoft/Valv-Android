@@ -138,6 +138,7 @@
     <string name="import_modal_body_importing">Your files are being encrypted and imported into %1$s.</string>
     <string name="import_modal_importing">Importing %1$d out of %2$d\n%3$s/%4$s MB</string>
     <string name="import_modal_checkbox_delete">Delete the original files after importing</string>
+    <string name="import_modal_checkbox_delete_share">Deleting shared files is not possible</string>
 
     <plurals name="copy_modal_title">
         <item quantity="one">Copy %1$d file (%2$s)</item>
