@@ -1,0 +1,9 @@
+* Komplett remake av appen och användargränssnittet
+* Nytt filnamnschema. Filnamn slutar nu på .valv
+* Ny filstruktur för krypterade filer
+* Lade till en inställningssida, med alternativ för att:
+** Ställ in antalet iterationer som används för nyckelgenerering. Antalet iterationer är som standard 50000 (ökat från 20000)
+** Inaktivera diskcache (=använd endast minnescache när du visar filer)
+* Förbättrade förhandsvisningar av mappars innehåll
+* Importera bilder och videor samtidigt
+* Många fler förbättringar

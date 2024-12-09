@@ -158,7 +158,6 @@ public class Settings {
     private List<StoredDirectory> getGalleryDirectories(boolean rootDirsOnly) {
         String s = getSharedPrefs().getString(PREF_DIRECTORIES, null);
         List<StoredDirectory> storedDirectories = new ArrayList<>();
-        Log.e(TAG, "getGalleryDirectories: " + s);
         if (s != null && !s.isEmpty()) {
             String[] split = s.split("\n");
             for (String value : split) {

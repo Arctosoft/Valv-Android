@@ -52,6 +52,7 @@ public class ImportViewModel extends ViewModel {
     private Uri currentDirectoryUri, importToUri;
     private DocumentFile destinationDirectory;
     private final AtomicBoolean interrupted = new AtomicBoolean(false);
+    private DocumentFile currentDocumentDirectory;
 
     private MutableLiveData<ProgressData> progressData;
 
@@ -144,6 +145,14 @@ public class ImportViewModel extends ViewModel {
 
     public Uri getCurrentDirectoryUri() {
         return currentDirectoryUri;
+    }
+
+    public void setCurrentDocumentDirectory(DocumentFile currentDocumentDirectory) {
+        this.currentDocumentDirectory = currentDocumentDirectory;
+    }
+
+    public DocumentFile getCurrentDocumentDirectory() {
+        return currentDocumentDirectory;
     }
 
     public void setDestinationFolderName(String destinationFolderName) {
