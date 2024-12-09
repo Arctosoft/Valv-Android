@@ -59,6 +59,7 @@ public class DirectoryFragment extends DirectoryBaseFragment {
                 importViewModel.getTextToImport().clear();
                 importViewModel.getFilesToImport().addAll(documents);
                 importViewModel.setCurrentDirectoryUri(galleryViewModel.getCurrentDirectoryUri());
+                importViewModel.setCurrentDocumentDirectory(galleryViewModel.getCurrentDocumentDirectory());
 
                 BottomSheetImportFragment bottomSheetImportFragment = new BottomSheetImportFragment();
                 FragmentManager childFragmentManager = getChildFragmentManager();
@@ -141,7 +142,6 @@ public class DirectoryFragment extends DirectoryBaseFragment {
         initViewModels();
         shareViewModel = new ViewModelProvider(requireActivity()).get(ShareViewModel.class);
         shareViewModel.getHasData().observe(getViewLifecycleOwner(), aBoolean -> {
-            Log.e(TAG, "onChanged: " + aBoolean);
             if (aBoolean) {
                 checkSharedData();
             }
@@ -155,12 +155,12 @@ public class DirectoryFragment extends DirectoryBaseFragment {
     }
 
     private void checkSharedData() {
-        Log.e(TAG, "checkSharedData: " + (shareViewModel != null ? shareViewModel.getFilesReceived().size() : ""));
         if (!shareViewModel.getFilesReceived().isEmpty() && importViewModel != null) {
             importViewModel.getFilesToImport().clear();
             importViewModel.getTextToImport().clear();
             importViewModel.getFilesToImport().addAll(shareViewModel.getFilesReceived());
             importViewModel.setCurrentDirectoryUri(galleryViewModel.getCurrentDirectoryUri());
+            importViewModel.setCurrentDocumentDirectory(galleryViewModel.getCurrentDocumentDirectory());
             importViewModel.setFromShare(true);
             shareViewModel.clear();
 
@@ -224,6 +224,7 @@ public class DirectoryFragment extends DirectoryBaseFragment {
                 importViewModel.getTextToImport().clear();
                 importViewModel.getTextToImport().add(tempText);
                 importViewModel.setCurrentDirectoryUri(galleryViewModel.getCurrentDirectoryUri());
+                importViewModel.setCurrentDocumentDirectory(galleryViewModel.getCurrentDocumentDirectory());
 
                 BottomSheetImportFragment bottomSheetImportFragment = new BottomSheetImportFragment();
                 FragmentManager childFragmentManager = getChildFragmentManager();

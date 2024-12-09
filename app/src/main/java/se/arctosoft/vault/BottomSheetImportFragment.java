@@ -160,7 +160,8 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
         ImportListAdapter adapter = new ImportListAdapter(names, context, currentName);
         adapter.setOnPositionSelected(pos -> {
             int directoriesPos = hasUri ? pos - 1 : pos;
-            Uri uri = hasUri && pos == 0 ? importViewModel.getCurrentDirectoryUri() : directories.get(directoriesPos);
+            boolean sameDir = hasUri && pos == 0;
+            Uri uri = sameDir ? importViewModel.getCurrentDocumentDirectory().getUri() : directories.get(directoriesPos);
 
             DocumentFile directory = DocumentFile.fromTreeUri(context, uri);
             if ((!hasUri || pos > 0) & (directory == null || !directory.isDirectory() || !directory.exists())) {
@@ -170,7 +171,7 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
                 names.remove(pos);
                 adapter.notifyItemRemoved(pos);
             } else {
-                doImport(bytes, uri, names.get(pos), binding.checkboxDeleteAfter.isChecked(), directory, hasUri && pos == 0);
+                doImport(bytes, uri, names.get(pos), binding.checkboxDeleteAfter.isChecked(), sameDir ? importViewModel.getCurrentDocumentDirectory() : directory, sameDir);
             }
         });
         binding.recycler.setNestedScrollingEnabled(false);

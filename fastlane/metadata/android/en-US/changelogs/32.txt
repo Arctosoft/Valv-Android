@@ -1,0 +1,9 @@
+* Complete remake of the app and UI
+* New file naming scheme. Filenames now end in .valv
+* New encrypted file structure
+* Added a settings page, with options to:
+** Set the iteration count used for key generation. The iteration count defaults to 50000 (up from 20000)
+** Disable disk cache (=use memory cache only when viewing files)
+* Improved thumbnail previews for nested folders
+* Import images and videos at the same time
+* Lots of other improvements
