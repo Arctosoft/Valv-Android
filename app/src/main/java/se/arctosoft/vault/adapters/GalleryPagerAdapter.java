@@ -34,6 +34,7 @@ import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.Insets;
@@ -166,7 +167,8 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         });
         ViewCompat.setOnApplyWindowInsetsListener(parentBinding.imgFullscreen, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-            v.setPadding(bars.left, bars.top, bars.right, 0);
+            ConstraintLayout.LayoutParams layoutParams = (ConstraintLayout.LayoutParams) v.getLayoutParams();
+            layoutParams.setMargins(bars.left, bars.top, bars.right, 0);
             return WindowInsetsCompat.CONSUMED;
         });
         parentBinding.lLButtons.addOnAttachStateChangeListener(onAttachStateChangeListener);
@@ -178,7 +180,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             int horizontalPadding = Pixels.dpToPixel(4, weakReference.get());
-            v.setPadding(horizontalPadding, bars.top, horizontalPadding, bars.bottom);
+            v.setPadding(bars.left + horizontalPadding, bars.top, bars.right + horizontalPadding, bars.bottom);
             return WindowInsetsCompat.CONSUMED;
         });
         view.addOnAttachStateChangeListener(onAttachStateChangeListener);
@@ -298,15 +300,8 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
 
     private void setupTextView(GalleryPagerViewHolder.GalleryPagerTextViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         holder.binding.text.setText(galleryFile.getText());
-        setTextColor(holder, context);
-        holder.binding.text.setOnClickListener(v -> {
-            onItemPressed(weakReference.get());
-            setTextColor(holder, context);
-        });
-    }
-
-    private void setTextColor(GalleryPagerViewHolder.GalleryPagerTextViewHolder holder, FragmentActivity context) {
         holder.binding.text.setTextColor(context.getResources().getColor(this.isFullscreen || context.getResources().getBoolean(R.bool.night) ? R.color.text_color_light : R.color.text_color_dark, context.getTheme()));
+        holder.binding.text.setTextIsSelectable(true);
     }
 
     private void setupVideoView(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
