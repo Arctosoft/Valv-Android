@@ -1,0 +1,3 @@
+* Tillagt alternativ för att markera "Delete after importing" som standard
+* Fixat saknad helskärmsknapp
+* Fixat textutfyllnad

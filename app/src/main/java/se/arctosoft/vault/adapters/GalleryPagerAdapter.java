@@ -34,6 +34,7 @@ import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
 import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.Insets;
@@ -83,6 +84,7 @@ import se.arctosoft.vault.subsampling.MySubsamplingScaleImageView;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.GlideStuff;
+import se.arctosoft.vault.utils.Pixels;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.StringStuff;
 import se.arctosoft.vault.utils.Toaster;
@@ -101,6 +103,17 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private final Map<Integer, ExoPlayer> players;
     private final Password password;
     private boolean isFullscreen;
+
+    private final View.OnAttachStateChangeListener onAttachStateChangeListener = new View.OnAttachStateChangeListener() {
+        @Override
+        public void onViewAttachedToWindow(@NonNull View view) {
+            view.requestApplyInsets();
+        }
+
+        @Override
+        public void onViewDetachedFromWindow(@NonNull View view) {
+        }
+    };
 
     public GalleryPagerAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, IOnFileDeleted onFileDeleted, DocumentFile currentDirectory, boolean isAllFolder, String nestedPath, GalleryViewModel galleryViewModel) {
         this.weakReference = new WeakReference<>(context);
@@ -133,6 +146,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             return new GalleryPagerViewHolder.GalleryPagerVideoViewHolder(parentBinding, videoBinding);
         } else if (viewType == FileType.TYPE_TEXT) {
             AdapterGalleryViewpagerItemTextBinding textBinding = AdapterGalleryViewpagerItemTextBinding.inflate(layoutInflater, parentBinding.content, true);
+            setViewPadding(textBinding.text);
             return new GalleryPagerViewHolder.GalleryPagerTextViewHolder(parentBinding, textBinding);
         } else {
             AdapterGalleryViewpagerItemDirectoryBinding videoBinding = AdapterGalleryViewpagerItemDirectoryBinding.inflate(layoutInflater, parentBinding.content, true);
@@ -140,7 +154,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         }
     }
 
-    private static void setPadding(@NonNull AdapterGalleryViewpagerItemBinding parentBinding) {
+    private void setPadding(@NonNull AdapterGalleryViewpagerItemBinding parentBinding) {
         ViewCompat.setOnApplyWindowInsetsListener(parentBinding.lLButtons, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             v.setPadding(bars.left, 0, bars.right, bars.bottom);
@@ -153,22 +167,23 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         });
         ViewCompat.setOnApplyWindowInsetsListener(parentBinding.imgFullscreen, (v, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
-            v.setPadding(bars.left, bars.top, bars.right, 0);
+            ConstraintLayout.LayoutParams layoutParams = (ConstraintLayout.LayoutParams) v.getLayoutParams();
+            layoutParams.setMargins(bars.left, bars.top, bars.right, 0);
             return WindowInsetsCompat.CONSUMED;
         });
-        View.OnAttachStateChangeListener onAttachStateChangeListener = new View.OnAttachStateChangeListener() {
-            @Override
-            public void onViewAttachedToWindow(@NonNull View view) {
-                view.requestApplyInsets();
-            }
-
-            @Override
-            public void onViewDetachedFromWindow(@NonNull View view) {
-            }
-        };
         parentBinding.lLButtons.addOnAttachStateChangeListener(onAttachStateChangeListener);
         parentBinding.txtName.addOnAttachStateChangeListener(onAttachStateChangeListener);
         parentBinding.imgFullscreen.addOnAttachStateChangeListener(onAttachStateChangeListener);
+    }
+
+    private void setViewPadding(@NonNull View view) {
+        ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            int horizontalPadding = Pixels.dpToPixel(4, weakReference.get());
+            v.setPadding(bars.left + horizontalPadding, bars.top, bars.right + horizontalPadding, bars.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
+        view.addOnAttachStateChangeListener(onAttachStateChangeListener);
     }
 
     @Override
@@ -286,6 +301,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private void setupTextView(GalleryPagerViewHolder.GalleryPagerTextViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         holder.binding.text.setText(galleryFile.getText());
         holder.binding.text.setTextColor(context.getResources().getColor(this.isFullscreen || context.getResources().getBoolean(R.bool.night) ? R.color.text_color_light : R.color.text_color_dark, context.getTheme()));
+        holder.binding.text.setTextIsSelectable(true);
     }
 
     private void setupVideoView(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
