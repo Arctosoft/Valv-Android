@@ -11,8 +11,8 @@ android {
         applicationId = "se.arctosoft.vault"
         minSdk = 28
         targetSdk = 35
-        versionCode = 32
-        versionName = "2.0.1"
+        versionCode = 33
+        versionName = "2.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
