@@ -3,6 +3,12 @@
 
     <PreferenceCategory app:title="@string/settings_app">
 
+        <Preference
+            android:icon="@drawable/ic_round_folder_open_24"
+            android:key="app_edit_folders"
+            android:summary="@string/dialog_edit_included_title"
+            android:title="@string/menu_gallery_edit_included_folders" />
+
         <SwitchPreferenceCompat
             android:key="app_secure"
             android:summary="@string/settings_secure_summary"
@@ -10,11 +16,21 @@
             app:icon="@drawable/ic_outline_lock_24"
             app:title="@string/settings_secure_title" />
 
-        <Preference
-            android:icon="@drawable/ic_round_folder_open_24"
-            android:key="app_edit_folders"
-            android:summary="@string/dialog_edit_included_title"
-            android:title="@string/menu_gallery_edit_included_folders" />
+        <SwitchPreferenceCompat
+            android:key="encryption_use_disk_cache"
+            app:defaultValue="true"
+            app:icon="@drawable/outline_sd_storage_24"
+            app:summaryOff="@string/settings_use_disk_cache_summary_off"
+            app:summaryOn="@string/settings_use_disk_cache_summary_on"
+            app:title="@string/settings_use_disk_cache_title" />
+
+        <SwitchPreferenceCompat
+            android:key="encryption_delete_by_default"
+            app:defaultValue="false"
+            app:icon="@drawable/ic_outline_delete_forever_24"
+            app:summaryOff="@string/settings_delete_by_default_summary_off"
+            app:summaryOn="@string/settings_delete_by_default_summary_on"
+            app:title="@string/settings_delete_by_default_title" />
 
     </PreferenceCategory>
 
@@ -25,14 +41,6 @@
             android:key="encryption_iteration_count"
             android:summary="@string/settings_iteration_count_summary"
             android:title="@string/settings_iteration_count_title" />
-
-        <SwitchPreferenceCompat
-            android:key="encryption_use_disk_cache"
-            app:defaultValue="true"
-            app:icon="@drawable/ic_outline_lock_24"
-            app:summaryOff="@string/settings_use_disk_cache_summary_off"
-            app:summaryOn="@string/settings_use_disk_cache_summary_on"
-            app:title="@string/settings_use_disk_cache_title" />
 
     </PreferenceCategory>
 

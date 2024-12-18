@@ -136,6 +136,7 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
         } else {
             binding.checkboxDeleteAfter.setVisibility(View.VISIBLE);
             binding.checkboxDeleteAfter.setEnabled(true);
+            binding.checkboxDeleteAfter.setChecked(settings.isDeleteByDefault());
             binding.deleteNote.setVisibility(View.GONE);
         }
 

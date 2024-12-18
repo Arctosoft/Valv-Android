@@ -1,6 +1,5 @@
 package se.arctosoft.vault;
 
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -19,8 +18,6 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
 
-import java.util.List;
-
 import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.Settings;
@@ -37,6 +34,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
         Preference editFolders = findPreference(Settings.PREF_APP_EDIT_FOLDERS);
         SwitchPreferenceCompat useDiskCache = findPreference(Settings.PREF_ENCRYPTION_USE_DISK_CACHE);
         SwitchPreferenceCompat secure = findPreference(Settings.PREF_APP_SECURE);
+        SwitchPreferenceCompat deleteByDefault = findPreference(Settings.PREF_ENCRYPTION_DELETE_BY_DEFAULT);
 
         FragmentActivity activity = requireActivity();
         Settings settings = Settings.getInstance(activity);
@@ -60,8 +58,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
         });
 
         secure.setOnPreferenceChangeListener((preference, newValue) -> {
-            boolean enabled = (boolean) newValue;
-            if (enabled) {
+            if ((boolean) newValue) {
                 requireActivity().getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
             } else {
                 requireActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
@@ -70,8 +67,12 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
         });
 
         useDiskCache.setOnPreferenceChangeListener((preference, newValue) -> {
-            boolean enabled = (boolean) newValue;
-            settings.setUseDiskCache(enabled);
+            settings.setUseDiskCache((boolean) newValue);
+            return true;
+        });
+
+        deleteByDefault.setOnPreferenceChangeListener((preference, newValue) -> {
+            settings.setDeleteByDefault((boolean) newValue);
             return true;
         });
 

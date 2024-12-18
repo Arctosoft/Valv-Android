@@ -35,6 +35,9 @@
     <string name="settings_use_disk_cache_title">Use disk cache</string>
     <string name="settings_use_disk_cache_summary_on">Decrypts media files you view to the app\'s private cache directory for faster loading. The cache directory is deleted when locking/restarting the app.</string>
     <string name="settings_use_disk_cache_summary_off">Disk cache disabled. All media files are stored in-memory only. More secure but takes longer to load media and thumbnails.</string>
+    <string name="settings_delete_by_default_title">Delete original files by default</string>
+    <string name="settings_delete_by_default_summary_on">\"Delete the original files after importing\" is checked by default.</string>
+    <string name="settings_delete_by_default_summary_off">\"Delete the original files after importing\" is unchecked by default.</string>
     <string name="settings_app">App behaviour</string>
     <string name="settings_secure_title">Use FLAG_SECURE</string>
     <string name="settings_secure_summary">Tells Android to not allow screenshots or display the window view on a non-secure display.</string>
