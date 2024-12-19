@@ -1,0 +1,4 @@
+* Added option to check "Delete after importing" by default
+* Fixed missing fullscreen button
+* Fixed text padding
+* Fixed GIFs not playing
