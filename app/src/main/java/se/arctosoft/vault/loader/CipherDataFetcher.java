@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 
+import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.encryption.Encryption;
 import se.arctosoft.vault.exception.InvalidPasswordException;
@@ -56,7 +57,12 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
     public void loadData(@NonNull Priority priority, @NonNull DataCallback<? super InputStream> callback) {
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(uri);
-            streams = Encryption.getCipherInputStream(inputStream, password.getPassword(), true, version);
+            streams = Encryption.getCipherInputStream(
+                    inputStream,
+                    password.getPassword(),
+                    version == 1 && !uri.getLastPathSegment().contains(FileType.GIF_V1.suffixPrefix), // don't load as thumb for GIF file
+                    version
+            );
             callback.onDataReady(streams.getInputStream());
         } catch (GeneralSecurityException | IOException | InvalidPasswordException |
                  JSONException e) {

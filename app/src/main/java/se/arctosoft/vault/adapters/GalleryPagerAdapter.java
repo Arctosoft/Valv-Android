@@ -415,7 +415,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setImage(ImageSource.uri(uri, password.getPassword(), version));
         } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
             Glide.with(context)
-                    .asGif()
+                    //.asGif()
                     .load(uri)
                     .apply(GlideStuff.getRequestOptions(useDiskCache))
                     .into(((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView);
