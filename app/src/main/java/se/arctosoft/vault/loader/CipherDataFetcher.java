@@ -60,7 +60,7 @@ public class CipherDataFetcher implements DataFetcher<InputStream> {
             streams = Encryption.getCipherInputStream(
                     inputStream,
                     password.getPassword(),
-                    version == 1 && !uri.getLastPathSegment().contains(FileType.GIF_V1.suffixPrefix), // don't load as thumb for GIF file
+                    version > 1 || !uri.getLastPathSegment().contains(FileType.GIF_V1.suffixPrefix), // don't load as thumb for GIF file
                     version
             );
             callback.onDataReady(streams.getInputStream());
