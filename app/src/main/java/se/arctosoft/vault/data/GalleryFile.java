@@ -338,11 +338,11 @@ public class GalleryFile implements Comparable<GalleryFile> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GalleryFile that = (GalleryFile) o;
-        return isDirectory == that.isDirectory && isAllFolder == that.isAllFolder && lastModified == that.lastModified && size == that.size && fileType == that.fileType && Objects.equals(fileUri, that.fileUri);
+        return size == that.size && fileType == that.fileType && Objects.equals(originalName, that.originalName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileType, isDirectory, isAllFolder, lastModified, size, version, fileUri, encryptedName);
+        return Objects.hash(size, fileType, originalName);
     }
 }
