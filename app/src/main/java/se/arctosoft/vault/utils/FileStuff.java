@@ -107,8 +107,7 @@ public class FileStuff {
                             galleryFile.setOriginalName(streams.getOriginalFileName());
                             readableFiles.add(galleryFile);
                         } catch (IOException | GeneralSecurityException | InvalidPasswordException |
-                                 JSONException e) {
-                            throw new RuntimeException(e);
+                                 JSONException ignored) {
                         } finally {
                             if (streams != null) {
                                 streams.close();

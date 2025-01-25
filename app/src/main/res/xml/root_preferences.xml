@@ -25,6 +25,14 @@
             app:title="@string/settings_use_disk_cache_title" />
 
         <SwitchPreferenceCompat
+            android:key="app_exit_on_lock"
+            app:defaultValue="true"
+            app:icon="@drawable/ic_outline_lock_24"
+            app:summaryOff="@string/settings_exit_on_lock_summary_off"
+            app:summaryOn="@string/settings_exit_on_lock_summary_on"
+            app:title="@string/settings_exit_on_lock_title" />
+
+        <SwitchPreferenceCompat
             android:key="encryption_delete_by_default"
             app:defaultValue="false"
             app:icon="@drawable/ic_outline_delete_forever_24"

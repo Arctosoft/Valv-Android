@@ -18,6 +18,7 @@
 package se.arctosoft.vault;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
@@ -541,6 +542,9 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
             FragmentActivity activity = getActivity();
             if (activity != null) {
                 activity.finish();
+                if (!settings.exitOnLock()) {
+                    startActivity(new Intent(requireContext(), MainActivity.class));
+                }
             }
             return true;
         } else if (id == R.id.order_by_newest_first) {

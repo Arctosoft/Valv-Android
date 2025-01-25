@@ -87,6 +87,9 @@ public class DirectoryFragment extends DirectoryBaseFragment {
                     FragmentActivity activity = requireActivity();
                     Password.lock(activity);
                     activity.finish();
+                    if (!settings.exitOnLock()) {
+                        startActivity(new Intent(context, MainActivity.class));
+                    }
                 }
             }
         };

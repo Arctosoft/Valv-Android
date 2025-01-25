@@ -1,6 +1,7 @@
 package se.arctosoft.vault;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -48,6 +49,9 @@ public class DirectoryAllFragment extends DirectoryBaseFragment {
                     FragmentActivity activity = requireActivity();
                     Password.lock(activity);
                     activity.finish();
+                    if (!settings.exitOnLock()) {
+                        startActivity(new Intent(context, MainActivity.class));
+                    }
                 }
             }
         };

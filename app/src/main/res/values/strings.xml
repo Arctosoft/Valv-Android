@@ -32,6 +32,9 @@
     <string name="settings_iteration_count_title">Iteration count</string>
     <string name="settings_iteration_count_summary">Set the iteration count used for key generation when encrypting new files. A higher value creates a stronger encryption key but is also slower. Default is 50000.\nCurrent: %1$d</string>
     <string name="settings_iteration_count_hint">Min 20000, max 500000</string>
+    <string name="settings_exit_on_lock_title">Exit on lock</string>
+    <string name="settings_exit_on_lock_summary_on">Exit the app after locking the vault.</string>
+    <string name="settings_exit_on_lock_summary_off">Show the lock screen after locking the vault.</string>
     <string name="settings_use_disk_cache_title">Use disk cache</string>
     <string name="settings_use_disk_cache_summary_on">Decrypts media files you view to the app\'s private cache directory for faster loading. The cache directory is deleted when locking/restarting the app.</string>
     <string name="settings_use_disk_cache_summary_off">Disk cache disabled. All media files are stored in-memory only. More secure but takes longer to load media and thumbnails.</string>
