@@ -234,7 +234,12 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         new Thread(() -> {
             String text = Encryption.readEncryptedTextFromUri(galleryFile.getUri(), context, galleryFile.getVersion(), password.getPassword());
             galleryFile.setText(text);
-            context.runOnUiThread(() -> galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition()));
+            context.runOnUiThread(() -> {
+                int pos = holder.getBindingAdapterPosition();
+                if (pos >= 0) {
+                    galleryViewModel.getOnAdapterItemChanged().onChanged(pos);
+                }
+            });
         }).start();
     }
 
@@ -279,6 +284,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                     } else {
                         bundle.putString(DirectoryFragment.ARGUMENT_DIRECTORY, galleryFile.getUri().toString());
                     }
+                    galleryViewModel.setClickedDirectoryUri(galleryFile.getUri());
                     Navigation.findNavController(holder.binding.layout).navigate(R.id.action_directory_self, bundle);
                 } else {
                     if (onFileCLicked != null) {

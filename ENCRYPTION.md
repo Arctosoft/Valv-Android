@@ -20,8 +20,6 @@ The following filename suffixes are used:
 - `-n.valv` for note files
 - `-t.valv` for thumbnail files
 
-The number represents the file structure version (for future expansion/changes).
-
 Filenames are generated randomly and are `32 chars + SUFFIX_LENGTH` long.
 Every media file has a corresponding thumbnail with the same name. For example, an image file named
 

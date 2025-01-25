@@ -52,7 +52,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private Uri fileUri;
     private Uri thumbUri, noteUri, decryptedCacheUri;
     private String originalName, nameWithPath, note, text;
-    private int fileCount;
+    private int fileCount, orientation;
 
     private GalleryFile(String name) {
         this.fileUri = null;
@@ -67,6 +67,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.version = fileType.version;
         this.size = -1;
         this.isAllFolder = true;
+        this.orientation = -1;
     }
 
     private GalleryFile(String name, String text) {
@@ -83,6 +84,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.size = text.getBytes(StandardCharsets.UTF_8).length;
         this.isAllFolder = false;
         this.text = text;
+        this.orientation = -1;
     }
 
     private GalleryFile(@NonNull CursorFile file, @Nullable CursorFile thumb, @Nullable CursorFile note) {
@@ -98,6 +100,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.size = file.getSize();
         this.isAllFolder = false;
         this.name = FileStuff.getNameWithoutPrefix(encryptedName);
+        this.orientation = -1;
     }
 
     private GalleryFile(@NonNull Uri fileUri) {
@@ -113,6 +116,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.version = fileType.version;
         this.size = 0;
         this.isAllFolder = false;
+        this.orientation = -1;
     }
 
     private GalleryFile(@NonNull CursorFile file) {
@@ -128,6 +132,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
         this.version = fileType.version;
         this.size = 0;
         this.isAllFolder = false;
+        this.orientation = -1;
     }
 
     public static GalleryFile asDirectory(Uri directoryUri) {
@@ -166,6 +171,14 @@ public class GalleryFile implements Comparable<GalleryFile> {
 
     public int getVersion() {
         return version;
+    }
+
+    public void setOrientation(int orientation) {
+        this.orientation = orientation;
+    }
+
+    public int getOrientation() {
+        return orientation;
     }
 
     public AtomicInteger getFindFilesInDirectoryStatus() {
@@ -325,11 +338,11 @@ public class GalleryFile implements Comparable<GalleryFile> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GalleryFile that = (GalleryFile) o;
-        return isDirectory == that.isDirectory && isAllFolder == that.isAllFolder && lastModified == that.lastModified && size == that.size && fileType == that.fileType && Objects.equals(fileUri, that.fileUri);
+        return size == that.size && fileType == that.fileType && Objects.equals(originalName, that.originalName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fileType, isDirectory, isAllFolder, lastModified, size, version, fileUri, encryptedName);
+        return Objects.hash(size, fileType, originalName);
     }
 }

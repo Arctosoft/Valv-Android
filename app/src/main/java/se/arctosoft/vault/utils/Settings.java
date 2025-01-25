@@ -41,8 +41,10 @@ public class Settings {
     public static final String PREF_ENCRYPTION_ITERATION_COUNT = "encryption_iteration_count";
     public static final String PREF_ENCRYPTION_USE_DISK_CACHE = "encryption_use_disk_cache";
     public static final String PREF_ENCRYPTION_DELETE_BY_DEFAULT = "encryption_delete_by_default";
+    public static final String PREF_ENCRYPTION_DISPLAY_DECRYPTABLE_ONLY = "encryption_display_decryptable_only";
     public static final String PREF_APP_SECURE = "app_secure";
     public static final String PREF_APP_EDIT_FOLDERS = "app_edit_folders";
+    public static final String PREF_APP_EXIT_ON_LOCK = "app_exit_on_lock";
 
     private final Context context;
     private static Settings settings;
@@ -90,8 +92,28 @@ public class Settings {
         getSharedPrefsEditor().putBoolean(PREF_ENCRYPTION_DELETE_BY_DEFAULT, deleteByDefault).apply();
     }
 
+    public boolean displayDecryptableFilesOnly() {
+        return getSharedPrefs().getBoolean(PREF_ENCRYPTION_DISPLAY_DECRYPTABLE_ONLY, false);
+    }
+
+    public void setDisplayDecryptableFilesOnly(boolean displayDecryptableFilesOnly) {
+        getSharedPrefsEditor().putBoolean(PREF_ENCRYPTION_DISPLAY_DECRYPTABLE_ONLY, displayDecryptableFilesOnly).apply();
+    }
+
     public boolean isSecureFlag() {
         return getSharedPrefs().getBoolean(PREF_APP_SECURE, true);
+    }
+
+    public void setSecureFlag(boolean secureFlag) {
+        getSharedPrefsEditor().putBoolean(PREF_APP_SECURE, secureFlag).apply();
+    }
+
+    public boolean exitOnLock() {
+        return getSharedPrefs().getBoolean(PREF_APP_EXIT_ON_LOCK, true);
+    }
+
+    public void setExitOnLock(boolean exitOnLock) {
+        getSharedPrefsEditor().putBoolean(PREF_APP_EXIT_ON_LOCK, exitOnLock).apply();
     }
 
     public void addGalleryDirectory(@NonNull Uri uri, boolean asRootDir, @Nullable IOnDirectoryAdded onDirectoryAdded) {

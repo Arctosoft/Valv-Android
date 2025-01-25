@@ -1,6 +1,7 @@
 package se.arctosoft.vault;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,11 +14,11 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.data.Password;
+import se.arctosoft.vault.data.UniqueLinkedList;
 import se.arctosoft.vault.utils.FileStuff;
 import se.arctosoft.vault.utils.Settings;
 
@@ -48,6 +49,9 @@ public class DirectoryAllFragment extends DirectoryBaseFragment {
                     FragmentActivity activity = requireActivity();
                     Password.lock(activity);
                     activity.finish();
+                    if (!settings.exitOnLock()) {
+                        startActivity(new Intent(context, MainActivity.class));
+                    }
                 }
             }
         };
@@ -122,7 +126,7 @@ public class DirectoryAllFragment extends DirectoryBaseFragment {
             activity.runOnUiThread(this::setLoadingAllWithProgress);
 
             List<GalleryFile> folders = new ArrayList<>();
-            List<GalleryFile> files = new LinkedList<>();
+            List<GalleryFile> files = new UniqueLinkedList<>();
             long start = System.currentTimeMillis();
             List<GalleryFile> filesToSearch = new ArrayList<>();
             for (Uri uri : uriFiles) {
@@ -226,7 +230,7 @@ public class DirectoryAllFragment extends DirectoryBaseFragment {
     @NonNull
     private List<GalleryFile> findAllFilesInFolder(Uri uri) {
         Log.e(TAG, "findAllFilesInFolder: find all files in " + uri.getLastPathSegment());
-        List<GalleryFile> files = new ArrayList<>();
+        List<GalleryFile> files = new UniqueLinkedList<>();
         FragmentActivity activity = getActivity();
         if (activity == null || !isSafe()) {
             return files;

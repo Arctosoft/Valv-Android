@@ -19,6 +19,7 @@
 package se.arctosoft.vault.utils;
 
 import android.content.ClipData;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -30,19 +31,26 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
+import org.json.JSONException;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.GeneralSecurityException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
 
 import se.arctosoft.vault.data.CursorFile;
 import se.arctosoft.vault.data.GalleryFile;
+import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.encryption.Encryption;
+import se.arctosoft.vault.exception.InvalidPasswordException;
 
 public class FileStuff {
     private static final String TAG = "FileStuff";
@@ -75,13 +83,57 @@ public class FileStuff {
         } while (c.moveToNext());
         c.close();
         Collections.sort(files);
-        List<GalleryFile> encryptedFilesInFolder = getEncryptedFilesInFolder(files);
+        List<GalleryFile> encryptedFilesInFolder = getEncryptedFilesInFolder(files, context);
         Collections.sort(encryptedFilesInFolder);
-        return encryptedFilesInFolder;
+
+        if (Settings.getInstance(context).displayDecryptableFilesOnly()) {
+            long start = System.currentTimeMillis();
+            List<GalleryFile> readableFiles = new ArrayList<>();
+            final Queue<GalleryFile> fileQueue = new ArrayDeque<>(encryptedFilesInFolder);
+            encryptedFilesInFolder.clear();
+            List<Thread> threads = new ArrayList<>();
+            ContentResolver contentResolver = context.getContentResolver();
+            Password password = Password.getInstance();
+            for (int i = 0; i < 4; i++) {
+                Thread t = new Thread(() -> {
+                    GalleryFile galleryFile;
+                    while ((galleryFile = fileQueue.poll()) != null) {
+                        if (galleryFile.isDirectory()) {
+                            continue;
+                        }
+                        Encryption.Streams streams = null;
+                        try {
+                            streams = Encryption.getCipherInputStream(contentResolver.openInputStream(galleryFile.getUri()), password.getPassword(), false, galleryFile.getVersion());
+                            galleryFile.setOriginalName(streams.getOriginalFileName());
+                            readableFiles.add(galleryFile);
+                        } catch (IOException | GeneralSecurityException | InvalidPasswordException |
+                                 JSONException ignored) {
+                        } finally {
+                            if (streams != null) {
+                                streams.close();
+                            }
+                        }
+                    }
+                });
+                threads.add(t);
+                t.start();
+            }
+            for (Thread t : threads) {
+                try {
+                    t.join();
+                } catch (InterruptedException e) {
+                    return readableFiles;
+                }
+            }
+            Log.e(TAG, "getFilesInFolder: took " + (System.currentTimeMillis() - start) + " ms");
+            return readableFiles;
+        } else {
+            return encryptedFilesInFolder;
+        }
     }
 
     @NonNull
-    private static List<GalleryFile> getEncryptedFilesInFolder(@NonNull List<CursorFile> files) {
+    private static List<GalleryFile> getEncryptedFilesInFolder(@NonNull List<CursorFile> files, Context context) {
         List<CursorFile> documentFiles = new ArrayList<>();
         List<CursorFile> documentThumbs = new ArrayList<>();
         List<CursorFile> documentNote = new ArrayList<>();

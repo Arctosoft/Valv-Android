@@ -12,6 +12,7 @@
         android:layout_height="0dp"
         app:fastScrollAutoHide="true"
         app:fastScrollAutoHideDelay="800"
+        android:scrollbars="none"
         app:fastScrollPopupBackgroundSize="42dp"
         app:fastScrollPopupBgColor="?attr/colorPrimary"
         app:fastScrollPopupTextColor="?attr/colorOnPrimary"

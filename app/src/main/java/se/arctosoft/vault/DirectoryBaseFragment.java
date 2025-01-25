@@ -18,6 +18,7 @@
 package se.arctosoft.vault;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
@@ -336,17 +337,14 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
                     galleryViewModel.setInitialised(true);
                     galleryGridAdapter.notifyItemRangeInserted(0, galleryFiles.size());
                     galleryPagerAdapter.notifyItemRangeInserted(0, galleryFiles.size());
+                    initFastScroll();
                 }
             });
         }).start();
     }
 
     void setupGrid() {
-        if (galleryViewModel.isInitialised()) {
-            binding.recyclerView.setFastScrollEnabled(galleryViewModel.getGalleryFiles().size() > MIN_FILES_FOR_FAST_SCROLL);
-        } else {
-            binding.recyclerView.setFastScrollEnabled(false);
-        }
+        initFastScroll();
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, RecyclerView.VERTICAL);
         binding.recyclerView.setLayoutManager(layoutManager);
@@ -356,6 +354,14 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
         binding.recyclerView.setAdapter(galleryGridAdapter);
         galleryGridAdapter.setOnFileCLicked(pos -> showViewpager(true, pos, true));
         galleryGridAdapter.setOnSelectionModeChanged(this::onSelectionModeChanged);
+    }
+
+    private void initFastScroll() {
+        if (galleryViewModel.isInitialised()) {
+            binding.recyclerView.setFastScrollEnabled(galleryViewModel.getGalleryFiles().size() > MIN_FILES_FOR_FAST_SCROLL);
+        } else {
+            binding.recyclerView.setFastScrollEnabled(false);
+        }
     }
 
     abstract void onSelectionModeChanged(boolean inSelectionMode);
@@ -536,6 +542,9 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
             FragmentActivity activity = getActivity();
             if (activity != null) {
                 activity.finish();
+                if (!settings.exitOnLock()) {
+                    startActivity(new Intent(requireContext(), MainActivity.class));
+                }
             }
             return true;
         } else if (id == R.id.order_by_newest_first) {
@@ -613,6 +622,22 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
     public void onStart() {
         super.onStart();
         requireActivity().addMenuProvider(this, getViewLifecycleOwner());
+        Uri clickedDirectoryUri = galleryViewModel.getClickedDirectoryUri();
+        if (clickedDirectoryUri != null) {
+            galleryViewModel.setClickedDirectoryUri(null);
+            synchronized (LOCK) {
+                List<GalleryFile> galleryFiles = galleryViewModel.getGalleryFiles();
+                for (int i = 0; i < galleryFiles.size(); i++) {
+                    GalleryFile galleryFile = galleryFiles.get(i);
+                    if (galleryFile.isDirectory() && galleryFile.getUri() == clickedDirectoryUri) {
+                        galleryFile.resetFilesInDirectory();
+                        galleryGridAdapter.notifyItemChanged(i);
+                        galleryPagerAdapter.notifyItemChanged(i);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     @Override
