@@ -41,6 +41,7 @@ public class Settings {
     public static final String PREF_ENCRYPTION_ITERATION_COUNT = "encryption_iteration_count";
     public static final String PREF_ENCRYPTION_USE_DISK_CACHE = "encryption_use_disk_cache";
     public static final String PREF_ENCRYPTION_DELETE_BY_DEFAULT = "encryption_delete_by_default";
+    public static final String PREF_ENCRYPTION_DISPLAY_DECRYPTABLE_ONLY = "encryption_display_decryptable_only";
     public static final String PREF_APP_SECURE = "app_secure";
     public static final String PREF_APP_EDIT_FOLDERS = "app_edit_folders";
 
@@ -88,6 +89,14 @@ public class Settings {
 
     public void setDeleteByDefault(boolean deleteByDefault) {
         getSharedPrefsEditor().putBoolean(PREF_ENCRYPTION_DELETE_BY_DEFAULT, deleteByDefault).apply();
+    }
+
+    public boolean displayDecryptableFilesOnly() {
+        return getSharedPrefs().getBoolean(PREF_ENCRYPTION_DISPLAY_DECRYPTABLE_ONLY, false);
+    }
+
+    public void setDisplayDecryptableFilesOnly(boolean displayDecryptableFilesOnly) {
+        getSharedPrefsEditor().putBoolean(PREF_ENCRYPTION_DISPLAY_DECRYPTABLE_ONLY, displayDecryptableFilesOnly).apply();
     }
 
     public boolean isSecureFlag() {

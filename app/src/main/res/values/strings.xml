@@ -38,6 +38,9 @@
     <string name="settings_delete_by_default_title">Delete original files by default</string>
     <string name="settings_delete_by_default_summary_on">\"Delete the original files after importing\" is checked by default.</string>
     <string name="settings_delete_by_default_summary_off">\"Delete the original files after importing\" is unchecked by default.</string>
+    <string name="settings_display_decryptable_only_title">Display only decryptable files</string>
+    <string name="settings_display_decryptable_only_summary_on">Only files that the current password can decrypt are displayed. Note that this makes the app slower as it tries to read every file before displaying a folder.</string>
+    <string name="settings_display_decryptable_only_summary_off">All files are initially displayed, even those that the current password cannot decrypt.</string>
     <string name="settings_app">App behaviour</string>
     <string name="settings_secure_title">Use FLAG_SECURE</string>
     <string name="settings_secure_summary">Tells Android to not allow screenshots or display the window view on a non-secure display.</string>
