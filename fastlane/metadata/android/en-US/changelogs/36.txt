@@ -1,0 +1,7 @@
+* The folder preview and file count now update after modifying the folder contents
+* Added a setting to hide all files encrypted using a different password
+* Added a setting to go to the password screen when locking instead of exiting
+* Fixed duplicate files in the All folder
+* Fixed images being displayed in the wrong orientation
+* Fixed missing fast scroll bar
+* Fixed a crash when scrolling fast in the grid
