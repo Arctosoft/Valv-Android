@@ -99,6 +99,7 @@ public class FileStuff {
                     GalleryFile galleryFile;
                     while ((galleryFile = fileQueue.poll()) != null) {
                         if (galleryFile.isDirectory()) {
+                            readableFiles.add(galleryFile);
                             continue;
                         }
                         Encryption.Streams streams = null;
