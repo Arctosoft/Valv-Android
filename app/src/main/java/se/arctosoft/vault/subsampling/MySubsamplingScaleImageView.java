@@ -20,7 +20,6 @@ package se.arctosoft.vault.subsampling;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -35,7 +34,6 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.MediaStore;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -48,7 +46,6 @@ import android.view.ViewParent;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.exifinterface.media.ExifInterface;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -1906,7 +1903,7 @@ public class MySubsamplingScaleImageView extends View {
      */
     @AnyThread
     private int getExifOrientation(Context context, String sourceUri) {
-        int exifOrientation = ORIENTATION_0;
+        /*int exifOrientation = ORIENTATION_0;
         if (sourceUri.startsWith(ContentResolver.SCHEME_CONTENT)) {
             Cursor cursor = null;
             try {
@@ -1947,8 +1944,8 @@ public class MySubsamplingScaleImageView extends View {
             } catch (Exception e) {
                 Log.w(TAG, "Could not get EXIF orientation of image");
             }
-        }
-        return exifOrientation;
+        }*/
+        return orientation;
     }
 
     private void execute(AsyncTask<Void, Void, ?> asyncTask) {

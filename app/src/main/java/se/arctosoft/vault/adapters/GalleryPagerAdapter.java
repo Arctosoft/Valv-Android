@@ -18,6 +18,7 @@
 
 package se.arctosoft.vault.adapters;
 
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PointF;
@@ -41,6 +42,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.documentfile.provider.DocumentFile;
+import androidx.exifinterface.media.ExifInterface;
 import androidx.fragment.app.FragmentActivity;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
@@ -55,9 +57,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.color.MaterialColors;
 
+import org.json.JSONException;
+
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -378,10 +384,11 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
 
                 }
             });
+            loadImage(galleryFile, (GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder, context);
         } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
             ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView.setOnClickListener(v -> onItemPressed(context));
+            loadGif(galleryFile, (GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder, context);
         }
-        loadImage(galleryFile.getUri(), holder, context, galleryFile.getVersion());
     }
 
     private void onItemPressed(FragmentActivity context) {
@@ -410,16 +417,65 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         notifyItemRangeChanged(0, galleryFiles.size(), isFullscreen);
     }
 
-    private void loadImage(Uri uri, GalleryPagerViewHolder holder, FragmentActivity context, int version) {
-        if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder) {
-            ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setImage(ImageSource.uri(uri, password.getPassword(), version));
-        } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
-            Glide.with(context)
-                    //.asGif()
-                    .load(uri)
-                    .apply(GlideStuff.getRequestOptions(useDiskCache))
-                    .into(((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView);
+    private void loadImage(GalleryFile galleryFile, GalleryPagerViewHolder.GalleryPagerImageViewHolder holder, FragmentActivity context) {
+        if (galleryFile.getOrientation() != -1) {
+            holder.binding.imageView.setOrientation(galleryFile.getOrientation());
+            holder.binding.imageView.setImage(ImageSource.uri(galleryFile.getUri(), password.getPassword(), galleryFile.getVersion()));
+        } else {
+            new Thread(() -> {
+                Encryption.Streams streams = null;
+                int orientation = -1;
+                try {
+                    ContentResolver contentResolver = context.getContentResolver();
+                    streams = Encryption.getCipherInputStream(contentResolver.openInputStream(galleryFile.getUri()), password.getPassword(), false, galleryFile.getVersion());
+                    ExifInterface exifInterface = new ExifInterface(streams.getInputStream());
+                    orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                    if (orientation == ExifInterface.ORIENTATION_UNDEFINED) {
+                        orientation = -1;
+                    } else {
+                        orientation = exifToDegrees(orientation);
+                    }
+                } catch (GeneralSecurityException | InvalidPasswordException | JSONException |
+                         IOException e) {
+                    e.printStackTrace();
+                    context.runOnUiThread(() -> {
+                        int i = holder.getBindingAdapterPosition();
+                        if (i >= 0) {
+                            removeFileAt(i, context);
+                        }
+                    });
+                } finally {
+                    if (streams != null) {
+                        streams.close();
+                    }
+                }
+
+                galleryFile.setOrientation(orientation);
+                context.runOnUiThread(() -> {
+                    holder.binding.imageView.setOrientation(galleryFile.getOrientation());
+                    holder.binding.imageView.setImage(ImageSource.uri(galleryFile.getUri(), password.getPassword(), galleryFile.getVersion()));
+                });
+            }).start();
         }
+    }
+
+    private int exifToDegrees(int orientation) {
+        if (orientation == ExifInterface.ORIENTATION_ROTATE_90) {
+            return 90;
+        } else if (orientation == ExifInterface.ORIENTATION_ROTATE_180) {
+            return 180;
+        } else if (orientation == ExifInterface.ORIENTATION_ROTATE_270) {
+            return 270;
+        }
+        return 0;
+    }
+
+    private void loadGif(GalleryFile galleryFile, GalleryPagerViewHolder.GalleryPagerGifViewHolder holder, FragmentActivity context) {
+        Glide.with(context)
+                //.asGif()
+                .load(galleryFile.getUri())
+                .apply(GlideStuff.getRequestOptions(useDiskCache))
+                .into(holder.binding.gifImageView);
     }
 
     private void showButtons(GalleryPagerViewHolder holder, boolean show) {
