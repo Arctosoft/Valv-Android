@@ -234,7 +234,12 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         new Thread(() -> {
             String text = Encryption.readEncryptedTextFromUri(galleryFile.getUri(), context, galleryFile.getVersion(), password.getPassword());
             galleryFile.setText(text);
-            context.runOnUiThread(() -> galleryViewModel.getOnAdapterItemChanged().onChanged(holder.getBindingAdapterPosition()));
+            context.runOnUiThread(() -> {
+                int pos = holder.getBindingAdapterPosition();
+                if (pos >= 0) {
+                    galleryViewModel.getOnAdapterItemChanged().onChanged(pos);
+                }
+            });
         }).start();
     }
 

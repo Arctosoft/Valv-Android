@@ -336,17 +336,14 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
                     galleryViewModel.setInitialised(true);
                     galleryGridAdapter.notifyItemRangeInserted(0, galleryFiles.size());
                     galleryPagerAdapter.notifyItemRangeInserted(0, galleryFiles.size());
+                    initFastScroll();
                 }
             });
         }).start();
     }
 
     void setupGrid() {
-        if (galleryViewModel.isInitialised()) {
-            binding.recyclerView.setFastScrollEnabled(galleryViewModel.getGalleryFiles().size() > MIN_FILES_FOR_FAST_SCROLL);
-        } else {
-            binding.recyclerView.setFastScrollEnabled(false);
-        }
+        initFastScroll();
         int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
         RecyclerView.LayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, RecyclerView.VERTICAL);
         binding.recyclerView.setLayoutManager(layoutManager);
@@ -356,6 +353,14 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
         binding.recyclerView.setAdapter(galleryGridAdapter);
         galleryGridAdapter.setOnFileCLicked(pos -> showViewpager(true, pos, true));
         galleryGridAdapter.setOnSelectionModeChanged(this::onSelectionModeChanged);
+    }
+
+    private void initFastScroll() {
+        if (galleryViewModel.isInitialised()) {
+            binding.recyclerView.setFastScrollEnabled(galleryViewModel.getGalleryFiles().size() > MIN_FILES_FOR_FAST_SCROLL);
+        } else {
+            binding.recyclerView.setFastScrollEnabled(false);
+        }
     }
 
     abstract void onSelectionModeChanged(boolean inSelectionMode);
