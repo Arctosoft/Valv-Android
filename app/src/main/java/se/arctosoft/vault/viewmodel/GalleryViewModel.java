@@ -48,6 +48,7 @@ public class GalleryViewModel extends ViewModel {
     private boolean isRootDir = false;
     private boolean isAllFolder = false;
     private IOnAdapterItemChanged onAdapterItemChanged;
+    private Uri clickedDirectoryUri;
 
     public boolean isInitialised() {
         return initialised;
@@ -120,6 +121,14 @@ public class GalleryViewModel extends ViewModel {
 
     public String getNestedPath() {
         return nestedPath;
+    }
+
+    public void setClickedDirectoryUri(Uri clickedDirectoryUri) {
+        this.clickedDirectoryUri = clickedDirectoryUri;
+    }
+
+    public Uri getClickedDirectoryUri() {
+        return clickedDirectoryUri;
     }
 
     public void setCurrentDirectoryUri(Uri currentDirectoryUri) {

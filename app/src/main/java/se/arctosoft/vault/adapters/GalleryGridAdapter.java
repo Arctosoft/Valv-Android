@@ -284,6 +284,7 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
                     } else {
                         bundle.putString(DirectoryFragment.ARGUMENT_DIRECTORY, galleryFile.getUri().toString());
                     }
+                    galleryViewModel.setClickedDirectoryUri(galleryFile.getUri());
                     Navigation.findNavController(holder.binding.layout).navigate(R.id.action_directory_self, bundle);
                 } else {
                     if (onFileCLicked != null) {

@@ -622,6 +622,22 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
     public void onStart() {
         super.onStart();
         requireActivity().addMenuProvider(this, getViewLifecycleOwner());
+        Uri clickedDirectoryUri = galleryViewModel.getClickedDirectoryUri();
+        if (clickedDirectoryUri != null) {
+            galleryViewModel.setClickedDirectoryUri(null);
+            synchronized (LOCK) {
+                List<GalleryFile> galleryFiles = galleryViewModel.getGalleryFiles();
+                for (int i = 0; i < galleryFiles.size(); i++) {
+                    GalleryFile galleryFile = galleryFiles.get(i);
+                    if (galleryFile.isDirectory() && galleryFile.getUri() == clickedDirectoryUri) {
+                        galleryFile.resetFilesInDirectory();
+                        galleryGridAdapter.notifyItemChanged(i);
+                        galleryPagerAdapter.notifyItemChanged(i);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     @Override
