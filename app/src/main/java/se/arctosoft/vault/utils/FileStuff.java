@@ -56,7 +56,7 @@ public class FileStuff {
     private static final String TAG = "FileStuff";
 
     @NonNull
-    public static List<GalleryFile> getFilesInFolder(Context context, Uri pickedDir) {
+    public static List<GalleryFile> getFilesInFolder(Context context, Uri pickedDir, boolean checkDecryptable) {
         //Log.e(TAG, "getFilesInFolder: " + pickedDir);
         Uri realUri = DocumentsContract.buildChildDocumentsUriUsingTree(pickedDir, DocumentsContract.getDocumentId(pickedDir));
         List<CursorFile> files = new ArrayList<>();
@@ -86,7 +86,7 @@ public class FileStuff {
         List<GalleryFile> encryptedFilesInFolder = getEncryptedFilesInFolder(files, context);
         Collections.sort(encryptedFilesInFolder);
 
-        if (Settings.getInstance(context).displayDecryptableFilesOnly()) {
+        if (checkDecryptable && Settings.getInstance(context).displayDecryptableFilesOnly()) {
             long start = System.currentTimeMillis();
             List<GalleryFile> readableFiles = new ArrayList<>();
             final Queue<GalleryFile> fileQueue = new ArrayDeque<>(encryptedFilesInFolder);

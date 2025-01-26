@@ -130,7 +130,7 @@ public class DirectoryAllFragment extends DirectoryBaseFragment {
             long start = System.currentTimeMillis();
             List<GalleryFile> filesToSearch = new ArrayList<>();
             for (Uri uri : uriFiles) {
-                List<GalleryFile> filesInFolder = FileStuff.getFilesInFolder(activity, uri);
+                List<GalleryFile> filesInFolder = FileStuff.getFilesInFolder(activity, uri, true);
                 for (GalleryFile foundFile : filesInFolder) {
                     if (foundFile.isDirectory()) {
                         Log.e(TAG, "findAllFiles: found " + foundFile.getNameWithPath());
@@ -236,7 +236,7 @@ public class DirectoryAllFragment extends DirectoryBaseFragment {
             return files;
         }
         incrementFolders(1);
-        List<GalleryFile> filesInFolder = FileStuff.getFilesInFolder(activity, uri);
+        List<GalleryFile> filesInFolder = FileStuff.getFilesInFolder(activity, uri, true);
         for (GalleryFile galleryFile : filesInFolder) {
             if (!isSafe()) {
                 return files;

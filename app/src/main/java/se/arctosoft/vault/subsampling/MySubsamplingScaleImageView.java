@@ -1945,7 +1945,7 @@ public class MySubsamplingScaleImageView extends View {
                 Log.w(TAG, "Could not get EXIF orientation of image");
             }
         }*/
-        return orientation;
+        return orientation == -1 ? ORIENTATION_0 : orientation;
     }
 
     private void execute(AsyncTask<Void, Void, ?> asyncTask) {
