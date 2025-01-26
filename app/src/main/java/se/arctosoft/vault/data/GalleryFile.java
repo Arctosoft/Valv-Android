@@ -307,7 +307,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
             return;
         }
         new Thread(() -> {
-            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(context, fileUri);
+            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(context, fileUri, false);
             this.fileCount = 0;
             this.firstFileInDirectoryWithThumb = null;
             for (GalleryFile f : galleryFiles) {
