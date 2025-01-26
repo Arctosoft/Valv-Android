@@ -1,0 +1,7 @@
+* Mappförhandsgranskningen och filantalet uppdateras nu efter att mappinnehållet har ändrats
+* Lade till en inställning för att dölja alla filer krypterade med ett annat lösenord
+* Lade till en inställning för att gå till lösenordsskärmen när du låser istället för att avsluta appen
+* Fixade dubbletter av filer i Alla-mappen
+* Fixade bilder som visades i fel orientering
+* Fixade saknad snabbrullning
+* Fixade en krasch när du scrollar snabbt i rutnätet
