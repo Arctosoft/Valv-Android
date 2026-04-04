@@ -75,19 +75,25 @@ public class PasswordFragment extends Fragment {
 
         Settings settings = Settings.getInstance(requireContext());
 
-        // Слушатель текста: кнопка активна только если что-то введено
+        // 1. Принудительно выключаем кнопку при старте (чтобы не была синей без текста)
+        binding.btnUnlock.setEnabled(false);
+
+        // 2. Единый слушатель текста для управления кнопкой
         binding.eTPassword.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
             @Override
             public void afterTextChanged(Editable s) {
-                binding.btnUnlock.setEnabled(s.length() > 0);
+                // Кнопка активна ТОЛЬКО если есть символы. Никакие другие события это не изменят.
+                binding.btnUnlock.setEnabled(s != null && s.length() > 0);
             }
         });
 
         binding.eTPassword.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE) {
-                binding.btnUnlock.performClick();
+                if (binding.btnUnlock.isEnabled()) {
+                    binding.btnUnlock.performClick();
+                }
                 return true;
             }
             return false;
@@ -116,7 +122,6 @@ public class PasswordFragment extends Fragment {
                         byte[] salt = Encryption.generateSecureSalt(Encryption.SALT_LENGTH);
                         dirHash = Encryption.getDirHash(salt, temp);
                         
-                        // ПРОВЕРКА НА NULL перед вызовом .hash()
                         if (dirHash != null) {
                             settings.createDirHashEntry(salt, dirHash.hash());
                         } else {
@@ -136,7 +141,8 @@ public class PasswordFragment extends Fragment {
                 } catch (Exception e) {
                     Log.e(TAG, "Критическая ошибка разблокировки", e);
                     requireActivity().runOnUiThread(() -> {
-                        binding.btnUnlock.setEnabled(true);
+                        // Возвращаем состояние кнопки на основе наличия текста
+                        binding.btnUnlock.setEnabled(binding.eTPassword.length() > 0);
                         binding.eTPassword.setEnabled(true);
                         binding.biometrics.setEnabled(true);
                         binding.loading.setVisibility(View.GONE);
@@ -156,7 +162,6 @@ public class PasswordFragment extends Fragment {
                 @Override
                 public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
                     super.onAuthenticationError(errorCode, errString);
-                    Log.e(TAG, "Biometric error: " + errString);
                 }
 
                 @Override
@@ -167,6 +172,7 @@ public class PasswordFragment extends Fragment {
                         try {
                             byte[] decrypted = cryptoObject.getCipher().doFinal(settings.getBiometricsData());
                             char[] chars = Encryption.toChars(decrypted);
+                            // setText вызовет afterTextChanged, который включит кнопку
                             binding.eTPassword.setText(chars, 0, chars.length);
                             binding.btnUnlock.performClick();
                         } catch (Exception e) {
@@ -188,20 +194,19 @@ public class PasswordFragment extends Fragment {
                     Cipher cipher = Encryption.getBiometricCipher();
                     SecretKey secretKey = Encryption.getOrGenerateBiometricSecretKey();
                     byte[] iv = settings.getBiometricsIv();
-                    if (iv == null) throw new Exception("IV биометрии не найден");
+                    if (iv == null) throw new Exception("IV не найден");
                     
                     cipher.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
                     biometricPrompt.authenticate(promptInfo, new BiometricPrompt.CryptoObject(cipher));
                 } catch (Exception e) {
-                    Log.e(TAG, "Biometric init error", e);
                     Toaster.getInstance(requireContext()).showShort("Биометрия недоступна");
                 }
             });
 
-            // Автоматический вызов биометрии при старте
+            // Запуск биометрии через post, чтобы UI успел отрисоваться
             binding.biometrics.post(() -> binding.biometrics.performClick());
         } else {
             binding.biometrics.setVisibility(View.GONE);
         }
     }
-}
+                }
