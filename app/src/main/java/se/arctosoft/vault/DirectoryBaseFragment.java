@@ -59,7 +59,6 @@ import java.util.List;
 
 import se.arctosoft.vault.adapters.GalleryGridAdapter;
 import se.arctosoft.vault.adapters.GalleryPagerAdapter;
-import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.databinding.FragmentDirectoryBinding;
@@ -86,10 +85,12 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
     static final int ORDER_BY_SMALLEST = 3;
     static final int ORDER_BY_RANDOM = 4;
     static final int FILTER_ALL = 0;
-    static final int FILTER_IMAGES = FileType.IMAGE_V2.type;
-    static final int FILTER_GIFS = FileType.GIF_V2.type;
-    static final int FILTER_VIDEOS = FileType.VIDEO_V2.type;
-    static final int FILTER_TEXTS = FileType.TEXT_V2.type;
+    static final int FILTER_IMAGES = 1;
+    static final int FILTER_GIFS = 2;
+    static final int FILTER_VIDEOS = 3;
+    static final int FILTER_TEXTS = 4;
+    static final int FILTER_HAS_NOTE = 100;
+    static final int FILTER_NO_NOTE = 101;
 
     NavController navController;
     FragmentDirectoryBinding binding;
@@ -497,7 +498,7 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
                     Iterator<GalleryFile> it = galleryFiles.iterator();
                     while (it.hasNext()) {
                         GalleryFile f = it.next();
-                        if (!f.isDirectory() && f.getFileType().type != filter) {
+                        if (!f.isDirectory() && !matchesFilter(f, filter)) {
                             it.remove();
                             hiddenFiles.add(f);
                         }
@@ -510,6 +511,14 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
                 orderBy(this.orderBy);
             }
         }).start();
+    }
+
+    private boolean matchesFilter(GalleryFile file, int filter) {
+        return switch (filter) {
+            case FILTER_HAS_NOTE -> file.hasNote();
+            case FILTER_NO_NOTE -> !file.hasNote();
+            default -> file.getFileType().type == filter;
+        };
     }
 
     @Override
@@ -576,6 +585,12 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
             return true;
         } else if (id == R.id.filter_text) {
             filterBy(FILTER_TEXTS);
+            return true;
+        } else if (id == R.id.filter_has_note) {
+            filterBy(FILTER_HAS_NOTE);
+            return true;
+        } else if (id == R.id.filter_no_note) {
+            filterBy(FILTER_NO_NOTE);
             return true;
         } else if (id == R.id.scroll_to_first_note) {
             scrollToNote(true);

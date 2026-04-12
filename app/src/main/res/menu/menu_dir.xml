@@ -52,6 +52,12 @@
             <item
                 android:id="@+id/filter_text"
                 android:title="@string/menu_filter_text" />
+            <item
+                android:id="@+id/filter_has_note"
+                android:title="@string/menu_filter_has_note" />
+            <item
+                android:id="@+id/filter_no_note"
+                android:title="@string/menu_filter_no_note" />
         </menu>
     </item>
     <item
