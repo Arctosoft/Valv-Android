@@ -39,7 +39,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
     private static final String TAG = "GalleryFile";
     private static final int FIND_FILES_NOT_STARTED = 0;
     private static final int FIND_FILES_RUNNING = 1;
-    private static final int FIND_FILES_DONE = 2;
+    public static final int FIND_FILES_DONE = 2;
 
     private final AtomicInteger findFilesInDirectoryStatus = new AtomicInteger(FIND_FILES_NOT_STARTED);
     private GalleryFile firstFileInDirectoryWithThumb;
@@ -181,8 +181,8 @@ public class GalleryFile implements Comparable<GalleryFile> {
         return orientation;
     }
 
-    public AtomicInteger getFindFilesInDirectoryStatus() {
-        return findFilesInDirectoryStatus;
+    public int getFindFilesInDirectoryStatus() {
+        return findFilesInDirectoryStatus.get();
     }
 
     public boolean isVideo() {
@@ -307,7 +307,7 @@ public class GalleryFile implements Comparable<GalleryFile> {
             return;
         }
         new Thread(() -> {
-            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(context, fileUri, false);
+            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(context, fileUri);
             this.fileCount = 0;
             this.firstFileInDirectoryWithThumb = null;
             for (GalleryFile f : galleryFiles) {

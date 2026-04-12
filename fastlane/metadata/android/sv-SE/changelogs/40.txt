@@ -1,0 +1,8 @@
+* Mappar laddar snabbare
+* Kom ihåg videouppspelningsposition vid t.ex. skärmrotation
+* Lade till en knapp för att skapa en ny mapp i den aktuella katalogen
+* Tryck länge på en tom mapp för att radera den
+* Ökade maximala iterationsantalet till 2 miljoner
+* Menyalternativ för att scrolla till den första/sista filen med en anteckning
+* Filtrera filer som har/inte har någon anteckning
+* Tog bort inställningen "Visa endast dekrypterbara filer"

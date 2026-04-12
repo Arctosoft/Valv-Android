@@ -37,6 +37,7 @@ import java.util.List;
 
 import se.arctosoft.vault.BuildConfig;
 import se.arctosoft.vault.R;
+import se.arctosoft.vault.databinding.DialogCreateFolderBinding;
 import se.arctosoft.vault.databinding.DialogEditNoteBinding;
 import se.arctosoft.vault.databinding.DialogImportTextBinding;
 import se.arctosoft.vault.databinding.DialogSetIterationCountBinding;
@@ -208,6 +209,17 @@ public class Dialogs {
                 .show();
     }
 
+    public static void showCreateFolderDialog(FragmentActivity context, IOnEdited onEdited) {
+        DialogCreateFolderBinding binding = DialogCreateFolderBinding.inflate(context.getLayoutInflater(), null, false);
+
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(context.getString(R.string.gallery_create_folder_title))
+                .setView(binding.getRoot())
+                .setPositiveButton(R.string.create, (dialog, which) -> onEdited.onEdited(binding.text.getText().toString()))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
     public static void showSetIterationCountDialog(FragmentActivity context, @Nullable String editTextBody, IOnEdited onEdited) {
         DialogSetIterationCountBinding binding = DialogSetIterationCountBinding.inflate(context.getLayoutInflater(), null, false);
         if (editTextBody != null) {
@@ -228,8 +240,8 @@ public class Dialogs {
             public void afterTextChanged(Editable s) {
                 try {
                     int ic = Integer.parseInt(s.toString());
-                    if (ic > 500000) {
-                        binding.text.setText(String.valueOf(500000));
+                    if (ic > 2000000) {
+                        binding.text.setText(String.valueOf(2000000));
                     }
                 } catch (NumberFormatException ignored) {
                 }

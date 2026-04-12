@@ -19,7 +19,6 @@
 package se.arctosoft.vault.utils;
 
 import android.content.ClipData;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -31,32 +30,28 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
-import org.json.JSONException;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.GeneralSecurityException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Queue;
+import java.util.Map;
 
 import se.arctosoft.vault.data.CursorFile;
 import se.arctosoft.vault.data.GalleryFile;
-import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.encryption.Encryption;
-import se.arctosoft.vault.exception.InvalidPasswordException;
 
 public class FileStuff {
     private static final String TAG = "FileStuff";
 
     @NonNull
-    public static List<GalleryFile> getFilesInFolder(Context context, Uri pickedDir, boolean checkDecryptable) {
+    public static List<GalleryFile> getFilesInFolder(Context context, Uri pickedDir) {
+        long start = System.currentTimeMillis();
         //Log.e(TAG, "getFilesInFolder: " + pickedDir);
         Uri realUri = DocumentsContract.buildChildDocumentsUriUsingTree(pickedDir, DocumentsContract.getDocumentId(pickedDir));
         List<CursorFile> files = new ArrayList<>();
@@ -73,83 +68,50 @@ public class FileStuff {
             }
             return new ArrayList<>();
         }
+        Log.e(TAG, "getFilesInFolder 1: " + (System.currentTimeMillis() - start));
         do {
             Uri uri = DocumentsContract.buildDocumentUriUsingTree(realUri, c.getString(0));
             String name = c.getString(1);
             long lastModified = c.getLong(2);
             String mimeType = c.getString(3);
             long size = c.getLong(4);
-            files.add(new CursorFile(name, uri, lastModified, mimeType, size));
+
+            if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType)
+                    || name.startsWith(Encryption.ENCRYPTED_PREFIX)
+                    || name.endsWith(Encryption.ENCRYPTED_SUFFIX)) {
+                files.add(new CursorFile(name, uri, lastModified, mimeType, size));
+            }
         } while (c.moveToNext());
         c.close();
         Collections.sort(files);
-        List<GalleryFile> encryptedFilesInFolder = getEncryptedFilesInFolder(files, context);
+        Log.e(TAG, "getFilesInFolder 2: " + (System.currentTimeMillis() - start));
+        List<GalleryFile> encryptedFilesInFolder = getEncryptedFilesInFolder(files);
+        Log.e(TAG, "getFilesInFolder 3: " + (System.currentTimeMillis() - start));
         Collections.sort(encryptedFilesInFolder);
 
-        if (checkDecryptable && Settings.getInstance(context).displayDecryptableFilesOnly()) {
-            long start = System.currentTimeMillis();
-            List<GalleryFile> readableFiles = new ArrayList<>();
-            final Queue<GalleryFile> fileQueue = new ArrayDeque<>(encryptedFilesInFolder);
-            encryptedFilesInFolder.clear();
-            List<Thread> threads = new ArrayList<>();
-            ContentResolver contentResolver = context.getContentResolver();
-            Password password = Password.getInstance();
-            for (int i = 0; i < 4; i++) {
-                Thread t = new Thread(() -> {
-                    GalleryFile galleryFile;
-                    while ((galleryFile = fileQueue.poll()) != null) {
-                        if (galleryFile.isDirectory()) {
-                            readableFiles.add(galleryFile);
-                            continue;
-                        }
-                        Encryption.Streams streams = null;
-                        try {
-                            streams = Encryption.getCipherInputStream(contentResolver.openInputStream(galleryFile.getUri()), password.getPassword(), false, galleryFile.getVersion());
-                            galleryFile.setOriginalName(streams.getOriginalFileName());
-                            readableFiles.add(galleryFile);
-                        } catch (IOException | GeneralSecurityException | InvalidPasswordException |
-                                 JSONException ignored) {
-                        } finally {
-                            if (streams != null) {
-                                streams.close();
-                            }
-                        }
-                    }
-                });
-                threads.add(t);
-                t.start();
-            }
-            for (Thread t : threads) {
-                try {
-                    t.join();
-                } catch (InterruptedException e) {
-                    return readableFiles;
-                }
-            }
-            Log.e(TAG, "getFilesInFolder: took " + (System.currentTimeMillis() - start) + " ms");
-            return readableFiles;
-        } else {
-            return encryptedFilesInFolder;
-        }
+        return encryptedFilesInFolder;
     }
 
     @NonNull
-    private static List<GalleryFile> getEncryptedFilesInFolder(@NonNull List<CursorFile> files, Context context) {
+    private static List<GalleryFile> getEncryptedFilesInFolder(@NonNull List<CursorFile> files) {
+        Map<String, CursorFile> thumbsMap = new HashMap<>();
+        Map<String, CursorFile> notesMap = new HashMap<>();
         List<CursorFile> documentFiles = new ArrayList<>();
-        List<CursorFile> documentThumbs = new ArrayList<>();
-        List<CursorFile> documentNote = new ArrayList<>();
         List<GalleryFile> galleryFiles = new ArrayList<>();
+
         for (CursorFile file : files) {
             String name = file.getName();
-            if (!name.startsWith(Encryption.ENCRYPTED_PREFIX) && !name.endsWith(Encryption.ENCRYPTED_SUFFIX) && !file.isDirectory()) {
-                continue;
-            }
-            //Log.e(TAG, "getEncryptedFilesInFolder: found " + name);
 
-            if (name.endsWith(Encryption.SUFFIX_THUMB) || name.startsWith(Encryption.PREFIX_THUMB)) {
-                documentThumbs.add(file);
-            } else if (name.endsWith(Encryption.SUFFIX_NOTE_FILE) || name.startsWith(Encryption.PREFIX_NOTE_FILE)) {
-                documentNote.add(file);
+            if (!file.isDirectory()) {
+                String nameWithoutPrefix = FileStuff.getNameWithoutPrefix(name);
+                if (name.endsWith(Encryption.SUFFIX_THUMB) || name.startsWith(Encryption.PREFIX_THUMB)) {
+                    thumbsMap.put(nameWithoutPrefix, file);
+                } else if (name.endsWith(Encryption.SUFFIX_NOTE_FILE) || name.startsWith(Encryption.PREFIX_NOTE_FILE)) {
+                    notesMap.put(nameWithoutPrefix, file);
+                } else {
+                    file.setNameWithoutPrefix(nameWithoutPrefix);
+                    documentFiles.add(file);
+                }
             } else {
                 documentFiles.add(file);
             }
@@ -160,23 +122,15 @@ public class FileStuff {
                 galleryFiles.add(GalleryFile.asDirectory(file));
                 continue;
             }
-            file.setNameWithoutPrefix(FileStuff.getNameWithoutPrefix(file.getName()));
-            CursorFile foundThumb = findCursorFile(documentThumbs, file.getNameWithoutPrefix());
-            CursorFile foundNote = findCursorFile(documentNote, file.getNameWithoutPrefix());
+
+            String nameWithoutPrefix = file.getNameWithoutPrefix();
+
+            CursorFile foundThumb = thumbsMap.get(nameWithoutPrefix);
+            CursorFile foundNote = notesMap.get(nameWithoutPrefix);
+
             galleryFiles.add(GalleryFile.asFile(file, foundThumb, foundNote));
         }
         return galleryFiles;
-    }
-
-    @Nullable
-    private static CursorFile findCursorFile(@NonNull List<CursorFile> list, String nameWithoutPrefix) {
-        for (CursorFile cf : list) {
-            cf.setNameWithoutPrefix(FileStuff.getNameWithoutPrefix(cf.getName()));
-            if (cf.getNameWithoutPrefix().startsWith(nameWithoutPrefix)) {
-                return cf;
-            }
-        }
-        return null;
     }
 
     public static Intent getPickFilesIntent(String mimeType) {
@@ -199,21 +153,33 @@ public class FileStuff {
     }
 
     public static String getFilenameWithPathFromUri(@NonNull Uri uri) {
-        String[] split = uri.getLastPathSegment().split(":");
-        return split[split.length - 1];
+        String segment = uri.getLastPathSegment();
+        if (segment == null) {
+            return "";
+        }
+        int index = segment.lastIndexOf(':');
+        return index != -1 ? segment.substring(index + 1) : segment;
     }
 
     public static String getFilenameFromUri(@NonNull Uri uri, boolean withoutPrefix) {
-        String[] split = uri.getLastPathSegment().split("/");
-        String s = split[split.length - 1];
-        if (withoutPrefix) {
-            if (s.startsWith(Encryption.ENCRYPTED_PREFIX)) {
-                return s.substring(s.indexOf("-") + 1);
-            } else {
-                return s.substring(0, s.lastIndexOf("-"));
-            }
+        String segment = uri.getLastPathSegment();
+        if (segment == null) {
+            return "";
         }
-        return s;
+
+        int index = segment.lastIndexOf('/');
+        String name = index != -1 ? segment.substring(index + 1) : segment;
+
+        if (!withoutPrefix) {
+            return name;
+        }
+
+        index = name.indexOf('-');
+        if (name.startsWith(Encryption.ENCRYPTED_PREFIX)) {
+            return index != -1 ? name.substring(index + 1) : name;
+        } else {
+            return index != -1 ? name.substring(0, index) : name;
+        }
     }
 
     public static String getNameWithoutPrefix(@NonNull String encryptedName) {

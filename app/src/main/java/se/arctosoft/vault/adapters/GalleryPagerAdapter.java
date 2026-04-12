@@ -322,12 +322,12 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         holder.binding.rLPlay.setOnClickListener(v -> {
             holder.binding.rLPlay.setVisibility(View.GONE);
             holder.binding.playerView.setVisibility(View.VISIBLE);
-            playVideo(context, galleryFile.getUri(), holder, galleryFile.getVersion());
+            playVideo(context, galleryFile.getUri(), holder, galleryFile.getVersion(), galleryViewModel.getVideoPosition(galleryFile.getUri()));
         });
     }
 
     @OptIn(markerClass = UnstableApi.class)
-    private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, int version) {
+    private void playVideo(FragmentActivity context, Uri fileUri, GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, int version, long startFrom) {
         final int pos = holder.getBindingAdapterPosition();
         ExoPlayer player = players.get(pos);
         for (ExoPlayer player1 : players.values()) {
@@ -350,11 +350,16 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                 .build();
         player.setMediaItem(mediaItem);
         holder.binding.playerView.setControllerShowTimeoutMs(1500);
+        player.seekTo(startFrom);
+        ExoPlayer finalPlayer = player;
         player.addListener(new Player.Listener() {
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
                 Player.Listener.super.onIsPlayingChanged(isPlaying);
                 holder.parentBinding.lLButtons.setVisibility(isPlaying ? View.INVISIBLE : View.VISIBLE);
+                if (!isPlaying) {
+                    galleryViewModel.setVideoPosition(finalPlayer.getCurrentPosition(), fileUri);
+                }
             }
 
             @Override

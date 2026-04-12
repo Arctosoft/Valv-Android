@@ -26,8 +26,10 @@ import androidx.annotation.NonNull;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.lifecycle.ViewModel;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.interfaces.IOnAdapterItemChanged;
@@ -47,6 +49,7 @@ public class GalleryViewModel extends ViewModel {
     private boolean inSelectionMode = false;
     private boolean isRootDir = false;
     private boolean isAllFolder = false;
+    private final Map<Uri, Long> videoPosition = new HashMap<>();
     private IOnAdapterItemChanged onAdapterItemChanged;
     private Uri clickedDirectoryUri;
 
@@ -177,6 +180,18 @@ public class GalleryViewModel extends ViewModel {
 
     public boolean isAllFolder() {
         return isAllFolder;
+    }
+
+    public void setVideoPosition(long position, Uri fileUri) {
+        videoPosition.put(fileUri, position);
+    }
+
+    public long getVideoPosition(Uri fileUri) {
+        Long l = videoPosition.get(fileUri);
+        if (l == null) {
+            return 0;
+        }
+        return l;
     }
 
     public boolean isEmptyRootDir() {

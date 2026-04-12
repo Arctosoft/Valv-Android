@@ -90,6 +90,8 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
     static final int FILTER_GIFS = FileType.GIF_V2.type;
     static final int FILTER_VIDEOS = FileType.VIDEO_V2.type;
     static final int FILTER_TEXTS = FileType.TEXT_V2.type;
+    static final int FILTER_HAS_NOTE = 100;
+    static final int FILTER_NO_NOTE = 101;
 
     NavController navController;
     FragmentDirectoryBinding binding;
@@ -325,7 +327,7 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
                 Log.e(TAG, "findFilesIn: not safe, return");
                 return;
             }
-            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(activity, directoryUri, true);
+            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(activity, directoryUri);
 
             activity.runOnUiThread(() -> {
                 setLoading(false);
@@ -497,7 +499,7 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
                     Iterator<GalleryFile> it = galleryFiles.iterator();
                     while (it.hasNext()) {
                         GalleryFile f = it.next();
-                        if (!f.isDirectory() && f.getFileType().type != filter) {
+                        if (!f.isDirectory() && !matchesFilter(f, filter)) {
                             it.remove();
                             hiddenFiles.add(f);
                         }
@@ -510,6 +512,14 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
                 orderBy(this.orderBy);
             }
         }).start();
+    }
+
+    private boolean matchesFilter(GalleryFile file, int filter) {
+        return switch (filter) {
+            case FILTER_HAS_NOTE -> file.hasNote();
+            case FILTER_NO_NOTE -> !file.hasNote();
+            default -> file.getFileType().type == filter;
+        };
     }
 
     @Override
@@ -577,6 +587,18 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
         } else if (id == R.id.filter_text) {
             filterBy(FILTER_TEXTS);
             return true;
+        } else if (id == R.id.filter_has_note) {
+            filterBy(FILTER_HAS_NOTE);
+            return true;
+        } else if (id == R.id.filter_no_note) {
+            filterBy(FILTER_NO_NOTE);
+            return true;
+        } else if (id == R.id.scroll_to_first_note) {
+            scrollToNote(true);
+            return true;
+        } else if (id == R.id.scroll_to_last_note) {
+            scrollToNote(false);
+            return true;
         } else if (id == R.id.toggle_filename) {
             settings.setShowFilenames(galleryGridAdapter.toggleFilenames());
             return true;
@@ -616,6 +638,22 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
         }
 
         return false;
+    }
+
+    private void scrollToNote(boolean first) {
+        List<GalleryFile> galleryFiles = galleryViewModel.getGalleryFiles();
+
+        int start = first ? 0 : galleryFiles.size() - 1;
+        int step = first ? 1 : -1;
+
+        for (int i = start; i >= 0 && i < galleryFiles.size(); i += step) {
+            if (galleryFiles.get(i).hasNote()) {
+                binding.recyclerView.scrollToPosition(i);
+                return;
+            }
+        }
+
+        Toaster.getInstance(requireContext()).showShort(getString(R.string.scroll_to_no_notes_found));
     }
 
     @Override

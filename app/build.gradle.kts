@@ -1,10 +1,11 @@
+import com.android.build.api.dsl.ApplicationExtension
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.about.libraries)
-    alias(libs.plugins.kotlin.android)
 }
 
-android {
+configure<ApplicationExtension> {
     namespace = "se.arctosoft.vault"
     compileSdk = 36
 
@@ -12,8 +13,8 @@ android {
         applicationId = "se.arctosoft.vault"
         minSdk = 28
         targetSdk = 36
-        versionCode = 39
-        versionName = "2.3.1"
+        versionCode = 40
+        versionName = "2.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,15 +35,15 @@ android {
             )
             applicationIdSuffix = ".dev"
         }
-        applicationVariants.all {
-            val variant = this
-            variant.outputs.map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
-                .forEach { output ->
-                    val outputFileName =
-                        "Vault_${variant.versionCode}_${variant.versionName}_${variant.buildType.name}.apk"
-                    output.outputFileName = outputFileName
-                }
-        }
+        //applicationVariants.all {
+        //    val variant = this
+        //    variant.outputs.map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+        //        .forEach { output ->
+        //            val outputFileName =
+        //                "Vault_${variant.versionCode}_${variant.versionName}_${variant.buildType.name}.apk"
+        //            output.outputFileName = outputFileName
+        //        }
+        //}
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -58,9 +59,7 @@ android {
         // Disables dependency metadata when building Android App Bundles.
         includeInBundle = false
     }
-    kotlinOptions {
-        jvmTarget = "21"
-    }
+
 }
 
 dependencies {
@@ -77,6 +76,7 @@ dependencies {
     implementation(libs.preference)
     implementation(libs.activity)
     implementation(libs.biometrics)
+    implementation(libs.documentfile)
 
     implementation(libs.security.crypto)
     implementation(libs.media3.exoplayer)
@@ -90,9 +90,13 @@ dependencies {
 }
 
 aboutLibraries {
-    configPath = "config"
-    // Remove the "generated" timestamp to allow for reproducible builds
-    excludeFields = arrayOf("generated")
+    collect {
+        configPath = file("../config")
+    }
+    export {
+        // Remove the "generated" timestamp to allow for reproducible builds
+        excludeFields.addAll("generated")
+    }
 }
 
 tasks.whenTaskAdded { // https://gist.github.com/obfusk/61046e09cee352ae6dd109911534b12e#fix-proposed-by-linsui-disable-baseline-profiles
