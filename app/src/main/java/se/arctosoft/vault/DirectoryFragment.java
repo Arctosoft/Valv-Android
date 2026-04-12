@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.View;
 
@@ -19,6 +20,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.snackbar.Snackbar;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -176,8 +178,7 @@ public class DirectoryFragment extends DirectoryBaseFragment {
     boolean expandedFabs = false;
 
     private void setClickListeners() {
-        View[] views = new View[]{binding.fabAddFolder, binding.fabImportMedia, binding.fabAddText};
-        boolean rootDir = galleryViewModel.isRootDir();
+        View[] views = new View[]{galleryViewModel.isRootDir() ? binding.fabAddFolder : binding.fabCreateFolder, binding.fabImportMedia, binding.fabAddText};
         binding.fab.setOnClickListener(v -> {
             if (expandedFabs) {
                 binding.fab.animate().rotation(0).setDuration(120).start();
@@ -191,9 +192,7 @@ public class DirectoryFragment extends DirectoryBaseFragment {
                 binding.fab.animate().rotation(-90).setDuration(120).start();
                 for (int i = 0, viewsLength = views.length; i < viewsLength; i++) {
                     View view = views[i];
-                    if (rootDir || view != binding.fabAddFolder) {
-                        view.animate().alpha(1f).setDuration(120).setStartDelay(i * 20).setListener(getShowOnStartListener(view)).start();
-                    }
+                    view.animate().alpha(1f).setDuration(120).setStartDelay(i * 20).setListener(getShowOnStartListener(view)).start();
                 }
                 expandedFabs = true;
             }
@@ -203,6 +202,29 @@ public class DirectoryFragment extends DirectoryBaseFragment {
             binding.fab.performClick();
         });
         FragmentActivity context = requireActivity();
+        binding.fabCreateFolder.setOnClickListener(v -> {
+            Dialogs.showCreateFolderDialog(context, text -> {
+                if (text != null && !text.isBlank()) {
+                    try {
+                        Uri newFolderUri = DocumentsContract.createDocument(
+                                context.getContentResolver(),
+                                galleryViewModel.getCurrentDirectoryUri(),
+                                DocumentsContract.Document.MIME_TYPE_DIR,
+                                text
+                        );
+                        synchronized (LOCK) {
+                            galleryViewModel.getGalleryFiles().add(0, GalleryFile.asDirectory(newFolderUri));
+                            galleryGridAdapter.notifyItemInserted(0);
+                            galleryPagerAdapter.notifyItemInserted(0);
+                            binding.recyclerView.scrollToPosition(0);
+                        }
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+            binding.fab.performClick();
+        });
         binding.fabRemoveFolders.setOnClickListener(v -> {
             if (galleryViewModel.isRootDir()) {
                 onRemoveFolderClicked(context);

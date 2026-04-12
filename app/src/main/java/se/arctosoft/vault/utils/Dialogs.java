@@ -37,6 +37,7 @@ import java.util.List;
 
 import se.arctosoft.vault.BuildConfig;
 import se.arctosoft.vault.R;
+import se.arctosoft.vault.databinding.DialogCreateFolderBinding;
 import se.arctosoft.vault.databinding.DialogEditNoteBinding;
 import se.arctosoft.vault.databinding.DialogImportTextBinding;
 import se.arctosoft.vault.databinding.DialogSetIterationCountBinding;
@@ -204,6 +205,17 @@ public class Dialogs {
                 .setTitle(context.getString(R.string.gallery_import_text_title))
                 .setView(binding.getRoot())
                 .setPositiveButton(isEdit ? R.string.gallery_import_text_overwrite : R.string.gallery_import_text_import, (dialog, which) -> onEdited.onEdited(binding.text.getText().toString()))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    public static void showCreateFolderDialog(FragmentActivity context, IOnEdited onEdited) {
+        DialogCreateFolderBinding binding = DialogCreateFolderBinding.inflate(context.getLayoutInflater(), null, false);
+
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(context.getString(R.string.gallery_create_folder_title))
+                .setView(binding.getRoot())
+                .setPositiveButton(R.string.create, (dialog, which) -> onEdited.onEdited(binding.text.getText().toString()))
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }

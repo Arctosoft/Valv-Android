@@ -20,6 +20,7 @@
     <string name="settings">Settings</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
+    <string name="create">Create</string>
 
     <string name="launcher_title">Vault locked</string>
     <string name="launcher_subtitle">Enter decryption password</string>
@@ -77,6 +78,7 @@
     <string name="gallery_adapter_folder_name">%1$s (%2$d)</string>
     <string name="gallery_adapter_file_name">%1$s (%2$s)</string>
     <string name="gallery_add_folder">Add a folder</string>
+    <string name="gallery_create_folder">Create a folder</string>
     <string name="gallery_import_media">Import media</string>
     <string name="gallery_add_text">Import text</string>
     <string name="gallery_added_folder">Added %1$s</string>
@@ -88,6 +90,8 @@
     <string name="gallery_import_text_import">Import</string>
     <string name="gallery_import_text_overwrite">Overwrite</string>
     <string name="gallery_import_text_hint">Text…</string>
+    <string name="gallery_create_folder_title">Create a new folder</string>
+    <string name="gallery_create_folder_hint">Name of folder</string>
     <string name="gallery_remove_selected_folders">Remove selected folders</string>
     <string name="gallery_delete_selected_files">Delete %1$d selected files</string>
     <string name="gallery_export_selected_files">Export selected</string>

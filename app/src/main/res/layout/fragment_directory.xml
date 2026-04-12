@@ -110,6 +110,18 @@
                     android:visibility="gone"
                     app:icon="@drawable/ic_outline_create_new_folder_24" />
 
+                <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+                    android:id="@+id/fab_create_folder"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="@dimen/fab_margin"
+                    android:layout_marginBottom="16dp"
+                    android:alpha="0"
+                    android:text="@string/gallery_create_folder"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_outline_create_new_folder_24" />
+
             </androidx.appcompat.widget.LinearLayoutCompat>
 
         </ScrollView>
