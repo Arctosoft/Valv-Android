@@ -62,7 +62,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
         SwitchPreferenceCompat useDiskCache = findPreference(Settings.PREF_ENCRYPTION_USE_DISK_CACHE);
         SwitchPreferenceCompat secure = findPreference(Settings.PREF_APP_SECURE);
         SwitchPreferenceCompat deleteByDefault = findPreference(Settings.PREF_ENCRYPTION_DELETE_BY_DEFAULT);
-        SwitchPreferenceCompat showDecryptableOnly = findPreference(Settings.PREF_ENCRYPTION_DISPLAY_DECRYPTABLE_ONLY);
         SwitchPreferenceCompat exitOnLock = findPreference(Settings.PREF_APP_EXIT_ON_LOCK);
 
         FragmentActivity activity = requireActivity();
@@ -147,11 +146,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
 
         deleteByDefault.setOnPreferenceChangeListener((preference, newValue) -> {
             settings.setDeleteByDefault((boolean) newValue);
-            return true;
-        });
-
-        showDecryptableOnly.setOnPreferenceChangeListener((preference, newValue) -> {
-            settings.setDisplayDecryptableFilesOnly((boolean) newValue);
             return true;
         });
 

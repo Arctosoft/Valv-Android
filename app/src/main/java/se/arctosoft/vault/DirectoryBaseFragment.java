@@ -325,7 +325,7 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
                 Log.e(TAG, "findFilesIn: not safe, return");
                 return;
             }
-            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(activity, directoryUri, true);
+            List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(activity, directoryUri);
 
             activity.runOnUiThread(() -> {
                 setLoading(false);

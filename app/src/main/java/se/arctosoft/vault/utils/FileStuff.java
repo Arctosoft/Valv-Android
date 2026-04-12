@@ -19,7 +19,6 @@
 package se.arctosoft.vault.utils;
 
 import android.content.ClipData;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -31,32 +30,25 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
-import org.json.JSONException;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.GeneralSecurityException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Queue;
 
 import se.arctosoft.vault.data.CursorFile;
 import se.arctosoft.vault.data.GalleryFile;
-import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.encryption.Encryption;
-import se.arctosoft.vault.exception.InvalidPasswordException;
 
 public class FileStuff {
     private static final String TAG = "FileStuff";
 
     @NonNull
-    public static List<GalleryFile> getFilesInFolder(Context context, Uri pickedDir, boolean checkDecryptable) {
+    public static List<GalleryFile> getFilesInFolder(Context context, Uri pickedDir) {
         //Log.e(TAG, "getFilesInFolder: " + pickedDir);
         Uri realUri = DocumentsContract.buildChildDocumentsUriUsingTree(pickedDir, DocumentsContract.getDocumentId(pickedDir));
         List<CursorFile> files = new ArrayList<>();
@@ -86,51 +78,7 @@ public class FileStuff {
         List<GalleryFile> encryptedFilesInFolder = getEncryptedFilesInFolder(files, context);
         Collections.sort(encryptedFilesInFolder);
 
-        if (checkDecryptable && Settings.getInstance(context).displayDecryptableFilesOnly()) {
-            long start = System.currentTimeMillis();
-            List<GalleryFile> readableFiles = new ArrayList<>();
-            final Queue<GalleryFile> fileQueue = new ArrayDeque<>(encryptedFilesInFolder);
-            encryptedFilesInFolder.clear();
-            List<Thread> threads = new ArrayList<>();
-            ContentResolver contentResolver = context.getContentResolver();
-            Password password = Password.getInstance();
-            for (int i = 0; i < 4; i++) {
-                Thread t = new Thread(() -> {
-                    GalleryFile galleryFile;
-                    while ((galleryFile = fileQueue.poll()) != null) {
-                        if (galleryFile.isDirectory()) {
-                            readableFiles.add(galleryFile);
-                            continue;
-                        }
-                        Encryption.Streams streams = null;
-                        try {
-                            streams = Encryption.getCipherInputStream(contentResolver.openInputStream(galleryFile.getUri()), password.getPassword(), false, galleryFile.getVersion());
-                            galleryFile.setOriginalName(streams.getOriginalFileName());
-                            readableFiles.add(galleryFile);
-                        } catch (IOException | GeneralSecurityException | InvalidPasswordException |
-                                 JSONException ignored) {
-                        } finally {
-                            if (streams != null) {
-                                streams.close();
-                            }
-                        }
-                    }
-                });
-                threads.add(t);
-                t.start();
-            }
-            for (Thread t : threads) {
-                try {
-                    t.join();
-                } catch (InterruptedException e) {
-                    return readableFiles;
-                }
-            }
-            Log.e(TAG, "getFilesInFolder: took " + (System.currentTimeMillis() - start) + " ms");
-            return readableFiles;
-        } else {
-            return encryptedFilesInFolder;
-        }
+        return encryptedFilesInFolder;
     }
 
     @NonNull
