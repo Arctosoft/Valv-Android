@@ -59,6 +59,7 @@ import java.util.List;
 
 import se.arctosoft.vault.adapters.GalleryGridAdapter;
 import se.arctosoft.vault.adapters.GalleryPagerAdapter;
+import se.arctosoft.vault.data.FileType;
 import se.arctosoft.vault.data.GalleryFile;
 import se.arctosoft.vault.data.Password;
 import se.arctosoft.vault.databinding.FragmentDirectoryBinding;
@@ -85,10 +86,10 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
     static final int ORDER_BY_SMALLEST = 3;
     static final int ORDER_BY_RANDOM = 4;
     static final int FILTER_ALL = 0;
-    static final int FILTER_IMAGES = 1;
-    static final int FILTER_GIFS = 2;
-    static final int FILTER_VIDEOS = 3;
-    static final int FILTER_TEXTS = 4;
+    static final int FILTER_IMAGES = FileType.IMAGE_V2.type;
+    static final int FILTER_GIFS = FileType.GIF_V2.type;
+    static final int FILTER_VIDEOS = FileType.VIDEO_V2.type;
+    static final int FILTER_TEXTS = FileType.TEXT_V2.type;
     static final int FILTER_HAS_NOTE = 100;
     static final int FILTER_NO_NOTE = 101;
 
