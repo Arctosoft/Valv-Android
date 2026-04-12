@@ -1,0 +1,14 @@
+<i>Valv</i> ist eine verschlüsselte Galerie, die Ihre vertraulichen Fotos, GIFs und Videos sicher auf Ihrem Gerät speichert. Wählen Sie ein Passwort oder einen PIN-Code und schützen Sie Ihre Galerie. Valve verschlüsselt Ihre Dateien mit der schnellen ChaCha20-Stream-Chiffre.
+
+<br><b>Eigenschaften:</b>
+
+* Unterstützt Bilder, GIFs und Videos
+* Organisieren Sie Ihre sichere Galerie mit Ordnern
+* Einfaches Entschlüsseln und Exportieren Ihrer Fotos zurück in Ihre Galerie
+* Die App benötigt keine Berechtigungen
+* Verschlüsselte Dateien werden auf der Festplatte gespeichert, was einfache Backups und Übertragungen zwischen Geräten ermöglicht
+* Unterstützt mehrere Tresore durch die Verwendung unterschiedlicher Passwörter
+
+<b>Encryption:</b>
+
+Die Dateien werden mit ChaCha20 verschlüsselt und die Schlüssel werden mit PBKDF2 und HMAC-SHA512 abgeleitet.
