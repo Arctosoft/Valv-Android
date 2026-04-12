@@ -228,8 +228,8 @@ public class Dialogs {
             public void afterTextChanged(Editable s) {
                 try {
                     int ic = Integer.parseInt(s.toString());
-                    if (ic > 500000) {
-                        binding.text.setText(String.valueOf(500000));
+                    if (ic > 2000000) {
+                        binding.text.setText(String.valueOf(2000000));
                     }
                 } catch (NumberFormatException ignored) {
                 }

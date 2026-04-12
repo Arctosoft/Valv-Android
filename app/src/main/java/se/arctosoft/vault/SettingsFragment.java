@@ -116,7 +116,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements MenuPr
             Dialogs.showSetIterationCountDialog(activity, settings.getIterationCount() + "", text -> {
                 try {
                     int ic = Integer.parseInt(text);
-                    if (ic < 20000 || ic > 500000) {
+                    if (ic < 20000 || ic > 2000000) {
                         Toaster.getInstance(activity).showLong(getString(R.string.settings_iteration_count_hint));
                         return;
                     }
