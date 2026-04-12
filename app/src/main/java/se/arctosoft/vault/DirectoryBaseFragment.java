@@ -577,6 +577,12 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
         } else if (id == R.id.filter_text) {
             filterBy(FILTER_TEXTS);
             return true;
+        } else if (id == R.id.scroll_to_first_note) {
+            scrollToNote(true);
+            return true;
+        } else if (id == R.id.scroll_to_last_note) {
+            scrollToNote(false);
+            return true;
         } else if (id == R.id.toggle_filename) {
             settings.setShowFilenames(galleryGridAdapter.toggleFilenames());
             return true;
@@ -616,6 +622,22 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
         }
 
         return false;
+    }
+
+    private void scrollToNote(boolean first) {
+        List<GalleryFile> galleryFiles = galleryViewModel.getGalleryFiles();
+
+        int start = first ? 0 : galleryFiles.size() - 1;
+        int step = first ? 1 : -1;
+
+        for (int i = start; i >= 0 && i < galleryFiles.size(); i += step) {
+            if (galleryFiles.get(i).hasNote()) {
+                binding.recyclerView.scrollToPosition(i);
+                return;
+            }
+        }
+
+        Toaster.getInstance(requireContext()).showShort(getString(R.string.scroll_to_no_notes_found));
     }
 
     @Override

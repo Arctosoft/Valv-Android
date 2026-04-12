@@ -55,6 +55,20 @@
         </menu>
     </item>
     <item
+        android:id="@+id/scroll_to"
+        android:icon="@drawable/round_find_in_page_24"
+        android:title="@string/menu_scroll_to"
+        app:showAsAction="ifRoom">
+        <menu>
+            <item
+                android:id="@+id/scroll_to_first_note"
+                android:title="@string/menu_scroll_to_first_note" />
+            <item
+                android:id="@+id/scroll_to_last_note"
+                android:title="@string/menu_scroll_to_last_note" />
+        </menu>
+    </item>
+    <item
         android:id="@+id/toggle_filename"
         android:icon="@drawable/ic_round_view_compact_24"
         android:title="@string/menu_toggle_filename"
