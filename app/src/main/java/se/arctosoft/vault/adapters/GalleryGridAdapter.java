@@ -22,6 +22,7 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.icu.text.SimpleDateFormat;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -62,6 +63,7 @@ import se.arctosoft.vault.fastscroll.views.FastScrollRecyclerView;
 import se.arctosoft.vault.interfaces.IOnFileClicked;
 import se.arctosoft.vault.interfaces.IOnFileDeleted;
 import se.arctosoft.vault.interfaces.IOnSelectionModeChanged;
+import se.arctosoft.vault.utils.Dialogs;
 import se.arctosoft.vault.utils.GlideStuff;
 import se.arctosoft.vault.utils.Settings;
 import se.arctosoft.vault.utils.StringStuff;
@@ -294,7 +296,25 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
             }
         });
         holder.binding.layout.setOnLongClickListener(v -> {
-            if (!galleryFile.isAllFolder() && (isRootDir || !galleryFile.isDirectory())) {
+            if (!galleryFile.isAllFolder() && galleryFile.isDirectory() && galleryFile.getFindFilesInDirectoryStatus() == GalleryFile.FIND_FILES_DONE
+                    && galleryFile.getFileCount() == 0) {
+                Dialogs.showConfirmationDialog(context, context.getString(R.string.gallery_delete_folder_title), context.getString(R.string.gallery_delete_folder_message), (dialogInterface, i) -> {
+                    try {
+                        int pos = galleryViewModel.getGalleryFiles().indexOf(galleryFile);
+                        if (pos != -1) {
+                            DocumentsContract.deleteDocument(context.getContentResolver(), galleryFile.getUri());
+                            synchronized (LOCK) {
+                                galleryViewModel.getGalleryFiles().remove(pos);
+                                notifyItemRemoved(pos);
+                                onFileDeleted.onFileDeleted(pos);
+                            }
+                        }
+                    } catch (Exception e) {
+                        Dialogs.showTextDialog(context, context.getString(R.string.gallery_delete_folder_error), e.getMessage());
+                        e.printStackTrace();
+                    }
+                });
+            } else if (!galleryFile.isAllFolder() && (isRootDir || !galleryFile.isDirectory())) {
                 int pos = holder.getBindingAdapterPosition();
                 if (!selectMode) {
                     setSelectMode(true);

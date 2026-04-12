@@ -94,6 +94,9 @@
     <string name="gallery_create_folder_hint">Name of folder</string>
     <string name="gallery_remove_selected_folders">Remove selected folders</string>
     <string name="gallery_delete_selected_files">Delete %1$d selected files</string>
+    <string name="gallery_delete_folder_title">Delete folder?</string>
+    <string name="gallery_delete_folder_message">Do you want to delete this folder from disk? All files in it will be deleted (including non Valv files that may not be visible in the app).</string>
+    <string name="gallery_delete_folder_error">Failed to delete</string>
     <string name="gallery_export_selected_files">Export selected</string>
     <string name="gallery_copy_selected_files">Copy to</string>
     <string name="gallery_move_selected_files">Move to</string>
