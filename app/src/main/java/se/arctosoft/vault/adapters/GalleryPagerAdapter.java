@@ -273,6 +273,9 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                     } else if (p.type() == GalleryGridAdapter.Payload.TYPE_LOADED_NOTE) {
                         loadNote(holder, weakReference.get(), galleryFiles.get(position));
                         found = true;
+                    } else if (p.type() == GalleryGridAdapter.Payload.TYPE_RELEASE_VIDEO && holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder h) {
+                        showVideoReady(h);
+                        found = true;
                     }
                 }
             }
@@ -324,6 +327,11 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             holder.binding.playerView.setVisibility(View.VISIBLE);
             playVideo(context, galleryFile.getUri(), holder, galleryFile.getVersion(), galleryViewModel.getVideoPosition(galleryFile.getUri()));
         });
+    }
+
+    private void showVideoReady(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
+        holder.binding.rLPlay.setVisibility(View.VISIBLE);
+        holder.binding.playerView.setVisibility(View.GONE);
     }
 
     @OptIn(markerClass = UnstableApi.class)
@@ -797,5 +805,11 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             pausePlayers();
         }
         setFullscreen(weakReference.get(), false);
+    }
+
+    @OptIn(markerClass = UnstableApi.class)
+    public boolean videoIsLoaded(int pos) {
+        ExoPlayer player = players.get(pos);
+        return player != null && !player.isReleased();
     }
 }
