@@ -1,0 +1,8 @@
+* Reduced folder loading times
+* Remember video playback position, e.g. after screen rotation
+* Added a button to create a new folder in the current directory
+* Long press on an empty folder to delete it
+* Increased maximum iteration count to 2 million
+* Menu option to scroll to the first/last file with a note
+* Filter files that have / don't have a note
+* Removed "Display only decryptable files" setting
