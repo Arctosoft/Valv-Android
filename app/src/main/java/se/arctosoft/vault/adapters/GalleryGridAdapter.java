@@ -95,11 +95,12 @@ public class GalleryGridAdapter extends RecyclerView.Adapter<GalleryGridViewHold
         return simpleDateFormat.format(new Date(galleryFiles.get(position).getLastModified()));
     }
 
-    record Payload(int type) {
+    public record Payload(int type) {
         static final int TYPE_SELECT_ALL = 0;
         static final int TYPE_TOGGLE_FILENAME = 1;
         static final int TYPE_NEW_FILENAME = 2;
         static final int TYPE_LOADED_NOTE = 3;
+       public static final int TYPE_RELEASE_VIDEO = 4;
     }
 
     public GalleryGridAdapter(FragmentActivity context, @NonNull List<GalleryFile> galleryFiles, boolean showFileNames, boolean isRootDir, GalleryViewModel galleryViewModel) {

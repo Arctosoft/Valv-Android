@@ -379,6 +379,19 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
                 super.onPageSelected(position);
                 binding.recyclerView.scrollToPosition(position);
                 galleryViewModel.setCurrentPosition(position);
+
+                int prev = position - 1;
+                int next = position + 1;
+                List<GalleryFile> galleryFiles = galleryViewModel.getGalleryFiles();
+                int size = galleryFiles.size();
+
+                if (prev >= 0 && prev < size && galleryFiles.get(prev).isVideo() && galleryPagerAdapter.videoIsLoaded(prev)) {
+                    galleryPagerAdapter.notifyItemChanged(prev, new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_RELEASE_VIDEO));
+                }
+                if (next >= 1 && next < size && galleryFiles.get(next).isVideo() && galleryPagerAdapter.videoIsLoaded(next)) {
+                    galleryPagerAdapter.notifyItemChanged(next, new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_RELEASE_VIDEO));
+                }
+                galleryPagerAdapter.releasePlayers();
             }
         });
         binding.viewPager.postDelayed(() -> {

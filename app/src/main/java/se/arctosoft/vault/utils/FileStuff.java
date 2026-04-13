@@ -18,9 +18,7 @@
 
 package se.arctosoft.vault.utils;
 
-import android.content.ClipData;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
@@ -51,7 +49,7 @@ public class FileStuff {
 
     @NonNull
     public static List<GalleryFile> getFilesInFolder(Context context, Uri pickedDir) {
-        long start = System.currentTimeMillis();
+        //long start = System.currentTimeMillis();
         //Log.e(TAG, "getFilesInFolder: " + pickedDir);
         Uri realUri = DocumentsContract.buildChildDocumentsUriUsingTree(pickedDir, DocumentsContract.getDocumentId(pickedDir));
         List<CursorFile> files = new ArrayList<>();
@@ -68,7 +66,7 @@ public class FileStuff {
             }
             return new ArrayList<>();
         }
-        Log.e(TAG, "getFilesInFolder 1: " + (System.currentTimeMillis() - start));
+        //Log.e(TAG, "getFilesInFolder 1: " + (System.currentTimeMillis() - start));
         do {
             Uri uri = DocumentsContract.buildDocumentUriUsingTree(realUri, c.getString(0));
             String name = c.getString(1);
@@ -84,9 +82,9 @@ public class FileStuff {
         } while (c.moveToNext());
         c.close();
         Collections.sort(files);
-        Log.e(TAG, "getFilesInFolder 2: " + (System.currentTimeMillis() - start));
+        //Log.e(TAG, "getFilesInFolder 2: " + (System.currentTimeMillis() - start));
         List<GalleryFile> encryptedFilesInFolder = getEncryptedFilesInFolder(files);
-        Log.e(TAG, "getFilesInFolder 3: " + (System.currentTimeMillis() - start));
+        //Log.e(TAG, "getFilesInFolder 3: " + (System.currentTimeMillis() - start));
         Collections.sort(encryptedFilesInFolder);
 
         return encryptedFilesInFolder;
@@ -106,8 +104,14 @@ public class FileStuff {
                 String nameWithoutPrefix = FileStuff.getNameWithoutPrefix(name);
                 if (name.endsWith(Encryption.SUFFIX_THUMB) || name.startsWith(Encryption.PREFIX_THUMB)) {
                     thumbsMap.put(nameWithoutPrefix, file);
-                } else if (name.endsWith(Encryption.SUFFIX_NOTE_FILE) || name.startsWith(Encryption.PREFIX_NOTE_FILE)) {
+                } else if (name.endsWith(Encryption.SUFFIX_NOTE_FILE)) {
                     notesMap.put(nameWithoutPrefix, file);
+                } else if (name.startsWith(Encryption.PREFIX_NOTE_FILE)) { // V1 note
+                    if (name.endsWith(".txt")) {
+                        notesMap.put(nameWithoutPrefix.substring(0, nameWithoutPrefix.length() - 4), file);
+                    } else {
+                        notesMap.put(nameWithoutPrefix, file);
+                    }
                 } else {
                     file.setNameWithoutPrefix(nameWithoutPrefix);
                     documentFiles.add(file);
@@ -131,25 +135,6 @@ public class FileStuff {
             galleryFiles.add(GalleryFile.asFile(file, foundThumb, foundNote));
         }
         return galleryFiles;
-    }
-
-    public static Intent getPickFilesIntent(String mimeType) {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType(mimeType);
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        return intent;
-    }
-
-    @NonNull
-    public static List<Uri> uriListFromClipData(@Nullable ClipData clipData) {
-        List<Uri> uris = new ArrayList<>();
-        if (clipData != null) {
-            for (int i = 0; i < clipData.getItemCount(); i++) {
-                uris.add(clipData.getItemAt(i).getUri());
-            }
-        }
-        return uris;
     }
 
     public static String getFilenameWithPathFromUri(@NonNull Uri uri) {
