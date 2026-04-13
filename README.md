@@ -20,6 +20,9 @@ Files are encrypted using ChaCha20 and keys are derived using PBKDF2 with HMAC-S
 [<img src="https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png" 
       alt="Download from Google Play" 
       height="80">](https://play.google.com/store/apps/details?id=se.arctosoft.vault)
+[<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" 
+      alt="Download from IzzyOnDroid" 
+      height="80">](https://apt.izzysoft.de/fdroid/index/apk/se.arctosoft.vault)
 
 Or download the latest APK from the [Releases Section](https://github.com/Arctosoft/Valv-Android/releases/latest).
 
