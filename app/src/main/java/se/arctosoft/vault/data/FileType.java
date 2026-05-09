@@ -31,13 +31,18 @@ public enum FileType {
     VIDEO_V1(3, ".mp4", Encryption.PREFIX_VIDEO_FILE, 1),
     VIDEO_V2(3, ".mp4", Encryption.SUFFIX_VIDEO_FILE, 2),
     TEXT_V1(4, ".txt", Encryption.PREFIX_TEXT_FILE, 1),
-    TEXT_V2(4, ".txt", Encryption.SUFFIX_TEXT_FILE, 2);
+    TEXT_V2(4, ".txt", Encryption.SUFFIX_TEXT_FILE, 2),
+
+    // --- NEW: Audio Types ---
+    AUDIO_V1(5, ".mp3", ".aud-", 1),
+    AUDIO_V2(5, ".mp3", "-aud", 2);
 
     public static final int TYPE_DIRECTORY = 0;
     public static final int TYPE_IMAGE = 1;
     public static final int TYPE_GIF = 2;
     public static final int TYPE_VIDEO = 3;
     public static final int TYPE_TEXT = 4;
+    public static final int TYPE_AUDIO = 5; // The constant we needed!
 
     public final String extension, suffixPrefix;
     public final int type, version;
@@ -66,6 +71,13 @@ public enum FileType {
             return TEXT_V1;
         } else if (name.endsWith(Encryption.SUFFIX_TEXT_FILE)) {
             return TEXT_V2;
+
+            // --- NEW: Audio Name Parsing ---
+        } else if (name.startsWith(".aud-")) {
+            return AUDIO_V1;
+        } else if (name.endsWith("-aud")) {
+            return AUDIO_V2;
+
         } else {
             return DIRECTORY;
         }
@@ -83,12 +95,16 @@ public enum FileType {
         return this == GIF_V1 || this == GIF_V2;
     }
 
-
     public boolean isVideo() {
         return this == VIDEO_V1 || this == VIDEO_V2;
     }
 
     public boolean isText() {
         return this == TEXT_V1 || this == TEXT_V2;
+    }
+
+    // --- NEW: Audio Helper Method ---
+    public boolean isAudio() {
+        return this == AUDIO_V1 || this == AUDIO_V2;
     }
 }

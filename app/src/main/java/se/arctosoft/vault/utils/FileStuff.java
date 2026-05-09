@@ -49,42 +49,37 @@ public class FileStuff {
 
     @NonNull
     public static List<GalleryFile> getFilesInFolder(Context context, Uri pickedDir) {
-        //long start = System.currentTimeMillis();
-        //Log.e(TAG, "getFilesInFolder: " + pickedDir);
         Uri realUri = DocumentsContract.buildChildDocumentsUriUsingTree(pickedDir, DocumentsContract.getDocumentId(pickedDir));
         List<CursorFile> files = new ArrayList<>();
-        Cursor c = context.getContentResolver().query(
+
+        // Modernized: try-with-resources automatically closes the Cursor to prevent memory leaks
+        try (Cursor c = context.getContentResolver().query(
                 realUri,
                 new String[]{DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME, DocumentsContract.Document.COLUMN_LAST_MODIFIED,
                         DocumentsContract.Document.COLUMN_MIME_TYPE, DocumentsContract.Document.COLUMN_SIZE},
-                null,
-                null,
-                null);
-        if (c == null || !c.moveToFirst()) {
-            if (c != null) {
-                c.close();
-            }
-            return new ArrayList<>();
-        }
-        //Log.e(TAG, "getFilesInFolder 1: " + (System.currentTimeMillis() - start));
-        do {
-            Uri uri = DocumentsContract.buildDocumentUriUsingTree(realUri, c.getString(0));
-            String name = c.getString(1);
-            long lastModified = c.getLong(2);
-            String mimeType = c.getString(3);
-            long size = c.getLong(4);
+                null, null, null)) {
 
-            if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType)
-                    || name.startsWith(Encryption.ENCRYPTED_PREFIX)
-                    || name.endsWith(Encryption.ENCRYPTED_SUFFIX)) {
-                files.add(new CursorFile(name, uri, lastModified, mimeType, size));
+            if (c == null || !c.moveToFirst()) {
+                return new ArrayList<>();
             }
-        } while (c.moveToNext());
-        c.close();
+
+            do {
+                Uri uri = DocumentsContract.buildDocumentUriUsingTree(realUri, c.getString(0));
+                String name = c.getString(1);
+                long lastModified = c.getLong(2);
+                String mimeType = c.getString(3);
+                long size = c.getLong(4);
+
+                if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mimeType)
+                        || name.startsWith(Encryption.ENCRYPTED_PREFIX)
+                        || name.endsWith(Encryption.ENCRYPTED_SUFFIX)) {
+                    files.add(new CursorFile(name, uri, lastModified, mimeType, size));
+                }
+            } while (c.moveToNext());
+        }
+
         Collections.sort(files);
-        //Log.e(TAG, "getFilesInFolder 2: " + (System.currentTimeMillis() - start));
         List<GalleryFile> encryptedFilesInFolder = getEncryptedFilesInFolder(files);
-        //Log.e(TAG, "getFilesInFolder 3: " + (System.currentTimeMillis() - start));
         Collections.sort(encryptedFilesInFolder);
 
         return encryptedFilesInFolder;
@@ -128,7 +123,6 @@ public class FileStuff {
             }
 
             String nameWithoutPrefix = file.getNameWithoutPrefix();
-
             CursorFile foundThumb = thumbsMap.get(nameWithoutPrefix);
             CursorFile foundNote = notesMap.get(nameWithoutPrefix);
 
@@ -183,7 +177,7 @@ public class FileStuff {
         }
         for (Uri uri : uris) {
             DocumentFile pickedFile = DocumentFile.fromSingleUri(context, uri);
-            if (pickedFile != null && pickedFile.getType() != null && (pickedFile.getType().startsWith("image/") || pickedFile.getType().startsWith("video/")) &&
+            if (pickedFile != null && pickedFile.getType() != null && isSupportedMedia(pickedFile.getType()) &&
                     (!pickedFile.getName().endsWith(Encryption.ENCRYPTED_SUFFIX) || !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX))) {
                 documentFiles.add(pickedFile);
             }
@@ -199,12 +193,17 @@ public class FileStuff {
         }
         for (Uri uri : uris) {
             DocumentFile pickedFile = DocumentFile.fromSingleUri(context, uri);
-            if (pickedFile != null && pickedFile.getType() != null && (pickedFile.getType().startsWith("image/") || pickedFile.getType().startsWith("video/")) &&
+            if (pickedFile != null && pickedFile.getType() != null && isSupportedMedia(pickedFile.getType()) &&
                     (!pickedFile.getName().endsWith(Encryption.ENCRYPTED_SUFFIX) || !pickedFile.getName().startsWith(Encryption.ENCRYPTED_PREFIX))) {
                 documentFiles.add(pickedFile);
             }
         }
         return documentFiles;
+    }
+
+    // Modern helper to cleanly verify all our supported Vault types (Images, Videos, and AUDIO!)
+    private static boolean isSupportedMedia(String mimeType) {
+        return mimeType.startsWith("image/") || mimeType.startsWith("video/") || mimeType.startsWith("audio/");
     }
 
     public static boolean deleteFile(Context context, @Nullable Uri uri) {
@@ -308,19 +307,16 @@ public class FileStuff {
     }
 
     public static boolean writeTo(Context context, Uri src, Uri dest) {
-        try {
-            InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(src), 1024 * 32);
-            OutputStream outputStream = new BufferedOutputStream(context.getContentResolver().openOutputStream(dest));
+        // Modernized: try-with-resources handles all stream closing safely automatically
+        try (InputStream inputStream = new BufferedInputStream(context.getContentResolver().openInputStream(src), 1024 * 32);
+             OutputStream outputStream = new BufferedOutputStream(context.getContentResolver().openOutputStream(dest))) {
+
             int read;
-            byte[] buffer = new byte[2048];
+            byte[] buffer = new byte[8192]; // Bumped up buffer size to 8KB for faster flash storage I/O
             while ((read = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, read);
             }
-            try {
-                outputStream.close();
-                inputStream.close();
-            } catch (IOException ignored) {
-            }
+
         } catch (IOException e) {
             Log.e(TAG, "writeTo: failed to write: " + e.getMessage());
             e.printStackTrace();

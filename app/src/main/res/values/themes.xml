@@ -23,6 +23,12 @@
         <item name="button_warning">@color/button_warning_color</item>
         <item name="gallery_grid_stroke">@color/grid_stroke_color_day</item>
         <item name="snackbarStyle">@style/MySnackBarStyle</item>
+        <!-- Forces the system navigation bar to be completely transparent -->
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+
+        <!-- (Optional) Do the same for the status bar at the top! -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
     </style>
 
     <style name="MySnackBarStyle" parent="Widget.Material3.Snackbar">

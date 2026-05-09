@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 75% Opacity Dark surface for the frosted glass look -->
+    <solid android:color="#C0000000" />
+
+    <!-- 100dp creates the perfect round pill shape -->
+    <corners android:radius="100dp" />
+
+    <!-- A very subtle, semi-transparent white border to give it a glass edge reflection -->
+    <stroke
+        android:width="1dp"
+        android:color="#33FFFFFF" />
+</shape>

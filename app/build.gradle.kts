@@ -11,10 +11,10 @@ configure<ApplicationExtension> {
 
     defaultConfig {
         applicationId = "se.arctosoft.vault"
-        minSdk = 28
+        minSdk = 30
         targetSdk = 36
         versionCode = 41
-        versionName = "2.4.1"
+        versionName = "2.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.about.libraries)
     implementation(libs.about.libraries.compose)
+    implementation("androidx.palette:palette:1.0.0")
 }
 
 aboutLibraries {

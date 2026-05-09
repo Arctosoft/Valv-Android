@@ -25,8 +25,10 @@
                 app:argType="string"
                 app:nullable="true" />
         </action>
+
+        <!-- FIXED: Updated ID to match the Java code -->
         <action
-            android:id="@+id/action_directory_to_directory_all"
+            android:id="@+id/action_directory_to_directoryAll"
             app:destination="@id/directory_all" />
     </fragment>
 
@@ -35,6 +37,7 @@
         android:name="se.arctosoft.vault.DirectoryAllFragment"
         android:label="@string/gallery_all"
         tools:layout="@layout/fragment_directory">
+        <!-- Kept the settings action for the All files view -->
         <action
             android:id="@+id/action_directory_to_settings"
             app:destination="@id/settings" />

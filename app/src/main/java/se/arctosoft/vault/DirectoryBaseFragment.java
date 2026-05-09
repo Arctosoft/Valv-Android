@@ -347,7 +347,11 @@ public abstract class DirectoryBaseFragment extends Fragment implements MenuProv
 
     void setupGrid() {
         initFastScroll();
-        int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 3;
+        // Change the portrait span count from 3 to 4.
+        // You can also adjust the landscape (6) if you want it even wider when rotated!
+        int spanCount = getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE ? 6 : 4;
+
+        // Notice it uses StaggeredGridLayoutManager here
         RecyclerView.LayoutManager layoutManager = new StaggeredGridLayoutManager(spanCount, RecyclerView.VERTICAL);
         binding.recyclerView.setLayoutManager(layoutManager);
         galleryGridAdapter = new GalleryGridAdapter(requireActivity(), galleryViewModel.getGalleryFiles(), settings.showFilenames(), galleryViewModel.isRootDir(), galleryViewModel);

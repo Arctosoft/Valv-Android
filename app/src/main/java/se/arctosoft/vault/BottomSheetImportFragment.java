@@ -36,6 +36,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
@@ -67,13 +68,7 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
             DocumentFile pickedDirectory = DocumentFile.fromTreeUri(context, uri);
             if (pickedDirectory != null) {
                 context.getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                long bytes = 0;
-                for (DocumentFile documentFile : importViewModel.getFilesToImport()) {
-                    bytes += documentFile.length();
-                }
-                for (GalleryFile galleryFile : importViewModel.getTextToImport()) {
-                    bytes += galleryFile.getSize();
-                }
+                long bytes = importViewModel.getTotalBytes();
                 doImport(bytes, uri, FileStuff.getFilenameWithPathFromUri(uri), binding.checkboxDeleteAfter.isChecked(), pickedDirectory,
                         importViewModel.getCurrentDirectoryUri() != null && uri.toString().equals(importViewModel.getCurrentDirectoryUri().toString()));
             }
@@ -83,48 +78,93 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         binding = BottomSheetImportBinding.inflate(inflater, container, false);
-
         return binding.getRoot();
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // --- UI POLISH: Force the Bottom Sheet to open fully expanded and gracefully ---
+        BottomSheetDialog dialog = (BottomSheetDialog) getDialog();
+        if (dialog != null) {
+            dialog.getBehavior().setState(BottomSheetBehavior.STATE_EXPANDED);
+            dialog.getBehavior().setSkipCollapsed(true);
+        }
+
         importViewModel = new ViewModelProvider(requireParentFragment()).get(ImportViewModel.class);
         List<DocumentFile> filesToImport = importViewModel.getFilesToImport();
         List<GalleryFile> textToImport = importViewModel.getTextToImport();
-        final int totalSize = filesToImport.size() + textToImport.size();
+
         if (filesToImport.isEmpty() && textToImport.isEmpty()) {
             dismiss();
             return;
         }
+
         long bytes = 0;
-        for (DocumentFile documentFile : filesToImport) {
-            bytes += documentFile.length();
-        }
-        for (GalleryFile galleryFile : textToImport) {
-            bytes += galleryFile.getSize();
-        }
+        for (DocumentFile documentFile : filesToImport) bytes += documentFile.length();
+        for (GalleryFile galleryFile : textToImport) bytes += galleryFile.getSize();
         importViewModel.setTotalBytes(bytes);
 
         Context context = requireContext();
         Settings settings = Settings.getInstance(context);
-        List<Uri> directories = settings.getGalleryDirectoriesAsUri(false);
-        List<String> names = new ArrayList<>(directories.size() + 1);
-
         final boolean hasUri = importViewModel.getCurrentDirectoryUri() != null;
-        binding.title.setText(getResources().getQuantityString(R.plurals.import_modal_title, totalSize, totalSize, StringStuff.bytesToReadableString(bytes)));
-        String currentName = hasUri ? FileStuff.getFilenameWithPathFromUri(importViewModel.getCurrentDirectoryUri()) : null;
-        if (hasUri) {
-            names.add(currentName);
+
+        // --- OBSERVERS: Attach listeners immediately for smooth UI updates ---
+        importViewModel.setOnImportDoneBottomSheet((destinationUri, sameDirectory, importedCount, failedCount, thumbErrorCount) -> {
+            clearViewModel();
+            dismiss();
+        });
+
+        // Best Practice: Use getViewLifecycleOwner() instead of 'this'
+        importViewModel.getProgressData().observe(getViewLifecycleOwner(), progressData -> {
+            if (progressData != null) {
+                binding.progress.setProgressCompat(progressData.getProgressPercentage(), true);
+                binding.progressText.setText(getString(R.string.import_modal_importing, progressData.getProgress(), progressData.getTotal(), progressData.getDoneMB(), progressData.getTotalMB()));
+            } else {
+                binding.progress.setProgressCompat(0, false);
+            }
+        });
+
+        // --- NEW UX FEATURE: FRICTIONLESS AUTO-IMPORT ---
+        // If we are already inside a specific folder, bypass the menu and start importing instantly!
+        if (hasUri && !importViewModel.isImporting()) {
+            boolean deleteAfter = settings.isDeleteByDefault();
+            if (importViewModel.isFromShare() || (filesToImport.isEmpty() && !textToImport.isEmpty())) {
+                deleteAfter = false;
+            }
+
+            String folderName = FileStuff.getFilenameWithPathFromUri(importViewModel.getCurrentDirectoryUri());
+            DocumentFile destinationDirectory = importViewModel.getCurrentDocumentDirectory();
+
+            // Hide the choice menu entirely so it doesn't flash on screen
+            binding.layoutContentMain.setVisibility(View.GONE);
+
+            // Trigger the import engine!
+            doImport(bytes, importViewModel.getCurrentDirectoryUri(), folderName, deleteAfter, destinationDirectory, true);
+            return; // Terminate early so we don't build the unnecessary RecyclerView
         }
+
+        // --- FALLBACK: If we are in the Root/Albums screen, ask the user where to save it ---
+        if (importViewModel.isImporting()) {
+            showImporting();
+            return;
+        }
+
+        List<Uri> directories = settings.getGalleryDirectoriesAsUri(false);
+        List<String> names = new ArrayList<>(directories.size());
+        final int totalSize = filesToImport.size() + textToImport.size();
+
+        binding.title.setText(getResources().getQuantityString(R.plurals.import_modal_title, totalSize, totalSize, StringStuff.bytesToReadableString(bytes)));
 
         for (int i = 0; i < directories.size(); i++) {
             names.add(FileStuff.getFilenameWithPathFromUri(directories.get(i)));
         }
 
-        setupRecyclerView(names, context, currentName, bytes, hasUri, directories, settings);
+        setupRecyclerView(names, context, null, bytes, false, directories, settings);
+
         binding.buttonNewFolder.setOnClickListener(v -> resultLauncherAddFolder.launch(importViewModel.getCurrentDirectoryUri()));
+
         if (importViewModel.isFromShare()) {
             binding.checkboxDeleteAfter.setVisibility(View.VISIBLE);
             binding.checkboxDeleteAfter.setEnabled(false);
@@ -138,22 +178,6 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
             binding.checkboxDeleteAfter.setEnabled(true);
             binding.checkboxDeleteAfter.setChecked(settings.isDeleteByDefault());
             binding.deleteNote.setVisibility(View.GONE);
-        }
-
-        importViewModel.setOnImportDoneBottomSheet((destinationUri, sameDirectory, importedCount, failedCount, thumbErrorCount) -> {
-            clearViewModel();
-            dismiss();
-        });
-        importViewModel.getProgressData().observe(this, progressData -> {
-            if (progressData != null) {
-                binding.progress.setProgressCompat(progressData.getProgressPercentage(), true);
-                binding.progressText.setText(getString(R.string.import_modal_importing, progressData.getProgress(), progressData.getTotal(), progressData.getDoneMB(), progressData.getTotalMB()));
-            } else {
-                binding.progress.setProgressCompat(0, false);
-            }
-        });
-        if (importViewModel.isImporting()) {
-            showImporting();
         }
     }
 
@@ -175,6 +199,7 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
                 doImport(bytes, uri, names.get(pos), binding.checkboxDeleteAfter.isChecked(), sameDir ? importViewModel.getCurrentDocumentDirectory() : directory, sameDir);
             }
         });
+
         binding.recycler.setNestedScrollingEnabled(false);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false);
         binding.recycler.setLayoutManager(linearLayoutManager);
@@ -188,15 +213,19 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
     }
 
     private void showImporting() {
-        BottomSheetDialog dialog = (BottomSheetDialog) requireDialog();
-        dialog.setCancelable(false);
-        dialog.setCanceledOnTouchOutside(false);
+        BottomSheetDialog dialog = (BottomSheetDialog) getDialog();
+        if (dialog != null) {
+            dialog.setCancelable(false);
+            dialog.setCanceledOnTouchOutside(false);
+        }
         binding.progress.setProgressCompat(0, false);
         binding.layoutContentMain.setVisibility(View.GONE);
         binding.layoutContentImporting.setVisibility(View.VISIBLE);
+
         final int totalSize = importViewModel.getFilesToImport().size() + importViewModel.getTextToImport().size();
         binding.title.setText(getResources().getQuantityString(R.plurals.import_modal_title_importing, totalSize, totalSize, StringStuff.bytesToReadableString(importViewModel.getTotalBytes())));
         binding.body.setText(getString(R.string.import_modal_body_importing, importViewModel.getDestinationFolderName()));
+
         binding.buttonCancel.setOnClickListener(v -> {
             importViewModel.cancelImport();
             dismiss();
@@ -228,5 +257,4 @@ public class BottomSheetImportFragment extends BottomSheetDialogFragment {
         importViewModel.setTotalBytes(0);
         importViewModel.setFromShare(false);
     }
-
 }

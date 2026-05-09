@@ -18,22 +18,30 @@
 
 package se.arctosoft.vault.adapters;
 
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PointF;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
+import android.widget.ImageButton;
+import android.widget.TextView;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.PopupMenu;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
@@ -55,6 +63,8 @@ import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.CustomTarget;
+import com.bumptech.glide.request.transition.Transition;
 import com.google.android.material.color.MaterialColors;
 
 import org.json.JSONException;
@@ -141,15 +151,19 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());
         AdapterGalleryViewpagerItemBinding parentBinding = AdapterGalleryViewpagerItemBinding.inflate(layoutInflater, parent, false);
         setPadding(parentBinding);
+
         if (viewType == FileType.TYPE_IMAGE) {
             AdapterGalleryViewpagerItemImageBinding imageBinding = AdapterGalleryViewpagerItemImageBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerImageViewHolder(parentBinding, imageBinding);
         } else if (viewType == FileType.TYPE_GIF) {
             AdapterGalleryViewpagerItemGifBinding gifBinding = AdapterGalleryViewpagerItemGifBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerGifViewHolder(parentBinding, gifBinding);
-        } else if (viewType == FileType.TYPE_VIDEO) {
+
+            // --- NEW: Audio routes into the Video View Holder! ---
+        } else if (viewType == FileType.TYPE_VIDEO || viewType == FileType.TYPE_AUDIO) {
             AdapterGalleryViewpagerItemVideoBinding videoBinding = AdapterGalleryViewpagerItemVideoBinding.inflate(layoutInflater, parentBinding.content, true);
             return new GalleryPagerViewHolder.GalleryPagerVideoViewHolder(parentBinding, videoBinding);
+
         } else if (viewType == FileType.TYPE_TEXT) {
             AdapterGalleryViewpagerItemTextBinding textBinding = AdapterGalleryViewpagerItemTextBinding.inflate(layoutInflater, parentBinding.content, true);
             setViewPadding(textBinding.text);
@@ -200,15 +214,20 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) {
             setupDirectoryView(holder, context, galleryFile);
         } else {
-            holder.parentBinding.txtName.setVisibility(View.VISIBLE);
+            // Force the top name to be permanently hidden
+            holder.parentBinding.txtName.setVisibility(View.GONE);
             holder.parentBinding.lLButtons.setVisibility(View.VISIBLE);
-            setName(holder, galleryFile);
+
+            // --- NEW: Apply Palette Chameleon Colors ---
+            applyDynamicChameleonColor(context, holder, galleryFile.getThumbUri());
+
             if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder) {
                 holder.parentBinding.imgFullscreen.setVisibility(View.VISIBLE);
                 setupVideoView((GalleryPagerViewHolder.GalleryPagerVideoViewHolder) holder, context, galleryFile);
             } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerTextViewHolder) {
                 holder.parentBinding.imgFullscreen.setVisibility(View.VISIBLE);
                 setupTextView((GalleryPagerViewHolder.GalleryPagerTextViewHolder) holder, context, galleryFile);
+                attachPullToDismiss(((GalleryPagerViewHolder.GalleryPagerTextViewHolder) holder).binding.text, holder.parentBinding.content, context);
             } else {
                 holder.parentBinding.imgFullscreen.setVisibility(View.GONE);
                 setupImageView(holder, context, galleryFile);
@@ -219,21 +238,122 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         }
     }
 
+    // --- NEW: Pull to Dismiss Logic ---
+    private void attachPullToDismiss(View touchView, View animateView, FragmentActivity context) {
+        touchView.setOnTouchListener(new View.OnTouchListener() {
+            float startY = 0;
+            float startX = 0;
+            boolean isDragging = false;
+            boolean isHandlingTouch = false;
+
+            @Override
+            public boolean onTouch(View v, android.view.MotionEvent event) {
+                if (touchView instanceof MySubsamplingScaleImageView) {
+                    MySubsamplingScaleImageView img = (MySubsamplingScaleImageView) touchView;
+                    if (img.getScale() > img.getMinScale() + 0.05f) {
+                        return false;
+                    }
+                }
+
+                switch (event.getAction()) {
+                    case android.view.MotionEvent.ACTION_DOWN:
+                        startY = event.getRawY();
+                        startX = event.getRawX();
+                        isDragging = false;
+                        isHandlingTouch = true;
+                        return false;
+
+                    case android.view.MotionEvent.ACTION_MOVE:
+                        if (!isHandlingTouch) return false;
+                        float deltaY = event.getRawY() - startY;
+                        float deltaX = event.getRawX() - startX;
+
+                        if (!isDragging && Math.abs(deltaX) > Math.abs(deltaY)) {
+                            isHandlingTouch = false;
+                            return false;
+                        }
+
+                        if (!isDragging && deltaY > 150) {
+                            isDragging = true;
+                            v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                        }
+
+                        if (isDragging) {
+                            float screenHeight = v.getHeight();
+                            float scale = 1f - (Math.abs(deltaY) / (screenHeight * 1.5f));
+                            scale = Math.max(0.5f, scale);
+                            animateView.setScaleX(scale);
+                            animateView.setScaleY(scale);
+                            animateView.setTranslationY(deltaY);
+                            return true;
+                        }
+                        break;
+
+                    case android.view.MotionEvent.ACTION_UP:
+                    case android.view.MotionEvent.ACTION_CANCEL:
+                        if (isDragging) {
+                            float deltaYUp = event.getRawY() - startY;
+                            if (deltaYUp > v.getHeight() * 0.20f) {
+                                context.onBackPressed();
+                            } else {
+                                animateView.animate()
+                                        .scaleX(1f).scaleY(1f).translationY(0)
+                                        .setDuration(250)
+                                        .setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator())
+                                        .start();
+                            }
+                            isDragging = false;
+                            return true;
+                        }
+                        break;
+                }
+                return false;
+            }
+        });
+    }
+
+    // --- NEW: Chameleon Background Colors ---
+    private void applyDynamicChameleonColor(FragmentActivity context, GalleryPagerViewHolder holder, Uri uri) {
+        if (uri == null) return;
+        Glide.with(context)
+                .asBitmap()
+                .load(uri)
+                .apply(GlideStuff.getRequestOptions(useDiskCache))
+                .into(new CustomTarget<android.graphics.Bitmap>() {
+                    @Override
+                    public void onResourceReady(@NonNull android.graphics.Bitmap resource, @Nullable Transition<? super android.graphics.Bitmap> transition) {
+                        androidx.palette.graphics.Palette.from(resource).generate(palette -> {
+                            if (palette != null) {
+                                int defaultColor = context.getResources().getColor(R.color.black, context.getTheme());
+                                int dominantColor = palette.getDarkMutedColor(defaultColor);
+
+                                // Save the extracted color
+                                holder.parentBinding.getRoot().setTag(dominantColor);
+
+                                // Smoothly animate to it if we are in fullscreen mode
+                                if (isFullscreen) {
+                                    ValueAnimator colorAnimation = ValueAnimator.ofObject(new ArgbEvaluator(), defaultColor, dominantColor);
+                                    colorAnimation.setDuration(400);
+                                    colorAnimation.addUpdateListener(animator -> holder.parentBinding.getRoot().setBackgroundColor((int) animator.getAnimatedValue()));
+                                    colorAnimation.start();
+                                }
+                            }
+                        });
+                    }
+                    @Override
+                    public void onLoadCleared(@Nullable Drawable placeholder) {}
+                });
+    }
+
     private void setupDirectoryView(@NonNull GalleryPagerViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         holder.parentBinding.lLButtons.setVisibility(View.GONE);
         holder.parentBinding.imgFullscreen.setVisibility(View.GONE);
-        holder.parentBinding.noteLayout.setVisibility(View.GONE);
         holder.parentBinding.txtName.setVisibility(View.GONE);
-        ((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.name.setText(context.getString(R.string.gallery_click_to_open_directory, galleryFile.getNameWithPath()));
+
+        String folderName = new java.io.File(galleryFile.getNameWithPath()).getName();
+        ((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.name.setText(context.getString(R.string.gallery_click_to_open_directory, folderName));
+
         ((GalleryPagerViewHolder.GalleryPagerDirectoryViewHolder) holder).binding.getRoot().setOnClickListener(v -> {
-            /*Intent intent = new Intent(context, GalleryDirectoryActivity.class);
-            if (nestedPath != null) {
-                intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString())
-                        .putExtra(GalleryDirectoryActivity.EXTRA_NESTED_PATH, nestedPath + "/" + new File(galleryFile.getUri().getPath()).getName());
-            } else {
-                intent.putExtra(GalleryDirectoryActivity.EXTRA_DIRECTORY, galleryFile.getUri().toString());
-            }
-            context.startActivity(intent);*/
             Bundle bundle = new Bundle();
             if (nestedPath != null) {
                 bundle.putString(DirectoryFragment.ARGUMENT_DIRECTORY, galleryFile.getUri().toString());
@@ -254,7 +374,8 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     }
 
     private void setName(@NonNull GalleryPagerViewHolder holder, GalleryFile galleryFile) {
-        holder.parentBinding.txtName.setText(weakReference.get().getString(R.string.gallery_adapter_file_name, galleryFile.getName(), StringStuff.bytesToReadableString(galleryFile.getSize())));
+        String displayName = galleryFile.getOriginalName() != null ? galleryFile.getOriginalName() : galleryFile.getName();
+        holder.parentBinding.txtName.setText(weakReference.get().getString(R.string.gallery_adapter_file_name, displayName, StringStuff.bytesToReadableString(galleryFile.getSize())));
     }
 
     @Override
@@ -314,18 +435,241 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         holder.binding.text.setTextIsSelectable(true);
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     private void setupVideoView(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
-        holder.binding.rLPlay.setVisibility(View.VISIBLE);
-        holder.binding.playerView.setVisibility(View.INVISIBLE);
-        Glide.with(context)
-                .load(galleryFile.getThumbUri())
-                .apply(GlideStuff.getRequestOptions(useDiskCache))
-                .into(holder.binding.imgThumb);
-        holder.parentBinding.imgFullscreen.setVisibility(isFullscreen ? View.GONE : View.VISIBLE);
-        holder.binding.rLPlay.setOnClickListener(v -> {
-            holder.binding.rLPlay.setVisibility(View.GONE);
-            holder.binding.playerView.setVisibility(View.VISIBLE);
-            playVideo(context, galleryFile.getUri(), holder, galleryFile.getVersion(), galleryViewModel.getVideoPosition(galleryFile.getUri()));
+        // Frictionless UI: Hide the play button overlay, show the player immediately
+        holder.binding.rLPlay.setVisibility(View.GONE);
+        holder.binding.playerView.setVisibility(View.VISIBLE);
+        holder.parentBinding.txtName.setVisibility(View.GONE);
+
+        // Audio Thumbnail Injection
+        if (galleryFile.isAudio()) {
+            Glide.with(context)
+                    .load(R.drawable.ic_outline_audio_file_24)
+                    .centerInside()
+                    .into(holder.binding.imgThumb);
+        } else {
+            Glide.with(context)
+                    .load(galleryFile.getThumbUri())
+                    .apply(GlideStuff.getRequestOptions(useDiskCache))
+                    .into(holder.binding.imgThumb);
+        }
+
+        View controllerView = holder.binding.playerView;
+        View gestureOverlay = controllerView.findViewById(R.id.gesture_overlay);
+        TextView tvGestureText = controllerView.findViewById(R.id.tv_gesture_text);
+
+        Runnable hideOverlay = () -> {
+            if (gestureOverlay != null) {
+                gestureOverlay.animate().alpha(0f).setDuration(250).withEndAction(() -> gestureOverlay.setVisibility(View.GONE));
+            }
+        };
+
+        TextView btnAspectRatio = controllerView.findViewById(R.id.btnAspectRatio);
+        if (btnAspectRatio != null) {
+            btnAspectRatio.setOnClickListener(v -> {
+                int currentMode = holder.binding.playerView.getResizeMode();
+                if (currentMode == androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT) {
+                    holder.binding.playerView.setResizeMode(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
+                    btnAspectRatio.setText("ZOOM");
+                } else if (currentMode == androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM) {
+                    holder.binding.playerView.setResizeMode(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL);
+                    btnAspectRatio.setText("FILL");
+                } else {
+                    holder.binding.playerView.setResizeMode(androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT);
+                    btnAspectRatio.setText("FIT");
+                }
+            });
+        }
+
+        TextView btnRotate = controllerView.findViewById(R.id.btnRotate);
+        if (btnRotate != null) {
+            btnRotate.setOnClickListener(v -> {
+                int currentOrientation = context.getResources().getConfiguration().orientation;
+                if (currentOrientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+                    context.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                } else {
+                    context.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                }
+            });
+        }
+
+        ImageButton btnPlayPause = controllerView.findViewById(R.id.custom_play_pause);
+        if (btnPlayPause != null) {
+            btnPlayPause.setOnClickListener(v -> {
+                int pos = holder.getBindingAdapterPosition();
+                if (pos >= 0) {
+                    ExoPlayer player = players.get(pos);
+                    if (player != null) {
+                        if (player.isPlaying()) player.pause();
+                        else player.play();
+                        btnPlayPause.setImageResource(player.isPlaying() ? R.drawable.ic_baseline_pause_24 : R.drawable.ic_baseline_play_arrow_24);
+                    }
+                }
+            });
+        }
+
+        final android.media.AudioManager audioManager = (android.media.AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+
+        // --- Video Touch Engine (Combined Gestures + Haptics + Pull-to-Dismiss) ---
+        holder.binding.playerView.setOnTouchListener(new View.OnTouchListener() {
+            private float startY = 0f;
+            private float startX = 0f;
+            private int startVolume = 0;
+            private float startBrightness = 0f;
+            private boolean isRightSide = false;
+
+            // Haptic Trackers
+            private int lastHapticVolume = -1;
+            private int lastHapticBrightness = -1;
+            private boolean isPullingToDismiss = false;
+
+            private final android.view.GestureDetector gestureDetector = new android.view.GestureDetector(context, new android.view.GestureDetector.SimpleOnGestureListener() {
+
+                @Override
+                public boolean onDown(android.view.MotionEvent e) {
+                    startY = e.getRawY();
+                    startX = e.getRawX();
+                    isRightSide = e.getX() > (holder.binding.playerView.getWidth() / 2f);
+                    startVolume = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC);
+                    android.view.Window window = context.getWindow();
+                    startBrightness = window.getAttributes().screenBrightness;
+                    if (startBrightness < 0) startBrightness = 0.5f;
+
+                    lastHapticVolume = startVolume;
+                    lastHapticBrightness = (int)(startBrightness * 100);
+                    isPullingToDismiss = false;
+                    return true;
+                }
+
+                @Override
+                public boolean onSingleTapConfirmed(android.view.MotionEvent e) {
+                    if (holder.binding.playerView.isControllerFullyVisible()) {
+                        holder.binding.playerView.hideController();
+                    } else {
+                        holder.binding.playerView.showController();
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean onDoubleTap(android.view.MotionEvent e) {
+                    int pos = holder.getBindingAdapterPosition();
+                    if (pos >= 0) {
+                        ExoPlayer player = players.get(pos);
+                        if (player != null) {
+                            long currentPos = player.getCurrentPosition();
+
+                            // Tactile feedback on Seek
+                            holder.binding.playerView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+
+                            gestureOverlay.animate().cancel();
+                            gestureOverlay.setVisibility(View.VISIBLE);
+                            gestureOverlay.setAlpha(1f);
+
+                            if (e.getX() > (holder.binding.playerView.getWidth() / 2f)) {
+                                player.seekTo(Math.min(player.getDuration(), currentPos + 10000));
+                                tvGestureText.setText("⏩ +10s");
+                            } else {
+                                player.seekTo(Math.max(0, currentPos - 10000));
+                                tvGestureText.setText("⏪ -10s");
+                            }
+
+                            holder.binding.playerView.removeCallbacks(hideOverlay);
+                            holder.binding.playerView.postDelayed(hideOverlay, 800);
+                        }
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean onScroll(android.view.MotionEvent e1, android.view.MotionEvent e2, float distanceX, float distanceY) {
+                    float deltaY = e2.getRawY() - startY;
+                    float deltaX = e2.getRawX() - startX;
+
+                    // Pull-to-dismiss integration
+                    if (!isPullingToDismiss && deltaY > 150 && Math.abs(deltaY) > Math.abs(deltaX)) {
+                        isPullingToDismiss = true;
+                        holder.binding.playerView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                    }
+
+                    if (isPullingToDismiss) {
+                        float screenHeight = holder.binding.playerView.getHeight();
+                        float scale = 1f - (deltaY / (screenHeight * 1.5f));
+                        scale = Math.max(0.5f, scale);
+                        holder.parentBinding.content.setScaleX(scale);
+                        holder.parentBinding.content.setScaleY(scale);
+                        holder.parentBinding.content.setTranslationY(deltaY);
+                        return true;
+                    }
+
+                    // Otherwise, execute Volume/Brightness logic
+                    if (Math.abs(deltaX) > Math.abs(deltaY)) return false;
+
+                    float swipePercentage = (startY - e2.getRawY()) / holder.binding.playerView.getHeight();
+
+                    gestureOverlay.animate().cancel();
+                    gestureOverlay.setVisibility(View.VISIBLE);
+                    gestureOverlay.setAlpha(1f);
+
+                    if (isRightSide) {
+                        int maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC);
+                        int volumeChange = (int) (maxVolume * swipePercentage);
+                        int newVolume = Math.max(0, Math.min(maxVolume, startVolume + volumeChange));
+                        audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, newVolume, 0);
+
+                        // Only tick when volume changes
+                        if (newVolume != lastHapticVolume) {
+                            holder.binding.playerView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                            lastHapticVolume = newVolume;
+                        }
+
+                        int displayVol = (int) (((float) newVolume / maxVolume) * 100);
+                        tvGestureText.setText("🔊 " + displayVol + "%");
+                    } else {
+                        android.view.Window window = context.getWindow();
+                        android.view.WindowManager.LayoutParams lp = window.getAttributes();
+                        float newBrightness = Math.max(0.01f, Math.min(1.0f, startBrightness + swipePercentage));
+                        lp.screenBrightness = newBrightness;
+                        window.setAttributes(lp);
+
+                        int brightPercent = (int) (newBrightness * 100);
+                        if (Math.abs(brightPercent - lastHapticBrightness) >= 3) {
+                            holder.binding.playerView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                            lastHapticBrightness = brightPercent;
+                        }
+
+                        tvGestureText.setText("☀️ " + brightPercent + "%");
+                    }
+
+                    holder.binding.playerView.removeCallbacks(hideOverlay);
+                    holder.binding.playerView.postDelayed(hideOverlay, 800);
+
+                    return true;
+                }
+            });
+
+            @Override
+            public boolean onTouch(View v, android.view.MotionEvent event) {
+                if (event.getAction() == android.view.MotionEvent.ACTION_UP || event.getAction() == android.view.MotionEvent.ACTION_CANCEL) {
+                    if (isPullingToDismiss) {
+                        float deltaY = event.getRawY() - startY;
+                        if (deltaY > v.getHeight() * 0.20f) {
+                            context.onBackPressed();
+                        } else {
+                            holder.parentBinding.content.animate().scaleX(1f).scaleY(1f).translationY(0).setDuration(250).start();
+                        }
+                        isPullingToDismiss = false;
+                        return true;
+                    }
+                }
+
+                if (event.getY() > (holder.binding.playerView.getHeight() * 0.75f)) {
+                    return false;
+                }
+                gestureDetector.onTouchEvent(event);
+                return true;
+            }
         });
     }
 
@@ -364,7 +708,10 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             @Override
             public void onIsPlayingChanged(boolean isPlaying) {
                 Player.Listener.super.onIsPlayingChanged(isPlaying);
-                holder.parentBinding.lLButtons.setVisibility(isPlaying ? View.INVISIBLE : View.VISIBLE);
+
+                ImageButton playBtn = holder.binding.playerView.findViewById(R.id.custom_play_pause);
+                if (playBtn != null) playBtn.setImageResource(isPlaying ? R.drawable.ic_baseline_pause_24 : R.drawable.ic_baseline_play_arrow_24);
+
                 if (!isPlaying) {
                     galleryViewModel.setVideoPosition(finalPlayer.getCurrentPosition(), fileUri);
                 }
@@ -379,11 +726,15 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
         holder.binding.playerView.setPlayer(player);
         player.prepare();
         player.setPlayWhenReady(true);
-        holder.binding.playerView.hideController();
+        holder.binding.playerView.showController();
     }
 
     private void setupImageView(GalleryPagerViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
         if (holder instanceof GalleryPagerViewHolder.GalleryPagerImageViewHolder) {
+
+            // --- NEW: Attach Pull to dismiss to the Image ---
+            attachPullToDismiss(((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView, holder.parentBinding.content, context);
+
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOnClickListener(v -> onItemPressed(context));
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setMinimumDpi(40);
             ((GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder).binding.imageView.setOrientation(MySubsamplingScaleImageView.ORIENTATION_USE_EXIF);
@@ -400,6 +751,10 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             });
             loadImage(galleryFile, (GalleryPagerViewHolder.GalleryPagerImageViewHolder) holder, context);
         } else if (holder instanceof GalleryPagerViewHolder.GalleryPagerGifViewHolder) {
+
+            // --- NEW: Attach Pull to dismiss to Gifs ---
+            attachPullToDismiss(((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView, holder.parentBinding.content, context);
+
             ((GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder).binding.gifImageView.setOnClickListener(v -> onItemPressed(context));
             loadGif(galleryFile, (GalleryPagerViewHolder.GalleryPagerGifViewHolder) holder, context);
         }
@@ -486,16 +841,20 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
 
     private void loadGif(GalleryFile galleryFile, GalleryPagerViewHolder.GalleryPagerGifViewHolder holder, FragmentActivity context) {
         Glide.with(context)
-                //.asGif()
                 .load(galleryFile.getUri())
                 .apply(GlideStuff.getRequestOptions(useDiskCache))
                 .into(holder.binding.gifImageView);
     }
 
+    // --- NEW: Updated showButtons to respect Palette Color ---
     private void showButtons(GalleryPagerViewHolder holder, boolean show) {
         if (isFullscreen) {
             show = false;
-            holder.parentBinding.getRoot().setBackgroundColor(weakReference.get().getResources().getColor(R.color.black, weakReference.get().getTheme()));
+            Object tag = holder.parentBinding.getRoot().getTag();
+            int defaultColor = weakReference.get().getResources().getColor(R.color.black, weakReference.get().getTheme());
+            int color = tag instanceof Integer ? (int) tag : defaultColor;
+
+            holder.parentBinding.getRoot().setBackgroundColor(color);
         } else {
             holder.parentBinding.getRoot().setBackgroundColor(MaterialColors.getColor(weakReference.get(), R.attr.gallery_viewpager_background, Color.WHITE));
         }
@@ -538,9 +897,9 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             }
             return true;
         });
-        menu.getItem(2).setVisible(!isAllFolder); // hide edit note in All folder
+        menu.getItem(2).setVisible(!isAllFolder);
         menu.getItem(2).setEnabled(!isAllFolder);
-        menu.getItem(3).setVisible(!isAllFolder && galleryFile.isText()); // hide edit text in All folder and for non-text files
+        menu.getItem(3).setVisible(!isAllFolder && galleryFile.isText());
         menu.getItem(3).setEnabled(!isAllFolder && galleryFile.isText());
 
         popup.show();
@@ -553,13 +912,11 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
             }
             galleryFile.setNote(text);
             if (text == null) {
-                // delete note
                 if (galleryFile.hasNote()) {
                     FileStuff.deleteFile(context, galleryFile.getNoteUri());
                     galleryFile.setNoteUri(null);
                 }
             } else if (galleryFile.hasNote()) {
-                // overwrite
                 deleteNote(context, galleryFile);
                 saveNote(context, galleryFile, text);
             } else {
@@ -639,7 +996,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
                         public void onInvalidPassword(InvalidPasswordException e) {
                             //removeFileAt(holder.getAdapterPosition(), context);
                         }
-                    }; // TODO does not export to current directory
+                    };
                     Encryption.decryptAndExport(context, galleryFile.getUri(), currentDirectory, galleryFile, galleryFile.isVideo(), galleryFile.getVersion(), password.getPassword(), result);
                 }).start());
     }
@@ -689,38 +1046,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     }
 
     private void loadNote(GalleryPagerViewHolder holder, FragmentActivity context, GalleryFile galleryFile) {
-        if (galleryFile.hasNote()) {
-            if (galleryFile.getNote() != null) {
-                holder.parentBinding.noteLayout.setVisibility(View.VISIBLE);
-                holder.parentBinding.note.setText(context.getString(R.string.gallery_note_click_to_show));
-                final boolean[] expanded = {false};
-                View.OnClickListener onClickListener = v -> {
-                    if (expanded[0]) {
-                        holder.parentBinding.noteAction.setImageDrawable(ResourcesCompat.getDrawable(context.getResources(), R.drawable.round_expand_less_24, context.getTheme()));
-                        holder.parentBinding.note.setText(context.getString(R.string.gallery_note_click_to_show));
-                        holder.parentBinding.noteLayout.setBackgroundColor(MaterialColors.getColor(context, R.attr.gallery_viewpager_buttons_background, Color.BLACK));
-                    } else {
-                        holder.parentBinding.noteAction.setImageDrawable(ResourcesCompat.getDrawable(context.getResources(), R.drawable.round_expand_more_24, context.getTheme()));
-                        holder.parentBinding.note.setText(galleryFile.getNote());
-                        holder.parentBinding.noteLayout.setBackgroundColor(MaterialColors.getColor(context, R.attr.gallery_viewpager_note_background, Color.BLACK));
-                    }
-                    expanded[0] = !expanded[0];
-                };
-                holder.parentBinding.noteAction.setOnClickListener(onClickListener);
-                holder.parentBinding.note.setOnClickListener(onClickListener);
-            } else {
-                holder.parentBinding.noteLayout.setVisibility(View.VISIBLE);
-                holder.parentBinding.note.setText(context.getString(R.string.gallery_loading_note));
-                new Thread(() -> {
-                    String text = Encryption.readEncryptedTextFromUri(galleryFile.getNoteUri(), context, galleryFile.getVersion(), password.getPassword());
-                    galleryFile.setNote(text);
-                    context.runOnUiThread(() -> notifyItemChanged(holder.getBindingAdapterPosition(), new GalleryGridAdapter.Payload(GalleryGridAdapter.Payload.TYPE_LOADED_NOTE)));
-                }).start();
-            }
-        } else {
-            holder.parentBinding.noteLayout.setVisibility(View.GONE);
-            holder.parentBinding.note.setText("");
-        }
+        // Intentionally left blank. Note UI was removed for a cleaner edge-to-edge layout!
     }
 
     private void removeFileAt(int pos, FragmentActivity context) {
@@ -737,6 +1063,47 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     public int getItemViewType(int position) {
         GalleryFile galleryFile = galleryFiles.get(position);
         return galleryFile.getFileType().type;
+    }
+
+    // --- NEW: Smart ViewPager Scroll Engine ---
+    private androidx.viewpager2.widget.ViewPager2 attachedViewPager;
+
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        if (recyclerView.getParent() instanceof androidx.viewpager2.widget.ViewPager2) {
+            attachedViewPager = (androidx.viewpager2.widget.ViewPager2) recyclerView.getParent();
+            attachedViewPager.registerOnPageChangeCallback(new androidx.viewpager2.widget.ViewPager2.OnPageChangeCallback() {
+                @Override
+                public void onPageSelected(int position) {
+                    super.onPageSelected(position);
+                    triggerActiveVideo(position);
+                }
+            });
+        }
+    }
+
+    public void triggerActiveVideo(int position) {
+        if (position < 0 || position >= galleryFiles.size()) return;
+
+        GalleryFile file = galleryFiles.get(position);
+        if (file.isVideo() || file.isAudio()) {
+            if (attachedViewPager != null) {
+                RecyclerView rv = (RecyclerView) attachedViewPager.getChildAt(0);
+                rv.post(() -> {
+                    // Force pause all background players to free up the decryption engine!
+                    pausePlayers();
+
+                    RecyclerView.ViewHolder holder = rv.findViewHolderForAdapterPosition(position);
+                    if (holder instanceof GalleryPagerViewHolder.GalleryPagerVideoViewHolder) {
+                        playVideo(weakReference.get(), file.getUri(), (GalleryPagerViewHolder.GalleryPagerVideoViewHolder) holder, file.getVersion(), galleryViewModel.getVideoPosition(file.getUri()));
+                    }
+                });
+            }
+        } else {
+            // If the user swiped to an image, immediately pause the audio/video!
+            pausePlayers();
+        }
     }
 
     @Override
@@ -760,6 +1127,7 @@ public class GalleryPagerAdapter extends RecyclerView.Adapter<GalleryPagerViewHo
     private void releaseVideo(GalleryPagerViewHolder.GalleryPagerVideoViewHolder holder) {
         final int pos = holder.getBindingAdapterPosition();
         holder.binding.playerView.setPlayer(null);
+
         if (pos >= 0) {
             ExoPlayer player = players.remove(pos);
             if (player != null) {

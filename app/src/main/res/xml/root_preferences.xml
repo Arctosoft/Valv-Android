@@ -1,61 +1,90 @@
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory app:title="@string/settings_app">
+    <!-- APP SETTINGS -->
+    <PreferenceCategory
+        app:title="@string/settings_app"
+        app:iconSpaceReserved="false">
 
         <Preference
-            android:icon="@drawable/ic_round_folder_open_24"
             android:key="app_edit_folders"
-            android:summary="@string/dialog_edit_included_title"
-            android:title="@string/menu_gallery_edit_included_folders" />
+            app:icon="@drawable/ic_round_folder_open_24"
+            app:title="@string/menu_gallery_edit_included_folders"
+            app:summary="@string/dialog_edit_included_title"
+            app:allowDividerAbove="false"
+            app:allowDividerBelow="false"
+            app:singleLineTitle="false" />
 
         <SwitchPreferenceCompat
             android:key="app_biometrics"
-            android:summary="@string/settings_biometrics_summary"
-            app:defaultValue="false"
             app:icon="@drawable/rounded_fingerprint_24"
-            app:title="@string/settings_biometrics_title" />
+            app:title="@string/settings_biometrics_title"
+            app:summary="@string/settings_biometrics_summary"
+            app:defaultValue="false"
+            app:allowDividerAbove="false"
+            app:allowDividerBelow="false"
+            app:singleLineTitle="false" />
 
         <SwitchPreferenceCompat
             android:key="app_secure"
-            android:summary="@string/settings_secure_summary"
-            app:defaultValue="true"
             app:icon="@drawable/ic_outline_lock_24"
-            app:title="@string/settings_secure_title" />
+            app:title="@string/settings_secure_title"
+            app:summary="@string/settings_secure_summary"
+            app:defaultValue="true"
+            app:allowDividerAbove="false"
+            app:allowDividerBelow="false"
+            app:singleLineTitle="false" />
 
         <SwitchPreferenceCompat
             android:key="encryption_use_disk_cache"
-            app:defaultValue="true"
             app:icon="@drawable/outline_sd_storage_24"
+            app:title="@string/settings_use_disk_cache_title"
             app:summaryOff="@string/settings_use_disk_cache_summary_off"
             app:summaryOn="@string/settings_use_disk_cache_summary_on"
-            app:title="@string/settings_use_disk_cache_title" />
+            app:defaultValue="true"
+            app:allowDividerAbove="false"
+            app:allowDividerBelow="false"
+            app:singleLineTitle="false" />
 
         <SwitchPreferenceCompat
             android:key="app_exit_on_lock"
-            app:defaultValue="true"
             app:icon="@drawable/ic_outline_lock_24"
+            app:title="@string/settings_exit_on_lock_title"
             app:summaryOff="@string/settings_exit_on_lock_summary_off"
             app:summaryOn="@string/settings_exit_on_lock_summary_on"
-            app:title="@string/settings_exit_on_lock_title" />
+            app:defaultValue="true"
+            app:allowDividerAbove="false"
+            app:allowDividerBelow="false"
+            app:singleLineTitle="false" />
 
         <SwitchPreferenceCompat
             android:key="encryption_delete_by_default"
-            app:defaultValue="false"
             app:icon="@drawable/ic_outline_delete_forever_24"
+            app:title="@string/settings_delete_by_default_title"
             app:summaryOff="@string/settings_delete_by_default_summary_off"
             app:summaryOn="@string/settings_delete_by_default_summary_on"
-            app:title="@string/settings_delete_by_default_title" />
+            app:defaultValue="false"
+            app:allowDividerAbove="false"
+            app:allowDividerBelow="false"
+            app:singleLineTitle="false" />
 
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/settings_encryption">
+    <!-- ENCRYPTION SETTINGS -->
+    <PreferenceCategory
+        app:title="@string/settings_encryption"
+        app:iconSpaceReserved="false">
 
         <Preference
-            android:icon="@drawable/round_key_24"
             android:key="encryption_iteration_count"
-            android:summary="@string/settings_iteration_count_summary"
-            android:title="@string/settings_iteration_count_title" />
+            app:icon="@drawable/round_key_24"
+            app:title="@string/settings_iteration_count_title"
+            app:summary="@string/settings_iteration_count_summary"
+            app:allowDividerAbove="false"
+            app:allowDividerBelow="false"
+            app:singleLineTitle="false" />
 
     </PreferenceCategory>
 

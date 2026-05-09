@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
 import android.util.Log;
+import android.view.HapticFeedbackConstants;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 
 import androidx.activity.OnBackPressedCallback;
@@ -17,7 +19,9 @@ import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.GridLayoutManager;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.FileNotFoundException;
@@ -41,6 +45,13 @@ public class DirectoryFragment extends DirectoryBaseFragment {
 
     private Snackbar snackBarBackPressed;
     private ShareViewModel shareViewModel;
+    private BottomNavigationView bottomNavigationView;
+
+    // --- NEW: Variables for the Breathing Grid ---
+    private ScaleGestureDetector scaleGestureDetector;
+    private float scaleFactor = 1.0f;
+    private static final int MIN_COLUMNS = 2;
+    private static final int MAX_COLUMNS = 6;
 
     private final ActivityResultLauncher<Uri> resultLauncherAddFolder = registerForActivityResult(new ActivityResultContracts.OpenDocumentTree(), uri -> {
         if (uri != null) {
@@ -119,15 +130,24 @@ public class DirectoryFragment extends DirectoryBaseFragment {
             galleryGridAdapter.notifyItemChanged(pos);
         });
 
+        // Initialize Bottom Navigation
+        bottomNavigationView = binding.getRoot().findViewById(R.id.bottom_navigation);
+
         if (galleryViewModel.isRootDir()) {
             setupViewpager();
             setupGrid();
             setClickListeners();
+            setupBottomNavigation();
 
             if (!galleryViewModel.isInitialised()) {
                 addRootFolders();
             }
         } else {
+            // Hide bottom navigation if we are inside a specific folder
+            if (bottomNavigationView != null) {
+                bottomNavigationView.setVisibility(View.GONE);
+            }
+
             DocumentFile documentFile = DocumentFile.fromSingleUri(context, galleryViewModel.getCurrentDirectoryUri());
             if (documentFile != null && documentFile.isDirectory() && documentFile.exists()) {
                 setupViewpager();
@@ -144,6 +164,44 @@ public class DirectoryFragment extends DirectoryBaseFragment {
             }
         }
 
+        // --- NEW: THE "BREATHING" GRID (PINCH TO ZOOM COLUMNS) ---
+        scaleGestureDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScale(@NonNull ScaleGestureDetector detector) {
+                scaleFactor *= detector.getScaleFactor();
+
+                if (binding.recyclerView.getLayoutManager() instanceof GridLayoutManager) {
+                    GridLayoutManager layoutManager = (GridLayoutManager) binding.recyclerView.getLayoutManager();
+                    int currentSpans = layoutManager.getSpanCount();
+
+                    // Pinching Out (Zooming In) -> Fewer Columns
+                    if (scaleFactor > 1.25f && currentSpans > MIN_COLUMNS) {
+                        layoutManager.setSpanCount(currentSpans - 1);
+                        scaleFactor = 1.0f; // Reset threshold
+                        binding.recyclerView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                        galleryGridAdapter.notifyItemRangeChanged(0, galleryGridAdapter.getItemCount());
+                        return true;
+                    }
+                    // Pinching In (Zooming Out) -> More Columns
+                    else if (scaleFactor < 0.75f && currentSpans < MAX_COLUMNS) {
+                        layoutManager.setSpanCount(currentSpans + 1);
+                        scaleFactor = 1.0f; // Reset threshold
+                        binding.recyclerView.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                        galleryGridAdapter.notifyItemRangeChanged(0, galleryGridAdapter.getItemCount());
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+
+        // Intercept touches on the RecyclerView to feed the detector
+        binding.recyclerView.setOnTouchListener((v, event) -> {
+            scaleGestureDetector.onTouchEvent(event);
+            return false; // Return false so normal scrolling still works perfectly
+        });
+        // -----------------------------
+
         initViewModels();
         shareViewModel = new ViewModelProvider(requireActivity()).get(ShareViewModel.class);
         shareViewModel.getHasData().observe(getViewLifecycleOwner(), aBoolean -> {
@@ -153,10 +211,65 @@ public class DirectoryFragment extends DirectoryBaseFragment {
         });
     }
 
+    private void setupBottomNavigation() {
+        if (bottomNavigationView == null) return;
+
+        bottomNavigationView.setVisibility(View.VISIBLE);
+        // Ensure "Albums" is selected when on this root screen
+        bottomNavigationView.setSelectedItemId(R.id.nav_albums);
+
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_all_files) {
+                // Navigate to the DirectoryAllFragment when "All Files" is clicked
+                navController.navigate(R.id.action_directory_to_directoryAll);
+                return true;
+            } else if (id == R.id.nav_albums) {
+                // Do nothing, we are already on the albums tab
+                return true;
+            }
+            return false;
+        });
+    }
+
     @Override
     void showViewpager(boolean show, int pos, boolean animate) {
-        binding.layoutFabsAdd.setVisibility(show ? View.GONE : View.VISIBLE);
-        super.showViewpager(show, pos, animate);
+        if (binding.layoutFabsAdd != null) binding.layoutFabsAdd.setVisibility(show ? View.GONE : View.VISIBLE);
+        View bottomNav = binding.getRoot().findViewById(R.id.bottom_navigation);
+        if (bottomNav != null) bottomNav.setVisibility(show ? View.GONE : View.VISIBLE);
+
+        if (show) {
+            binding.viewPager.setCurrentItem(pos, false);
+            binding.viewPager.setAlpha(0f);
+            binding.viewPager.setScaleX(0.95f);
+            binding.viewPager.setScaleY(0.95f);
+            binding.viewPager.setVisibility(View.VISIBLE);
+            galleryPagerAdapter.triggerActiveVideo(pos);
+
+            binding.viewPager.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(250)
+                    .setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator())
+                    .start();
+        } else {
+            binding.viewPager.animate()
+                    .alpha(0f)
+                    .scaleX(0.95f)
+                    .scaleY(0.95f)
+                    .setDuration(200)
+                    .setInterpolator(new androidx.interpolator.view.animation.FastOutSlowInInterpolator())
+                    .withEndAction(() -> {
+                        binding.viewPager.setVisibility(View.GONE);
+                        binding.viewPager.setScaleX(1f);
+                        binding.viewPager.setScaleY(1f);
+                        binding.viewPager.setAlpha(1f);
+                    })
+                    .start();
+        }
+
+        super.showViewpager(show, pos, false);
     }
 
     private void checkSharedData() {
@@ -183,7 +296,6 @@ public class DirectoryFragment extends DirectoryBaseFragment {
             if (expandedFabs) {
                 binding.fab.animate().rotation(0).setDuration(120).start();
                 for (View view : views) {
-                    //view.animate().alpha(0f).setDuration(120).setListener(getHideOnEndListener(view)).start();
                     view.setAlpha(0f);
                     view.setVisibility(View.GONE);
                 }
@@ -238,7 +350,7 @@ public class DirectoryFragment extends DirectoryBaseFragment {
             }
         });
         binding.fabImportMedia.setOnClickListener(v -> {
-            String[] mimeTypes = new String[]{"image/*", "video/*"};
+            String[] mimeTypes = new String[]{"image/*", "video/*", "audio/*"};
             resultLauncherOpenDocuments.launch(mimeTypes);
             binding.fab.performClick();
         });
@@ -326,6 +438,12 @@ public class DirectoryFragment extends DirectoryBaseFragment {
             binding.layoutFabsAdd.setVisibility(View.VISIBLE);
             binding.layoutFabsRemoveFolders.setVisibility(View.GONE);
         }
+
+        // Hide bottom navigation during selection mode to prevent weird UX
+        if (bottomNavigationView != null && galleryViewModel.isRootDir()) {
+            bottomNavigationView.setVisibility(inSelectionMode ? View.GONE : View.VISIBLE);
+        }
+
         requireActivity().invalidateOptionsMenu();
     }
 
@@ -341,13 +459,9 @@ public class DirectoryFragment extends DirectoryBaseFragment {
             public void onAddedAsRoot() {
                 Toaster.getInstance(context).showLong(getString(R.string.gallery_added_folder, FileStuff.getFilenameWithPathFromUri(uri)));
                 Uri directoryUri = documentFile.getUri();
-                //List<GalleryFile> galleryFiles = FileStuff.getFilesInFolder(context, directoryUri);
 
-                if (galleryViewModel.getGalleryFiles().isEmpty()) {
-                    addAllFolder();
-                }
                 synchronized (LOCK) {
-                    galleryViewModel.getGalleryFiles().add(0, GalleryFile.asDirectory(directoryUri/*, galleryFiles*/));
+                    galleryViewModel.getGalleryFiles().add(0, GalleryFile.asDirectory(directoryUri));
                     galleryGridAdapter.notifyItemInserted(0);
                 }
             }
@@ -365,12 +479,6 @@ public class DirectoryFragment extends DirectoryBaseFragment {
                 }
             }
         });
-        //if (viewModel.getFilesToAdd() != null) {
-        //    importFiles(viewModel.getFilesToAdd());
-        //}
-        //if (viewModel.getTextToImport() != null) {
-        //    importText(viewModel.getTextToImport());
-        //}
     }
 
     @Override
@@ -411,21 +519,10 @@ public class DirectoryFragment extends DirectoryBaseFragment {
             });
         }
         activity.runOnUiThread(() -> {
-            if (navController.getPreviousBackStackEntry() == null && !galleryViewModel.getGalleryFiles().isEmpty()) {
-                addAllFolder();
-            }
             binding.noMedia.setVisibility(directories.isEmpty() ? View.VISIBLE : View.GONE);
             setLoading(false);
         });
         galleryViewModel.setInitialised(true);
-    }
-
-    private void addAllFolder() {
-        synchronized (LOCK) {
-            galleryViewModel.getGalleryFiles().add(0, GalleryFile.asAllFolder(getString(R.string.gallery_all)));
-            galleryGridAdapter.notifyItemInserted(0);
-        }
-        binding.noMedia.setVisibility(View.GONE);
     }
 
     @Override
